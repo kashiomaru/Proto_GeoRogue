@@ -30,7 +30,13 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
 
     public void Execute(int index, TransformAccess transform)
     {
-        if (!bulletActive[index]) return;
+        if (!bulletActive[index])
+        {
+            // 非アクティブな弾は画面外に移動
+            transform.position = new float3(0, -100, 0);
+            bulletPositions[index] = new float3(0, -100, 0);
+            return;
+        }
 
         float life = bulletLifeTime[index] - deltaTime;
         bulletLifeTime[index] = life;
