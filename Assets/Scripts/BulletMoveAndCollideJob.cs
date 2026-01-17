@@ -23,6 +23,9 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
     // 「同じ敵に複数の弾が同時に当たった」場合も、両方がfalseを書き込むだけなので問題なし。
     [NativeDisableParallelForRestriction] 
     public NativeArray<bool> enemyActive;
+    
+    // 死んだ敵の位置を記録するキュー（並列書き込み用）
+    public NativeQueue<float3>.ParallelWriter deadEnemyPositions;
 
     public void Execute(int index, TransformAccess transform)
     {
@@ -74,7 +77,13 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
                         if (distSq < 1.0f)
                         {
                             // ヒット！
-                            enemyActive[enemyIndex] = false; // 敵死亡
+                            // 敵がまだ生きている場合のみ処理（重複ヒット防止）
+                            if (enemyActive[enemyIndex])
+                            {
+                                enemyActive[enemyIndex] = false; // 敵死亡
+                                // 死んだ敵の位置をキューに追加
+                                deadEnemyPositions.Enqueue(enemyPos);
+                            }
                             bulletActive[index] = false;     // 弾消滅
                             transform.position = new float3(0, -100, 0); // 弾隠す
                             return; // 弾は1回当たったら消える

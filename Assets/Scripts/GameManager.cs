@@ -21,6 +21,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float respawnDistance = 50f; // リスポーン判定距離（プレイヤーからこの距離以上離れた敵をリスポーン）
     [SerializeField] private float respawnMinRadius = 20f; // リスポーン最小半径
     [SerializeField] private float respawnMaxRadius = 30f; // リスポーン最大半径
+    
+    [Header("References")]
+    [SerializeField] private GemManager gemManager; // GemManagerへの参照
 
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -37,6 +40,10 @@ public class GameManager : MonoBehaviour
     // --- Spatial Partitioning ---
     // Key: グリッドのハッシュ値, Value: 敵のインデックス
     private NativeParallelMultiHashMap<int, int> _spatialMap;
+    
+    // --- Gem Spawn Queue ---
+    // 敵が死んだ位置を記録するキュー（Job内からメインスレッドへ通知）
+    private NativeQueue<float3> _deadEnemyPositions;
 
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
@@ -45,6 +52,9 @@ public class GameManager : MonoBehaviour
     {
         InitializeEnemies();
         InitializeBullets();
+        
+        // 死んだ敵の位置を記録するキューを初期化
+        _deadEnemyPositions = new NativeQueue<float3>(Allocator.Persistent);
     }
 
     void Update()
@@ -86,13 +96,17 @@ public class GameManager : MonoBehaviour
             bulletDirections = _bulletDirections, // 弾の方向
             bulletActive = _bulletActive,
             bulletLifeTime = _bulletLifeTime,
-            enemyActive = _enemyActive // ヒットしたらfalseにする
+            enemyActive = _enemyActive, // ヒットしたらfalseにする
+            deadEnemyPositions = _deadEnemyPositions.AsParallelWriter() // 死んだ敵の位置を記録
         };
         
         var bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
 
         // 完了待ち
         bulletHandle.Complete();
+        
+        // 死んだ敵の位置からジェムを生成
+        HandleDeadEnemies();
 
         // 3. 敵のリスポーン処理
         HandleEnemyRespawn(playerPos);
@@ -209,6 +223,18 @@ public class GameManager : MonoBehaviour
         updateRespawnJob.Schedule(_enemyTransforms).Complete();
     }
     
+    void HandleDeadEnemies()
+    {
+        // キューから死んだ敵の位置を取得してジェムを生成
+        if (gemManager != null)
+        {
+            while (_deadEnemyPositions.TryDequeue(out float3 position))
+            {
+                gemManager.SpawnGem(position);
+            }
+        }
+    }
+    
     void SyncVisuals()
     {
         // 簡易処理：死んだ敵を消す（重いので本来は間引く）
@@ -235,5 +261,7 @@ public class GameManager : MonoBehaviour
         if (_bulletLifeTime.IsCreated) _bulletLifeTime.Dispose();
         
         if (_spatialMap.IsCreated) _spatialMap.Dispose();
+        
+        if (_deadEnemyPositions.IsCreated) _deadEnemyPositions.Dispose();
     }
 }
