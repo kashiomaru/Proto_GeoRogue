@@ -84,8 +84,19 @@ public class Player : MonoBehaviour
             float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
             
-            // 移動
-            transform.position += direction * moveSpeed * Time.deltaTime;
+        // 移動
+        transform.position += direction * moveSpeed * Time.deltaTime;
         }
+    }
+    
+    // LevelUpManager用のパラメータ取得・設定メソッド
+    public float GetMoveSpeed()
+    {
+        return moveSpeed;
+    }
+    
+    public void SetMoveSpeed(float value)
+    {
+        moveSpeed = value;
     }
 }

@@ -24,6 +24,15 @@ public class GameManager : MonoBehaviour
     
     [Header("References")]
     [SerializeField] private GemManager gemManager; // GemManagerへの参照
+    [SerializeField] private LevelUpManager levelUpManager; // LevelUpManagerへの参照
+    
+    [Header("Level System")]
+    [SerializeField] private int maxLevel = 99;
+    
+    // --- Experience & Level ---
+    private int _currentExp = 0;
+    private int _nextLevelExp = 10;
+    private int _currentLevel = 1;
 
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -107,8 +116,11 @@ public class GameManager : MonoBehaviour
         
         // 死んだ敵の位置からジェムを生成
         HandleDeadEnemies();
+        
+        // 3. 経験値の取得と加算
+        HandleExperience();
 
-        // 3. 敵のリスポーン処理
+        // 4. 敵のリスポーン処理
         HandleEnemyRespawn(playerPos);
 
         // （オプション）死んだ敵を非表示にする処理
@@ -235,6 +247,33 @@ public class GameManager : MonoBehaviour
         }
     }
     
+    void HandleExperience()
+    {
+        // GemManagerから回収されたジェムの数を取得して経験値を加算
+        if (gemManager != null)
+        {
+            int expGained = gemManager.GetCollectedGemCount();
+            if (expGained > 0)
+            {
+                _currentExp += expGained;
+            }
+        }
+        
+        // レベルアップ判定
+        while (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
+        {
+            _currentExp -= _nextLevelExp;
+            _currentLevel++;
+            _nextLevelExp = (int)(_nextLevelExp * 1.2f); // 必要経験値を増やす（カーブは要調整）
+
+            // レベルアップ画面を表示！
+            if (levelUpManager != null)
+            {
+                levelUpManager.ShowLevelUpOptions();
+            }
+        }
+    }
+    
     void SyncVisuals()
     {
         // 簡易処理：死んだ敵を消す（重いので本来は間引く）
@@ -263,5 +302,26 @@ public class GameManager : MonoBehaviour
         if (_spatialMap.IsCreated) _spatialMap.Dispose();
         
         if (_deadEnemyPositions.IsCreated) _deadEnemyPositions.Dispose();
+    }
+    
+    // LevelUpManager用のパラメータ取得・設定メソッド
+    public float GetFireRate()
+    {
+        return fireRate;
+    }
+    
+    public void SetFireRate(float value)
+    {
+        fireRate = value;
+    }
+    
+    public float GetBulletSpeed()
+    {
+        return bulletSpeed;
+    }
+    
+    public void SetBulletSpeed(float value)
+    {
+        bulletSpeed = value;
     }
 }

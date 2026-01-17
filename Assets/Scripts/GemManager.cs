@@ -98,17 +98,8 @@ public class GemManager : MonoBehaviour
         };
         updatePosJob.Schedule(_gemTransforms).Complete();
         
-        // 回収されたジェムの数を取得して経験値を加算
-        int collectedCount = 0;
-        while (_collectedGemQueue.TryDequeue(out int _))
-        {
-            collectedCount++;
-        }
-        
-        if (collectedCount > 0 && player != null)
-        {
-            player.AddExp(collectedCount); // ジェム1つで1経験値
-        }
+        // 回収されたジェムの数はGameManagerで取得するため、ここでは処理しない
+        // （GameManager.GetCollectedGemCount()で取得可能）
     }
 
     void OnDestroy()
@@ -118,5 +109,27 @@ public class GemManager : MonoBehaviour
         if (_gemActive.IsCreated) _gemActive.Dispose();
         if (_gemIsFlying.IsCreated) _gemIsFlying.Dispose();
         if (_collectedGemQueue.IsCreated) _collectedGemQueue.Dispose();
+    }
+    
+    // LevelUpManager用のパラメータ取得・設定メソッド
+    public float GetMagnetDist()
+    {
+        return magnetDist;
+    }
+    
+    public void SetMagnetDist(float value)
+    {
+        magnetDist = value;
+    }
+    
+    // GameManager用：回収されたジェムの数を取得（キューから取得して返す）
+    public int GetCollectedGemCount()
+    {
+        int count = 0;
+        while (_collectedGemQueue.TryDequeue(out int _))
+        {
+            count++;
+        }
+        return count;
     }
 }
