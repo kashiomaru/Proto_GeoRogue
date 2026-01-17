@@ -368,6 +368,59 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &379471277
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 379471279}
+  - component: {fileID: 379471278}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &379471278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 379471277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d25cdc25a68345369d8f9b5dd12bcb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  cubePrefab: {fileID: 5245499245727803100, guid: 24586601eb5764e69a4e27cc54b00816, type: 3}
+  bulletPrefab: {fileID: 418365409580796662, guid: ab54663d7eb3d4ceaa4875f81afccdef, type: 3}
+  enemyCount: 0
+  maxBullets: 1000
+  playerTransform: {fileID: 322285197}
+  enemySpeed: 5
+  bulletSpeed: 20
+  fireRate: 0.1
+  cellSize: 2
+--- !u!4 &379471279
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 379471277}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,7 +613,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1049530431
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -576,7 +629,8 @@ MonoBehaviour:
   cubePrefab: {fileID: 5245499245727803100, guid: 24586601eb5764e69a4e27cc54b00816, type: 3}
   objectCount: 3000
   speed: 5
-  targetPosition: {x: 0, y: 0, z: 0}
+  separationDistance: 1.5
+  playerTransform: {fileID: 0}
 --- !u!4 &1049530432
 Transform:
   m_ObjectHideFlags: 0
@@ -601,3 +655,4 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1049530432}
   - {fileID: 322285197}
+  - {fileID: 379471279}
