@@ -564,10 +564,13 @@ MonoBehaviour:
   enemyCount: 10
   maxBullets: 100
   playerTransform: {fileID: 322285197}
-  enemySpeed: 5
+  enemySpeed: 3
   bulletSpeed: 20
   fireRate: 0.1
   cellSize: 2
+  respawnDistance: 50
+  respawnMinRadius: 20
+  respawnMaxRadius: 30
 --- !u!4 &379471279
 Transform:
   m_ObjectHideFlags: 0

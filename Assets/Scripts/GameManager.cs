@@ -18,6 +18,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float bulletSpeed = 20f;
     [SerializeField] private float fireRate = 0.1f;
     [SerializeField] private float cellSize = 2.0f; // 空間分割のグリッドサイズ（敵のサイズの2倍程度が目安）
+    [SerializeField] private float respawnDistance = 50f; // リスポーン判定距離（プレイヤーからこの距離以上離れた敵をリスポーン）
+    [SerializeField] private float respawnMinRadius = 20f; // リスポーン最小半径
+    [SerializeField] private float respawnMaxRadius = 30f; // リスポーン最大半径
 
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -91,6 +94,9 @@ public class GameManager : MonoBehaviour
         // 完了待ち
         bulletHandle.Complete();
 
+        // 3. 敵のリスポーン処理
+        HandleEnemyRespawn(playerPos);
+
         // （オプション）死んだ敵を非表示にする処理
         // 本来はCommandBufferやComputeShaderで描画自体をスキップしますが、
         // プロトタイプなのでScaleを0にする等の簡易処理で対応
@@ -162,6 +168,45 @@ public class GameManager : MonoBehaviour
             // 実運用ではJob内で「初期化フラグ」を見て位置セットするのが定石です。
             // 今回は簡略化のため、「発射された弾はJob内で位置更新される」前提で進めます。
         }
+    }
+    
+    void HandleEnemyRespawn(float3 playerPos)
+    {
+        // 死んでいる敵（または画面外にはるか遠くに行った敵）を見つけて再配置
+        float deleteDistSq = respawnDistance * respawnDistance;
+        
+        for (int i = 0; i < enemyCount; i++)
+        {
+            // アクティブでない、またはプレイヤーから離れすぎた敵をリサイクル
+            if (!_enemyActive[i] || math.distancesq(_enemyPositions[i], playerPos) > deleteDistSq)
+            {
+                // 画面外（半径20〜30mのドーナツ状の範囲）に再配置
+                float angle = UnityEngine.Random.Range(0f, math.PI * 2f);
+                float dist = UnityEngine.Random.Range(respawnMinRadius, respawnMaxRadius);
+                float3 offset = new float3(math.cos(angle) * dist, 0f, math.sin(angle) * dist);
+                
+                float3 newPos = playerPos + offset;
+                _enemyPositions[i] = newPos;
+                _enemyActive[i] = true; // 復活
+                
+                // Transformも更新（重要）
+                // TransformAccessArrayは直接インデクサーでアクセスできないため、
+                // GameObjectを経由して位置を更新する必要があります
+                // ただし、TransformAccessArrayの要素に直接アクセスできないため、
+                // 別の方法で位置を更新する必要があります
+                // ここでは、Job内で位置を更新する前提で、位置配列のみ更新します
+                // 実際のTransform位置は、次のフレームのEnemyMoveAndHashJobで更新されます
+            }
+        }
+        
+        // Transform位置を更新するためのJobを実行
+        // リスポーンした敵の位置をTransformに反映
+        var updateRespawnJob = new UpdateRespawnedEnemyPositionJob
+        {
+            positions = _enemyPositions,
+            activeFlags = _enemyActive
+        };
+        updateRespawnJob.Schedule(_enemyTransforms).Complete();
     }
     
     void SyncVisuals()
