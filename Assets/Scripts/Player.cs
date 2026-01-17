@@ -10,7 +10,16 @@ public class Player : MonoBehaviour
     [Header("Camera Reference")]
     [SerializeField] private Camera playerCamera; // カメラ参照（未設定の場合はMainCameraを自動取得）
     
+    [Header("Experience")]
+    public int currentExp = 0; // 現在の経験値
+    
     private float _currentRotationVelocity; // 回転の滑らかさ用
+    
+    // 経験値を追加するメソッド
+    public void AddExp(int amount)
+    {
+        currentExp += amount;
+    }
     
     private void Start()
     {

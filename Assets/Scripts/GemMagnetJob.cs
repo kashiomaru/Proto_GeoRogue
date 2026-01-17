@@ -14,6 +14,9 @@ public struct GemMagnetJob : IJobParallelForTransform
     public NativeArray<float3> positions;
     public NativeArray<bool> activeFlags;
     public NativeArray<bool> flyingFlags;
+    
+    // 回収されたジェムの数をカウント（並列書き込み用）
+    public NativeCounter.ParallelWriter collectedGemCount;
 
     public void Execute(int index, TransformAccess transform)
     {
@@ -44,13 +47,16 @@ public struct GemMagnetJob : IJobParallelForTransform
             // プレイヤーに到達（回収）
             if (math.distancesq(newPos, playerPos) < 1.0f) // 半径1.0以内
             {
-                activeFlags[index] = false; // 消滅
-                flyingFlags[index] = false;
-                positions[index] = new float3(0, -500, 0); // 画面外へ
-                
-                // ここで経験値を加算したいが、Job内から直接変数はいじれない。
-                // 本来は NativeCounter や NativeQueue を使う。
-                // とりあえず見た目上消える動きを作ることを優先。
+                // まだアクティブな場合のみ処理（重複防止）
+                if (activeFlags[index])
+                {
+                    activeFlags[index] = false; // 消滅
+                    flyingFlags[index] = false;
+                    positions[index] = new float3(0, -500, 0); // 画面外へ
+                    
+                    // 回収されたジェムの数をカウント
+                    collectedGemCount.Increment();
+                }
             }
         }
         // まだ吸い寄せられていないなら、その場に留まる（何もしない）

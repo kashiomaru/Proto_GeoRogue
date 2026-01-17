@@ -11,6 +11,9 @@ public class GemManager : MonoBehaviour
     [SerializeField] private Transform playerTransform;
     [SerializeField] private float magnetDist = 5.0f; // 吸い寄せ開始距離
     [SerializeField] private float gemSpeed = 15.0f;  // 吸い寄せ速度
+    
+    [Header("References")]
+    [SerializeField] private Player player; // Playerへの参照
 
     private TransformAccessArray _gemTransforms;
     private NativeArray<float3> _gemPositions; // ジェムの位置配列
@@ -19,6 +22,9 @@ public class GemManager : MonoBehaviour
     
     // 描画最適化用（Transformから座標を取るのは重いので、座標だけの配列も持つ）
     // 今回は簡易的にTransformAccessArrayで動かしますが、本来はこれもNativeArray<float3>で管理推奨
+    
+    // 経験値加算用（Job内からメインスレッドへ通知）
+    private NativeCounter _collectedGemCount;
     
     private int _gemHeadIndex = 0; // リングバッファ用
 
@@ -48,6 +54,9 @@ public class GemManager : MonoBehaviour
         _gemPositions = new NativeArray<float3>(maxGems, Allocator.Persistent);
         _gemActive = new NativeArray<bool>(maxGems, Allocator.Persistent);
         _gemIsFlying = new NativeArray<bool>(maxGems, Allocator.Persistent);
+        
+        // 回収されたジェムの数をカウントするカウンターを初期化
+        _collectedGemCount = new NativeCounter(Allocator.Persistent);
 
         // プール生成（画面外へ）
         for (int i = 0; i < maxGems; i++)
@@ -65,6 +74,9 @@ public class GemManager : MonoBehaviour
         // プレイヤーのレベルアップ管理などはここで行う
 
         // --- JOB: Gemの吸い寄せと回収 ---
+        // カウンターをリセット
+        _collectedGemCount.Reset();
+        
         var gemJob = new GemMagnetJob
         {
             deltaTime = Time.deltaTime,
@@ -73,7 +85,8 @@ public class GemManager : MonoBehaviour
             moveSpeed = gemSpeed,
             positions = _gemPositions,
             activeFlags = _gemActive,
-            flyingFlags = _gemIsFlying
+            flyingFlags = _gemIsFlying,
+            collectedGemCount = _collectedGemCount.AsParallelWriter() // 回収されたジェムの数をカウント
         };
 
         var handle = gemJob.Schedule(_gemTransforms);
@@ -87,13 +100,12 @@ public class GemManager : MonoBehaviour
         };
         updatePosJob.Schedule(_gemTransforms).Complete();
         
-        // ヒットしたGemの処理（Job内で距離0になったものを検知するのは難しいので、
-        // 簡易的に「飛んでいて、かつプレイヤーに近い」ものを回収扱いにする処理を別途書くか、
-        // NativeQueueに「回収したGemID」を積むのが正解です）
-        
-        // 今回はプロトタイプなので、「GemMagnetJob」内で
-        // 「プレイヤーに到達したらActiveをfalseにして画面外に飛ばす」処理までやっています。
-        // ※経験値加算は本来 NativeQueue でメインスレッドに通知します。
+        // 回収されたジェムの数を取得して経験値を加算
+        int collectedCount = _collectedGemCount.Count;
+        if (collectedCount > 0 && player != null)
+        {
+            player.AddExp(collectedCount); // ジェム1つで1経験値
+        }
     }
 
     void OnDestroy()
@@ -102,5 +114,6 @@ public class GemManager : MonoBehaviour
         if (_gemPositions.IsCreated) _gemPositions.Dispose();
         if (_gemActive.IsCreated) _gemActive.Dispose();
         if (_gemIsFlying.IsCreated) _gemIsFlying.Dispose();
+        if (_collectedGemCount.IsCreated) _collectedGemCount.Dispose();
     }
 }
