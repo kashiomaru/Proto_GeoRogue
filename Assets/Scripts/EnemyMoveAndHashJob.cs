@@ -10,10 +10,14 @@ public struct EnemyMoveAndHashJob : IJobParallelForTransform
     public float3 target;
     public float speed;
     public float cellSize;
+    public float damageRadius; // プレイヤーとの当たり判定半径
 
     [WriteOnly] public NativeParallelMultiHashMap<int, int>.ParallelWriter spatialMap;
     public NativeArray<float3> positions;
     public NativeArray<bool> activeFlags;
+    
+    // プレイヤーへのダメージを記録するキュー（並列書き込み用）
+    public NativeQueue<int>.ParallelWriter damageQueue;
 
     public void Execute(int index, TransformAccess transform)
     {
@@ -32,6 +36,14 @@ public struct EnemyMoveAndHashJob : IJobParallelForTransform
 
         transform.position = pos;
         positions[index] = pos;
+
+        // --- プレイヤーとの当たり判定 ---
+        float distSq = math.distancesq(pos, target);
+        if (distSq < damageRadius * damageRadius)
+        {
+            // プレイヤーにダメージを与える（ダメージ量は1とする）
+            damageQueue.Enqueue(1);
+        }
 
         // --- 空間ハッシュ登録 ---
         // 座標をグリッド整数座標に変換

@@ -29,6 +29,11 @@ public class GameManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private GemManager gemManager; // GemManagerへの参照
     [SerializeField] private LevelUpManager levelUpManager; // LevelUpManagerへの参照
+    [SerializeField] private Player player; // Playerへの参照
+    [SerializeField] private UIManager uiManager; // UIManagerへの参照
+    
+    [Header("Combat")]
+    [SerializeField] private float enemyDamageRadius = 1.0f; // 敵とプレイヤーの当たり判定半径
     
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
@@ -58,6 +63,10 @@ public class GameManager : MonoBehaviour
     // --- Gem Spawn Queue ---
     // 敵が死んだ位置を記録するキュー（Job内からメインスレッドへ通知）
     private NativeQueue<float3> _deadEnemyPositions;
+    
+    // --- Damage Queue ---
+    // プレイヤーへのダメージを記録するキュー（Job内からメインスレッドへ通知）
+    private NativeQueue<int> _playerDamageQueue;
 
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
@@ -69,6 +78,9 @@ public class GameManager : MonoBehaviour
         
         // 死んだ敵の位置を記録するキューを初期化
         _deadEnemyPositions = new NativeQueue<float3>(Allocator.Persistent);
+        
+        // プレイヤーへのダメージを記録するキューを初期化
+        _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
     }
 
     void Update()
@@ -91,9 +103,11 @@ public class GameManager : MonoBehaviour
             target = playerPos,
             speed = enemySpeed,
             cellSize = cellSize,
+            damageRadius = enemyDamageRadius,
             spatialMap = _spatialMap.AsParallelWriter(), // 並列書き込み用
             positions = _enemyPositions,
-            activeFlags = _enemyActive
+            activeFlags = _enemyActive,
+            damageQueue = _playerDamageQueue.AsParallelWriter() // プレイヤーへのダメージを記録
         };
         var enemyHandle = enemyJob.Schedule(_enemyTransforms);
 
@@ -123,10 +137,13 @@ public class GameManager : MonoBehaviour
         // 死んだ敵の位置からジェムを生成
         HandleDeadEnemies();
         
-        // 3. 経験値の取得と加算
+        // 3. プレイヤーへのダメージ処理
+        HandlePlayerDamage();
+        
+        // 4. 経験値の取得と加算
         HandleExperience();
 
-        // 4. 敵のリスポーン処理
+        // 5. 敵のリスポーン処理
         HandleEnemyRespawn(playerPos);
 
         // （オプション）死んだ敵を非表示にする処理
@@ -275,6 +292,30 @@ public class GameManager : MonoBehaviour
         }
     }
     
+    void HandlePlayerDamage()
+    {
+        // キューからダメージを取得してプレイヤーに適用
+        if (player != null && !player.IsDead)
+        {
+            int totalDamage = 0;
+            while (_playerDamageQueue.TryDequeue(out int damage))
+            {
+                totalDamage += damage;
+            }
+            
+            if (totalDamage > 0)
+            {
+                player.TakeDamage(totalDamage);
+                
+                // HPが0になったらゲームオーバー
+                if (player.IsDead && uiManager != null)
+                {
+                    uiManager.ShowGameOver(OnRetryClicked);
+                }
+            }
+        }
+    }
+    
     void HandleExperience()
     {
         // GemManagerから回収されたジェムの数を取得して経験値を加算
@@ -331,6 +372,72 @@ public class GameManager : MonoBehaviour
         if (_spatialMap.IsCreated) _spatialMap.Dispose();
         
         if (_deadEnemyPositions.IsCreated) _deadEnemyPositions.Dispose();
+        if (_playerDamageQueue.IsCreated) _playerDamageQueue.Dispose();
+    }
+    
+    // ゲームリセット処理
+    public void ResetGame()
+    {
+        // プレイヤーをリセット
+        if (player != null)
+        {
+            player.ResetPlayer();
+        }
+        
+        // 経験値とレベルをリセット
+        _currentExp = 0;
+        _nextLevelExp = 10;
+        _currentLevel = 1;
+        
+        // パラメータをリセット
+        fireRate = 0.1f;
+        bulletSpeed = 20f;
+        bulletCountPerShot = 1;
+        if (player != null)
+        {
+            player.SetMoveSpeed(5f);
+        }
+        if (gemManager != null)
+        {
+            gemManager.SetMagnetDist(5.0f);
+        }
+        
+        // 敵をリセット
+        for (int i = 0; i < enemyCount; i++)
+        {
+            var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
+            pos.y = 0;
+            _enemyPositions[i] = pos;
+            _enemyActive[i] = true;
+        }
+        
+        // 敵のTransform位置を更新
+        var updateRespawnJob = new UpdateRespawnedEnemyPositionJob
+        {
+            positions = _enemyPositions,
+            activeFlags = _enemyActive
+        };
+        updateRespawnJob.Schedule(_enemyTransforms).Complete();
+        
+        // 弾をリセット
+        for (int i = 0; i < maxBullets; i++)
+        {
+            _bulletActive[i] = false;
+            _bulletPositions[i] = new float3(0, -100, 0);
+        }
+        
+        // キューをクリア
+        while (_deadEnemyPositions.TryDequeue(out _)) { }
+        while (_playerDamageQueue.TryDequeue(out _)) { }
+        
+        // タイマーをリセット
+        _timer = 0f;
+        _bulletIndexHead = 0;
+    }
+    
+    private void OnRetryClicked()
+    {
+        ResetGame();
     }
     
     // LevelUpManager用のパラメータ取得・設定メソッド

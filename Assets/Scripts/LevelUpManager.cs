@@ -1,16 +1,10 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro; // TextMeshProを使う場合
 using System.Collections.Generic;
 
 public class LevelUpManager : MonoBehaviour
 {
-    [Header("UI References")]
-    [SerializeField] private GameObject levelUpPanel;
-    [SerializeField] private Button[] optionButtons;
-    [SerializeField] private TextMeshProUGUI[] optionTexts; // ボタン内のテキスト参照
-
-    [Header("Game References")]
+    [Header("References")]
+    [SerializeField] private UIManager uiManager; // UIManagerへの参照
     [SerializeField] private GameManager gameManager; // パラメータ変更用
     [SerializeField] private Player player; // プレイヤー参照
     [SerializeField] private GemManager gemManager; // GemManager参照
@@ -25,64 +19,39 @@ public class LevelUpManager : MonoBehaviour
         new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot", description = "Shoot multiple bullets!" },
     };
 
-    void Start()
-    {
-        // パネルを隠す
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(false);
-        }
-    }
-
-    // 外部（Player）から経験値が溜まったら呼ばれる
+    // 外部（GameManager）から経験値が溜まったら呼ばれる
     public void ShowLevelUpOptions()
     {
-        // 1. ゲームを止める
-        Time.timeScale = 0f; 
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(true);
-        }
-
-        // 2. ランダムに3つ選出（重複なし）
-        // 簡易的なシャッフルロジック
-        List<UpgradeData> deck = new List<UpgradeData>(_upgradeDatabase);
+        // ランダムに3つ選出（重複なし）
+        List<UpgradeData> selectedOptions = SelectRandomUpgrades(3);
         
-        for (int i = 0; i < optionButtons.Length && i < optionTexts.Length; i++)
+        // UIManagerに表示を委譲
+        if (uiManager != null)
         {
-            if (deck.Count == 0) break;
-
+            uiManager.ShowLevelUpOptions(selectedOptions, OnUpgradeSelected);
+        }
+    }
+    
+    private List<UpgradeData> SelectRandomUpgrades(int count)
+    {
+        List<UpgradeData> deck = new List<UpgradeData>(_upgradeDatabase);
+        List<UpgradeData> selected = new List<UpgradeData>();
+        
+        for (int i = 0; i < count && deck.Count > 0; i++)
+        {
             int randIndex = Random.Range(0, deck.Count);
             UpgradeData data = deck[randIndex];
             deck.RemoveAt(randIndex); // 選んだものはリストから消す（重複防止）
-
-            // UI反映
-            int index = i; // クロージャ用
-            if (optionTexts[i] != null)
-            {
-                optionTexts[i].text = $"{data.title}\n<size=70%>{data.description}</size>";
-            }
-            
-            // ボタンのクリックイベントをリセットして登録
-            if (optionButtons[i] != null)
-            {
-                optionButtons[i].onClick.RemoveAllListeners();
-                optionButtons[i].onClick.AddListener(() => OnUpgradeSelected(data.type));
-            }
+            selected.Add(data);
         }
+        
+        return selected;
     }
 
     private void OnUpgradeSelected(UpgradeType type)
     {
-        // 3. 効果を適用（GameManagerのパラメータをいじる）
+        // 効果を適用
         ApplyUpgradeEffect(type);
-
-        // 4. ゲーム再開
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(false);
-        }
-        Time.timeScale = 1f;
     }
 
     private void ApplyUpgradeEffect(UpgradeType type)

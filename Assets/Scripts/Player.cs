@@ -13,7 +13,20 @@ public class Player : MonoBehaviour
     [Header("Experience")]
     public int currentExp = 0; // 現在の経験値
     
+    [Header("Health")]
+    [SerializeField] private int maxHp = 10;
+    [SerializeField] private float invincibleDuration = 1.0f; // 無敵時間（秒）
+    
+    private int _currentHp;
+    private float _invincibleTimer = 0f;
+    private bool _isInvincible = false;
+    
     private float _currentRotationVelocity; // 回転の滑らかさ用
+    
+    public int CurrentHp => _currentHp;
+    public int MaxHp => maxHp;
+    public bool IsInvincible => _isInvincible;
+    public bool IsDead => _currentHp <= 0;
     
     // 経験値を追加するメソッド
     public void AddExp(int amount)
@@ -28,11 +41,49 @@ public class Player : MonoBehaviour
         {
             playerCamera = Camera.main;
         }
+        
+        // HP初期化
+        _currentHp = maxHp;
     }
     
     private void Update()
     {
+        // 無敵時間の更新
+        if (_isInvincible)
+        {
+            _invincibleTimer -= Time.deltaTime;
+            if (_invincibleTimer <= 0f)
+            {
+                _isInvincible = false;
+            }
+        }
+        
         HandleMovement();
+    }
+    
+    // ダメージを受ける
+    public void TakeDamage(int damage)
+    {
+        if (_isInvincible || _currentHp <= 0) return;
+        
+        _currentHp -= damage;
+        if (_currentHp < 0) _currentHp = 0;
+        
+        // 無敵時間を開始
+        if (_currentHp > 0)
+        {
+            _isInvincible = true;
+            _invincibleTimer = invincibleDuration;
+        }
+    }
+    
+    // リセット処理
+    public void ResetPlayer()
+    {
+        _currentHp = maxHp;
+        _isInvincible = false;
+        _invincibleTimer = 0f;
+        currentExp = 0;
     }
     
     private void HandleMovement()
