@@ -22,7 +22,7 @@ public class LevelUpManager : MonoBehaviour
         new UpgradeData { type = UpgradeType.BulletSpeedUp, title = "Bullet Speed", description = "Faster bullets!" },
         new UpgradeData { type = UpgradeType.MoveSpeedUp, title = "Move Speed", description = "Run faster!" },
         new UpgradeData { type = UpgradeType.MagnetRange, title = "Magnet", description = "Larger collection range!" },
-        // MultiShotなどはロジック実装に合わせて追加
+        new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot", description = "Shoot multiple bullets!" },
     };
 
     void Start()
@@ -117,10 +117,12 @@ public class LevelUpManager : MonoBehaviour
                 }
                 break;
                 
-            // 今後追加:
-            // case UpgradeType.MultiShot:
-            //    gameManager.bulletCountPerShot += 1;
-            //    break;
+            case UpgradeType.MultiShot:
+                if (gameManager != null)
+                {
+                    gameManager.SetBulletCountPerShot(gameManager.GetBulletCountPerShot() + 1);
+                }
+                break;
         }
         
         Debug.Log($"Upgraded: {type}");

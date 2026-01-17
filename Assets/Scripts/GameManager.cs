@@ -18,6 +18,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float bulletSpeed = 20f;
     [SerializeField] private float fireRate = 0.1f;
     [SerializeField] private float cellSize = 2.0f; // 空間分割のグリッドサイズ（敵のサイズの2倍程度が目安）
+    
+    [Header("MultiShot Settings")]
+    public int bulletCountPerShot = 1; // 1回の発射数（レベルアップでこれを増やす）
+    [SerializeField] private float multiShotSpreadAngle = 10f; // 弾の拡散角度（10度ずつ広がるなど）
     [SerializeField] private float respawnDistance = 50f; // リスポーン判定距離（プレイヤーからこの距離以上離れた敵をリスポーン）
     [SerializeField] private float respawnMinRadius = 20f; // リスポーン最小半径
     [SerializeField] private float respawnMaxRadius = 30f; // リスポーン最大半径
@@ -42,7 +46,8 @@ public class GameManager : MonoBehaviour
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
     private NativeArray<float3> _bulletPositions;
-    private NativeArray<float3> _bulletDirections; // 弾の方向ベクトル
+    private NativeArray<float3> _bulletDirections; // 弾の方向ベクトル（後方互換性のため残す）
+    private NativeArray<float3> _bulletVelocities; // 弾ごとの速度ベクトルを保存する配列
     private NativeArray<bool> _bulletActive;
     private NativeArray<float> _bulletLifeTime;
     
@@ -102,7 +107,8 @@ public class GameManager : MonoBehaviour
             spatialMap = _spatialMap, // 読み込みのみ
             enemyPositions = _enemyPositions, // 敵の位置参照
             bulletPositions = _bulletPositions,
-            bulletDirections = _bulletDirections, // 弾の方向
+            bulletDirections = _bulletDirections, // 弾の方向（後方互換性のため）
+            bulletVelocities = _bulletVelocities, // 弾の速度ベクトル
             bulletActive = _bulletActive,
             bulletLifeTime = _bulletLifeTime,
             enemyActive = _enemyActive, // ヒットしたらfalseにする
@@ -155,6 +161,7 @@ public class GameManager : MonoBehaviour
         _bulletTransforms = new TransformAccessArray(maxBullets);
         _bulletPositions = new NativeArray<float3>(maxBullets, Allocator.Persistent);
         _bulletDirections = new NativeArray<float3>(maxBullets, Allocator.Persistent);
+        _bulletVelocities = new NativeArray<float3>(maxBullets, Allocator.Persistent);
         _bulletActive = new NativeArray<bool>(maxBullets, Allocator.Persistent);
         _bulletLifeTime = new NativeArray<float>(maxBullets, Allocator.Persistent);
 
@@ -174,25 +181,46 @@ public class GameManager : MonoBehaviour
         if (_timer >= fireRate)
         {
             _timer = 0;
-            // 一番近い敵を探して撃つロジックは省略し、とりあえずランダム or 正面へ
-            // リングバッファで弾を再利用
-            int id = _bulletIndexHead;
-            _bulletIndexHead = (_bulletIndexHead + 1) % maxBullets;
 
-            _bulletActive[id] = true;
-            _bulletPositions[id] = playerTransform.position;
-            // プレイヤーのforward方向を設定
-            _bulletDirections[id] = (float3)playerTransform.forward;
-            _bulletLifeTime[id] = 2.0f; // 2秒で消える
-            
-            // Transformも更新しておく（描画用）
-            // 注意: TransformAccessArrayへの直接書き込みはJob外ではできないため、
-            // ここではGameObject経由で動かすか、Job内で初期位置セットが必要。
-            // 簡易的にGameObjectを動かす：
-            // _bulletTransforms[id].position = playerTransform.position; 
-            // ↑ TransformAccessArrayはインデクサでGameObjectにアクセスできないため、
-            // 実運用ではJob内で「初期化フラグ」を見て位置セットするのが定石です。
-            // 今回は簡略化のため、「発射された弾はJob内で位置更新される」前提で進めます。
+            // プレイヤーの正面方向
+            Vector3 baseDir = playerTransform.forward; 
+
+            // 発射数ぶんループ
+            for (int i = 0; i < bulletCountPerShot; i++)
+            {
+                // リングバッファからID取得
+                int id = _bulletIndexHead;
+                _bulletIndexHead = (_bulletIndexHead + 1) % maxBullets;
+
+                // --- 角度計算（重要） ---
+                // i=0, count=1 -> 0
+                // i=0,1 count=2 -> -5, +5
+                // i=0,1,2 count=3 -> -10, 0, +10
+                
+                float angle = 0f;
+                if (bulletCountPerShot > 1)
+                {
+                    // 全体の開き幅の中心を0としてオフセット計算
+                    angle = -multiShotSpreadAngle * (bulletCountPerShot - 1) * 0.5f + (multiShotSpreadAngle * i);
+                }
+
+                // クォータニオンで回転させる
+                Quaternion rot = Quaternion.AngleAxis(angle, Vector3.up);
+                Vector3 finalDir = rot * baseDir;
+
+                // データのセット
+                _bulletActive[id] = true;
+                _bulletLifeTime[id] = 2.0f;
+                
+                // 位置：プレイヤー位置
+                _bulletPositions[id] = (float3)playerTransform.position;
+                
+                // 方向ベクトル（後方互換性のため）
+                _bulletDirections[id] = (float3)finalDir;
+
+                // ★ここで計算したベクトルをNativeArrayに入れる
+                _bulletVelocities[id] = (float3)(finalDir.normalized * bulletSpeed);
+            }
         }
     }
     
@@ -296,6 +324,7 @@ public class GameManager : MonoBehaviour
         if (_bulletTransforms.isCreated) _bulletTransforms.Dispose();
         if (_bulletPositions.IsCreated) _bulletPositions.Dispose();
         if (_bulletDirections.IsCreated) _bulletDirections.Dispose();
+        if (_bulletVelocities.IsCreated) _bulletVelocities.Dispose();
         if (_bulletActive.IsCreated) _bulletActive.Dispose();
         if (_bulletLifeTime.IsCreated) _bulletLifeTime.Dispose();
         
@@ -323,5 +352,15 @@ public class GameManager : MonoBehaviour
     public void SetBulletSpeed(float value)
     {
         bulletSpeed = value;
+    }
+    
+    public int GetBulletCountPerShot()
+    {
+        return bulletCountPerShot;
+    }
+    
+    public void SetBulletCountPerShot(int value)
+    {
+        bulletCountPerShot = value;
     }
 }

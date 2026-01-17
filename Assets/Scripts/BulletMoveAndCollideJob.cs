@@ -14,7 +14,8 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
     [ReadOnly] public NativeArray<float3> enemyPositions;
     
     public NativeArray<float3> bulletPositions;
-    [ReadOnly] public NativeArray<float3> bulletDirections; // 弾の方向ベクトル
+    [ReadOnly] public NativeArray<float3> bulletDirections; // 弾の方向ベクトル（後方互換性のため）
+    [ReadOnly] public NativeArray<float3> bulletVelocities; // 弾の速度ベクトル
     public NativeArray<bool> bulletActive;
     public NativeArray<float> bulletLifeTime;
     
@@ -41,10 +42,10 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
             return;
         }
 
-        // 弾の移動（プレイヤーの向きに飛ばす）
+        // 弾の移動（速度ベクトルを使用）
         float3 pos = bulletPositions[index];
-        // 方向ベクトルを使用して移動
-        float3 velocity = bulletDirections[index] * speed; 
+        // 速度ベクトルを使用して移動（MultiShot対応）
+        float3 velocity = bulletVelocities[index];
         
         pos += velocity * deltaTime;
         transform.position = pos;
