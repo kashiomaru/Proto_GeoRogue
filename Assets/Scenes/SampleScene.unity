@@ -360,6 +360,7 @@ MonoBehaviour:
   moveSpeed: 5
   rotationSpeed: 10
   playerCamera: {fileID: 0}
+  currentExp: 0
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -763,6 +764,7 @@ MonoBehaviour:
   playerTransform: {fileID: 322285197}
   magnetDist: 3
   gemSpeed: 15
+  player: {fileID: 322285198}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

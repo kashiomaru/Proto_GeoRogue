@@ -24,7 +24,8 @@ public class GemManager : MonoBehaviour
     // 今回は簡易的にTransformAccessArrayで動かしますが、本来はこれもNativeArray<float3>で管理推奨
     
     // 経験値加算用（Job内からメインスレッドへ通知）
-    private NativeCounter _collectedGemCount;
+    // 回収されたジェムの数を記録するキュー（各ジェムごとに1を追加）
+    private NativeQueue<int> _collectedGemQueue;
     
     private int _gemHeadIndex = 0; // リングバッファ用
 
@@ -55,8 +56,8 @@ public class GemManager : MonoBehaviour
         _gemActive = new NativeArray<bool>(maxGems, Allocator.Persistent);
         _gemIsFlying = new NativeArray<bool>(maxGems, Allocator.Persistent);
         
-        // 回収されたジェムの数をカウントするカウンターを初期化
-        _collectedGemCount = new NativeCounter(Allocator.Persistent);
+        // 回収されたジェムを記録するキューを初期化
+        _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
         // プール生成（画面外へ）
         for (int i = 0; i < maxGems; i++)
@@ -74,9 +75,6 @@ public class GemManager : MonoBehaviour
         // プレイヤーのレベルアップ管理などはここで行う
 
         // --- JOB: Gemの吸い寄せと回収 ---
-        // カウンターをリセット
-        _collectedGemCount.Reset();
-        
         var gemJob = new GemMagnetJob
         {
             deltaTime = Time.deltaTime,
@@ -86,7 +84,7 @@ public class GemManager : MonoBehaviour
             positions = _gemPositions,
             activeFlags = _gemActive,
             flyingFlags = _gemIsFlying,
-            collectedGemCount = _collectedGemCount.AsParallelWriter() // 回収されたジェムの数をカウント
+            collectedGemQueue = _collectedGemQueue.AsParallelWriter() // 回収されたジェムを記録
         };
 
         var handle = gemJob.Schedule(_gemTransforms);
@@ -101,7 +99,12 @@ public class GemManager : MonoBehaviour
         updatePosJob.Schedule(_gemTransforms).Complete();
         
         // 回収されたジェムの数を取得して経験値を加算
-        int collectedCount = _collectedGemCount.Count;
+        int collectedCount = 0;
+        while (_collectedGemQueue.TryDequeue(out int _))
+        {
+            collectedCount++;
+        }
+        
         if (collectedCount > 0 && player != null)
         {
             player.AddExp(collectedCount); // ジェム1つで1経験値
@@ -114,6 +117,6 @@ public class GemManager : MonoBehaviour
         if (_gemPositions.IsCreated) _gemPositions.Dispose();
         if (_gemActive.IsCreated) _gemActive.Dispose();
         if (_gemIsFlying.IsCreated) _gemIsFlying.Dispose();
-        if (_collectedGemCount.IsCreated) _collectedGemCount.Dispose();
+        if (_collectedGemQueue.IsCreated) _collectedGemQueue.Dispose();
     }
 }

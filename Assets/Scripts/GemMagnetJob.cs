@@ -15,8 +15,9 @@ public struct GemMagnetJob : IJobParallelForTransform
     public NativeArray<bool> activeFlags;
     public NativeArray<bool> flyingFlags;
     
-    // 回収されたジェムの数をカウント（並列書き込み用）
-    public NativeCounter.ParallelWriter collectedGemCount;
+    // 回収されたジェムを記録するキュー（並列書き込み用）
+    // 各ジェムごとに1を追加して、メインスレッドでカウントする
+    public NativeQueue<int>.ParallelWriter collectedGemQueue;
 
     public void Execute(int index, TransformAccess transform)
     {
@@ -54,8 +55,8 @@ public struct GemMagnetJob : IJobParallelForTransform
                     flyingFlags[index] = false;
                     positions[index] = new float3(0, -500, 0); // 画面外へ
                     
-                    // 回収されたジェムの数をカウント
-                    collectedGemCount.Increment();
+                    // 回収されたジェムをキューに追加（メインスレッドでカウントするため）
+                    collectedGemQueue.Enqueue(1);
                 }
             }
         }
