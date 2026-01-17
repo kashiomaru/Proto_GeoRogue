@@ -25,6 +25,13 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
     [NativeDisableParallelForRestriction] 
     public NativeArray<bool> enemyActive;
     
+    // 敵のHP配列（並列書き込み可能）
+    [NativeDisableParallelForRestriction]
+    public NativeArray<float> enemyHp;
+    
+    // 弾のダメージ
+    public float bulletDamage;
+    
     // 死んだ敵の位置を記録するキュー（並列書き込み用）
     public NativeQueue<float3>.ParallelWriter deadEnemyPositions;
 
@@ -84,12 +91,21 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
                         if (distSq < 1.0f)
                         {
                             // ヒット！
-                            // 敵がまだ生きている場合のみ処理（重複ヒット防止）
+                            // 敵がまだ生きている場合のみ処理
                             if (enemyActive[enemyIndex])
                             {
-                                enemyActive[enemyIndex] = false; // 敵死亡
-                                // 死んだ敵の位置をキューに追加
-                                deadEnemyPositions.Enqueue(enemyPos);
+                                // HPを減らす
+                                float currentHp = enemyHp[enemyIndex];
+                                currentHp -= bulletDamage;
+                                enemyHp[enemyIndex] = currentHp;
+                                
+                                // HPが0以下になったら敵を死亡させる
+                                if (currentHp <= 0f)
+                                {
+                                    enemyActive[enemyIndex] = false; // 敵死亡
+                                    // 死んだ敵の位置をキューに追加
+                                    deadEnemyPositions.Enqueue(enemyPos);
+                                }
                             }
                             bulletActive[index] = false;     // 弾消滅
                             transform.position = new float3(0, -100, 0); // 弾隠す

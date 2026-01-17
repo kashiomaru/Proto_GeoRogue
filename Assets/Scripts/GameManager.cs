@@ -35,6 +35,8 @@ public class GameManager : MonoBehaviour
     
     [Header("Combat")]
     [SerializeField] private float enemyDamageRadius = 1.0f; // 敵とプレイヤーの当たり判定半径
+    [SerializeField] private float enemyMaxHp = 1.0f; // 敵の最大HP
+    [SerializeField] private float bulletDamage = 1.0f; // 弾のダメージ
     
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
@@ -48,6 +50,7 @@ public class GameManager : MonoBehaviour
     private TransformAccessArray _enemyTransforms;
     private NativeArray<float3> _enemyPositions;
     private NativeArray<bool> _enemyActive; // 生存フラグ
+    private NativeArray<float> _enemyHp; // 敵のHP
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -127,6 +130,8 @@ public class GameManager : MonoBehaviour
             bulletActive = _bulletActive,
             bulletLifeTime = _bulletLifeTime,
             enemyActive = _enemyActive, // ヒットしたらfalseにする
+            enemyHp = _enemyHp, // 敵のHP配列
+            bulletDamage = bulletDamage, // 弾のダメージ
             deadEnemyPositions = _deadEnemyPositions.AsParallelWriter() // 死んだ敵の位置を記録
         };
         
@@ -160,6 +165,7 @@ public class GameManager : MonoBehaviour
         _enemyTransforms = new TransformAccessArray(enemyCount);
         _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
         _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
+        _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
 
         for (int i = 0; i < enemyCount; i++)
         {
@@ -171,6 +177,7 @@ public class GameManager : MonoBehaviour
             _enemyTransforms.Add(obj.transform);
             _enemyPositions[i] = pos;
             _enemyActive[i] = true;
+            _enemyHp[i] = enemyMaxHp; // HPを最大値に設定
         }
     }
 
@@ -260,6 +267,7 @@ public class GameManager : MonoBehaviour
                 float3 newPos = playerPos + offset;
                 _enemyPositions[i] = newPos;
                 _enemyActive[i] = true; // 復活
+                _enemyHp[i] = enemyMaxHp; // HPをリセット
                 
                 // Transformも更新（重要）
                 // TransformAccessArrayは直接インデクサーでアクセスできないため、
@@ -369,6 +377,7 @@ public class GameManager : MonoBehaviour
         if (_enemyTransforms.isCreated) _enemyTransforms.Dispose();
         if (_enemyPositions.IsCreated) _enemyPositions.Dispose();
         if (_enemyActive.IsCreated) _enemyActive.Dispose();
+        if (_enemyHp.IsCreated) _enemyHp.Dispose();
         
         if (_bulletTransforms.isCreated) _bulletTransforms.Dispose();
         if (_bulletPositions.IsCreated) _bulletPositions.Dispose();
@@ -417,6 +426,7 @@ public class GameManager : MonoBehaviour
             pos.y = 0;
             _enemyPositions[i] = pos;
             _enemyActive[i] = true;
+            _enemyHp[i] = enemyMaxHp; // HPをリセット
         }
         
         // 敵のTransform位置を更新
