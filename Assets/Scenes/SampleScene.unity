@@ -561,8 +561,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   cubePrefab: {fileID: 5245499245727803100, guid: 24586601eb5764e69a4e27cc54b00816, type: 3}
   bulletPrefab: {fileID: 418365409580796662, guid: ab54663d7eb3d4ceaa4875f81afccdef, type: 3}
-  enemyCount: 0
-  maxBullets: 1000
+  enemyCount: 10
+  maxBullets: 100
   playerTransform: {fileID: 322285197}
   enemySpeed: 5
   bulletSpeed: 20
@@ -860,7 +860,7 @@ MonoBehaviour:
       Offset: {x: 0, y: 0}
   CenterOnActivate: 1
   TargetOffset: {x: 0, y: 0, z: 0}
-  Damping: {x: 1, y: 1, z: 1}
+  Damping: {x: 0.1, y: 0.1, z: 0.1}
   Lookahead:
     Enabled: 0
     Time: 0
