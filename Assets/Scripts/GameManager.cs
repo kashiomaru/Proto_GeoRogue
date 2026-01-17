@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
     private NativeArray<float3> _bulletPositions;
+    private NativeArray<float3> _bulletDirections; // 弾の方向ベクトル
     private NativeArray<bool> _bulletActive;
     private NativeArray<float> _bulletLifeTime;
     
@@ -79,6 +80,7 @@ public class GameManager : MonoBehaviour
             spatialMap = _spatialMap, // 読み込みのみ
             enemyPositions = _enemyPositions, // 敵の位置参照
             bulletPositions = _bulletPositions,
+            bulletDirections = _bulletDirections, // 弾の方向
             bulletActive = _bulletActive,
             bulletLifeTime = _bulletLifeTime,
             enemyActive = _enemyActive // ヒットしたらfalseにする
@@ -120,6 +122,7 @@ public class GameManager : MonoBehaviour
     {
         _bulletTransforms = new TransformAccessArray(maxBullets);
         _bulletPositions = new NativeArray<float3>(maxBullets, Allocator.Persistent);
+        _bulletDirections = new NativeArray<float3>(maxBullets, Allocator.Persistent);
         _bulletActive = new NativeArray<bool>(maxBullets, Allocator.Persistent);
         _bulletLifeTime = new NativeArray<float>(maxBullets, Allocator.Persistent);
 
@@ -146,6 +149,8 @@ public class GameManager : MonoBehaviour
 
             _bulletActive[id] = true;
             _bulletPositions[id] = playerTransform.position;
+            // プレイヤーのforward方向を設定
+            _bulletDirections[id] = (float3)playerTransform.forward;
             _bulletLifeTime[id] = 2.0f; // 2秒で消える
             
             // Transformも更新しておく（描画用）
@@ -180,6 +185,7 @@ public class GameManager : MonoBehaviour
         
         if (_bulletTransforms.isCreated) _bulletTransforms.Dispose();
         if (_bulletPositions.IsCreated) _bulletPositions.Dispose();
+        if (_bulletDirections.IsCreated) _bulletDirections.Dispose();
         if (_bulletActive.IsCreated) _bulletActive.Dispose();
         if (_bulletLifeTime.IsCreated) _bulletLifeTime.Dispose();
         

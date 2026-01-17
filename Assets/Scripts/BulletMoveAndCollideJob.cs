@@ -14,6 +14,7 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
     [ReadOnly] public NativeArray<float3> enemyPositions;
     
     public NativeArray<float3> bulletPositions;
+    [ReadOnly] public NativeArray<float3> bulletDirections; // 弾の方向ベクトル
     public NativeArray<bool> bulletActive;
     public NativeArray<float> bulletLifeTime;
     
@@ -37,13 +38,10 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
             return;
         }
 
-        // 弾の移動（今回は単純にZ+方向などではなく、放射状にするなら個別のvelocityが必要）
-        // 簡易的に「原点から外側へ」飛ばすロジックにします
+        // 弾の移動（プレイヤーの向きに飛ばす）
         float3 pos = bulletPositions[index];
-        // 本来はvelocity配列を持つべきですが、デモとして「現在位置から少し進める」
-        // ※実際はHandleShootingでVelocityを設定してください
-        // ここでは仮に「x軸プラス方向」に飛ぶとしておきます
-        float3 velocity = new float3(1, 0, 0) * speed; 
+        // 方向ベクトルを使用して移動
+        float3 velocity = bulletDirections[index] * speed; 
         
         pos += velocity * deltaTime;
         transform.position = pos;
