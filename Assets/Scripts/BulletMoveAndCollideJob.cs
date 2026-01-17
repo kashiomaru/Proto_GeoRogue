@@ -34,6 +34,9 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
     
     // 死んだ敵の位置を記録するキュー（並列書き込み用）
     public NativeQueue<float3>.ParallelWriter deadEnemyPositions;
+    
+    // 敵へのダメージ情報を記録するキュー（並列書き込み用）
+    public NativeQueue<EnemyDamageInfo>.ParallelWriter enemyDamageQueue;
 
     public void Execute(int index, TransformAccess transform)
     {
@@ -98,6 +101,9 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
                                 float currentHp = enemyHp[enemyIndex];
                                 currentHp -= bulletDamage;
                                 enemyHp[enemyIndex] = currentHp;
+                                
+                                // ダメージ情報をキューに追加（ダメージテキスト表示用）
+                                enemyDamageQueue.Enqueue(new EnemyDamageInfo(enemyPos, bulletDamage));
                                 
                                 // HPが0以下になったら敵を死亡させる
                                 if (currentHp <= 0f)

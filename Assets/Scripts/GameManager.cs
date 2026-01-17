@@ -4,6 +4,19 @@ using Unity.Collections;
 using Unity.Burst;
 using Unity.Mathematics;
 
+// 敵へのダメージ情報を保持する構造体
+public struct EnemyDamageInfo
+{
+    public float3 position;
+    public float damage;
+    
+    public EnemyDamageInfo(float3 pos, float dmg)
+    {
+        position = pos;
+        damage = dmg;
+    }
+}
+
 public class GameManager : MonoBehaviour
 {
     [Header("Settings")]
@@ -71,6 +84,9 @@ public class GameManager : MonoBehaviour
     // --- Damage Queue ---
     // プレイヤーへのダメージを記録するキュー（Job内からメインスレッドへ通知）
     private NativeQueue<int> _playerDamageQueue;
+    
+    // 敵へのダメージ情報を記録するキュー（Job内からメインスレッドへ通知）
+    private NativeQueue<EnemyDamageInfo> _enemyDamageQueue;
 
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
@@ -85,6 +101,9 @@ public class GameManager : MonoBehaviour
         
         // プレイヤーへのダメージを記録するキューを初期化
         _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
+        
+        // 敵へのダメージ情報を記録するキューを初期化
+        _enemyDamageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
     }
 
     void Update()
@@ -132,7 +151,8 @@ public class GameManager : MonoBehaviour
             enemyActive = _enemyActive, // ヒットしたらfalseにする
             enemyHp = _enemyHp, // 敵のHP配列
             bulletDamage = bulletDamage, // 弾のダメージ
-            deadEnemyPositions = _deadEnemyPositions.AsParallelWriter() // 死んだ敵の位置を記録
+            deadEnemyPositions = _deadEnemyPositions.AsParallelWriter(), // 死んだ敵の位置を記録
+            enemyDamageQueue = _enemyDamageQueue.AsParallelWriter() // 敵へのダメージ情報を記録
         };
         
         var bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
@@ -143,7 +163,10 @@ public class GameManager : MonoBehaviour
         // 死んだ敵の位置からジェムを生成
         HandleDeadEnemies();
         
-        // 3. プレイヤーへのダメージ処理
+        // 3. 敵へのダメージ表示処理
+        HandleEnemyDamage();
+        
+        // 4. プレイヤーへのダメージ処理
         HandlePlayerDamage();
         
         // 4. 経験値の取得と加算
@@ -301,6 +324,23 @@ public class GameManager : MonoBehaviour
         }
     }
     
+    void HandleEnemyDamage()
+    {
+        // キューから敵へのダメージ情報を取得してダメージテキストを表示
+        if (damageTextManager != null)
+        {
+            while (_enemyDamageQueue.TryDequeue(out EnemyDamageInfo damageInfo))
+            {
+                // ダメージをintに変換して表示（小数点以下は切り捨て）
+                int damageInt = (int)damageInfo.damage;
+                if (damageInt > 0)
+                {
+                    damageTextManager.ShowDamage(damageInfo.position, damageInt);
+                }
+            }
+        }
+    }
+    
     void HandlePlayerDamage()
     {
         // キューからダメージを取得してプレイヤーに適用
@@ -390,6 +430,7 @@ public class GameManager : MonoBehaviour
         
         if (_deadEnemyPositions.IsCreated) _deadEnemyPositions.Dispose();
         if (_playerDamageQueue.IsCreated) _playerDamageQueue.Dispose();
+        if (_enemyDamageQueue.IsCreated) _enemyDamageQueue.Dispose();
     }
     
     // ゲームリセット処理
@@ -447,6 +488,7 @@ public class GameManager : MonoBehaviour
         // キューをクリア
         while (_deadEnemyPositions.TryDequeue(out _)) { }
         while (_playerDamageQueue.TryDequeue(out _)) { }
+        while (_enemyDamageQueue.TryDequeue(out _)) { }
         
         // タイマーをリセット
         _timer = 0f;

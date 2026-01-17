@@ -1114,6 +1114,8 @@ MonoBehaviour:
   uiManager: {fileID: 614781147}
   damageTextManager: {fileID: 614781148}
   enemyDamageRadius: 1
+  enemyMaxHp: 3
+  bulletDamage: 1
   maxLevel: 99
 --- !u!4 &379471279
 Transform:
