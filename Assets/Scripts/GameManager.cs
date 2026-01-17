@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private LevelUpManager levelUpManager; // LevelUpManagerへの参照
     [SerializeField] private Player player; // Playerへの参照
     [SerializeField] private UIManager uiManager; // UIManagerへの参照
+    [SerializeField] private DamageTextManager damageTextManager; // ダメージテキスト表示用
     
     [Header("Combat")]
     [SerializeField] private float enemyDamageRadius = 1.0f; // 敵とプレイヤーの当たり判定半径
@@ -305,7 +306,14 @@ public class GameManager : MonoBehaviour
             
             if (totalDamage > 0)
             {
-                player.TakeDamage(totalDamage);
+                // ダメージを適用し、実際に与えたダメージを取得
+                int actualDamage = player.TakeDamage(totalDamage);
+                
+                // 実際にダメージが与えられた場合のみダメージテキストを表示
+                if (actualDamage > 0 && damageTextManager != null)
+                {
+                    damageTextManager.ShowDamage(playerTransform.position, actualDamage);
+                }
                 
                 // HPが0になったらゲームオーバー
                 if (player.IsDead && uiManager != null)

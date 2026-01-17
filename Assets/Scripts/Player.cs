@@ -61,13 +61,23 @@ public class Player : MonoBehaviour
         HandleMovement();
     }
     
-    // ダメージを受ける
-    public void TakeDamage(int damage)
+    // ダメージを受ける（実際に与えたダメージを返す）
+    public int TakeDamage(int damage)
     {
-        if (_isInvincible || _currentHp <= 0) return;
+        // 無敵時間中または既に死んでいる場合はダメージを与えない
+        if (_isInvincible || _currentHp <= 0) return 0;
         
-        _currentHp -= damage;
-        if (_currentHp < 0) _currentHp = 0;
+        // 実際に与えるダメージを計算
+        int actualDamage = damage;
+        int newHp = _currentHp - actualDamage;
+        if (newHp < 0)
+        {
+            // HPが0を下回る場合は、実際に与えたダメージを調整
+            actualDamage = _currentHp;
+            newHp = 0;
+        }
+        
+        _currentHp = newHp;
         
         // 無敵時間を開始
         if (_currentHp > 0)
@@ -75,6 +85,8 @@ public class Player : MonoBehaviour
             _isInvincible = true;
             _invincibleTimer = invincibleDuration;
         }
+        
+        return actualDamage;
     }
     
     // リセット処理
