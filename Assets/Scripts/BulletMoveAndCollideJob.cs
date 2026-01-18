@@ -37,6 +37,9 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
     
     // 敵へのダメージ情報を記録するキュー（並列書き込み用）
     public NativeQueue<EnemyDamageInfo>.ParallelWriter enemyDamageQueue;
+    
+    // フラッシュタイマー設定用のキュー（並列書き込み用）
+    public NativeQueue<int>.ParallelWriter enemyFlashQueue;
 
     public void Execute(int index, TransformAccess transform)
     {
@@ -104,6 +107,9 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
                                 
                                 // ダメージ情報をキューに追加（ダメージテキスト表示用）
                                 enemyDamageQueue.Enqueue(new EnemyDamageInfo(enemyPos, bulletDamage));
+                                
+                                // フラッシュタイマーを設定（ヒットフラッシュ用）
+                                enemyFlashQueue.Enqueue(enemyIndex);
                                 
                                 // HPが0以下になったら敵を死亡させる
                                 if (currentHp <= 0f)

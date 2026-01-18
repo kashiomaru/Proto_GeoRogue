@@ -3,6 +3,7 @@ using UnityEngine.Jobs;
 using Unity.Collections;
 using Unity.Burst;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
 // 敵へのダメージ情報を保持する構造体
 public struct EnemyDamageInfo
@@ -45,11 +46,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Player player; // Playerへの参照
     [SerializeField] private UIManager uiManager; // UIManagerへの参照
     [SerializeField] private DamageTextManager damageTextManager; // ダメージテキスト表示用
+    [SerializeField] private RenderManager renderManager; // RenderManagerへの参照
     
     [Header("Combat")]
     [SerializeField] private float enemyDamageRadius = 1.0f; // 敵とプレイヤーの当たり判定半径
     [SerializeField] private float enemyMaxHp = 1.0f; // 敵の最大HP
     [SerializeField] private float bulletDamage = 1.0f; // 弾のダメージ
+    [SerializeField] private float enemyFlashDuration = 0.1f; // 敵のフラッシュ持続時間（秒）
     
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
@@ -64,6 +67,9 @@ public class GameManager : MonoBehaviour
     private NativeArray<float3> _enemyPositions;
     private NativeArray<bool> _enemyActive; // 生存フラグ
     private NativeArray<float> _enemyHp; // 敵のHP
+    private List<float> _enemyFlashTimers; // フラッシュの残り時間を管理
+    private List<Transform> _enemyTransformList; // 描画メソッドに渡す用（TransformAccessArrayとは別管理が楽）
+    private List<bool> _enemyActiveList; // 生存フラグ
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -87,6 +93,9 @@ public class GameManager : MonoBehaviour
     
     // 敵へのダメージ情報を記録するキュー（Job内からメインスレッドへ通知）
     private NativeQueue<EnemyDamageInfo> _enemyDamageQueue;
+    
+    // ダメージを受けた敵のインデックスを記録するキュー（フラッシュタイマー設定用）
+    private NativeQueue<int> _enemyFlashQueue;
 
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
@@ -104,6 +113,9 @@ public class GameManager : MonoBehaviour
         
         // 敵へのダメージ情報を記録するキューを初期化
         _enemyDamageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
+        
+        // フラッシュタイマー設定用のキューを初期化
+        _enemyFlashQueue = new NativeQueue<int>(Allocator.Persistent);
     }
 
     void Update()
@@ -152,7 +164,8 @@ public class GameManager : MonoBehaviour
             enemyHp = _enemyHp, // 敵のHP配列
             bulletDamage = bulletDamage, // 弾のダメージ
             deadEnemyPositions = _deadEnemyPositions.AsParallelWriter(), // 死んだ敵の位置を記録
-            enemyDamageQueue = _enemyDamageQueue.AsParallelWriter() // 敵へのダメージ情報を記録
+            enemyDamageQueue = _enemyDamageQueue.AsParallelWriter(), // 敵へのダメージ情報を記録
+            enemyFlashQueue = _enemyFlashQueue.AsParallelWriter() // フラッシュタイマー設定用
         };
         
         var bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
@@ -179,6 +192,10 @@ public class GameManager : MonoBehaviour
         // 本来はCommandBufferやComputeShaderで描画自体をスキップしますが、
         // プロトタイプなのでScaleを0にする等の簡易処理で対応
         SyncVisuals();
+        
+        // 6. フラッシュタイマーの更新とRenderManagerによる描画
+        UpdateFlashTimers(deltaTime);
+        RenderEnemies();
     }
     
     // --- 初期化 & ユーティリティ ---
@@ -189,6 +206,11 @@ public class GameManager : MonoBehaviour
         _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
         _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
         _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
+        
+        // RenderManager用のリストを初期化
+        _enemyFlashTimers = new List<float>(new float[enemyCount]);
+        _enemyTransformList = new List<Transform>(enemyCount);
+        _enemyActiveList = new List<bool>(enemyCount);
 
         for (int i = 0; i < enemyCount; i++)
         {
@@ -201,6 +223,10 @@ public class GameManager : MonoBehaviour
             _enemyPositions[i] = pos;
             _enemyActive[i] = true;
             _enemyHp[i] = enemyMaxHp; // HPを最大値に設定
+            
+            // TransformAccessArrayに入れるタイミングでListにも入れておく
+            _enemyTransformList.Add(obj.transform);
+            _enemyActiveList.Add(true);
         }
     }
 
@@ -339,6 +365,16 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
+        
+        // フラッシュタイマーを設定（ダメージを受けた敵）
+        while (_enemyFlashQueue.TryDequeue(out int enemyIndex))
+        {
+            if (enemyIndex >= 0 && enemyIndex < enemyCount && enemyIndex < _enemyFlashTimers.Count)
+            {
+                // ★ヒットフラッシュ開始（0.1秒光る）
+                _enemyFlashTimers[enemyIndex] = enemyFlashDuration;
+            }
+        }
     }
     
     void HandlePlayerDamage()
@@ -411,6 +447,32 @@ public class GameManager : MonoBehaviour
         }
         */
     }
+    
+    void UpdateFlashTimers(float deltaTime)
+    {
+        // --- フラッシュタイマーの更新 ---
+        for (int i = 0; i < _enemyFlashTimers.Count; i++)
+        {
+            if (_enemyFlashTimers[i] > 0)
+            {
+                _enemyFlashTimers[i] -= deltaTime;
+            }
+        }
+        
+        // アクティブフラグを同期
+        for (int i = 0; i < enemyCount && i < _enemyActiveList.Count; i++)
+        {
+            _enemyActiveList[i] = _enemyActive[i];
+        }
+    }
+    
+    void RenderEnemies()
+    {
+        if (renderManager == null) return;
+        
+        // --- 描画呼び出し ---
+        renderManager.RenderEnemies(_enemyTransformList, _enemyFlashTimers, _enemyActiveList);
+    }
 
     void OnDestroy()
     {
@@ -431,6 +493,8 @@ public class GameManager : MonoBehaviour
         if (_deadEnemyPositions.IsCreated) _deadEnemyPositions.Dispose();
         if (_playerDamageQueue.IsCreated) _playerDamageQueue.Dispose();
         if (_enemyDamageQueue.IsCreated) _enemyDamageQueue.Dispose();
+        if (_enemyFlashQueue.IsCreated) _enemyFlashQueue.Dispose();
+        // _enemyFlashTimersはList<float>なので、Dispose()は不要（ガベージコレクタが自動管理）
     }
     
     // ゲームリセット処理
@@ -489,6 +553,13 @@ public class GameManager : MonoBehaviour
         while (_deadEnemyPositions.TryDequeue(out _)) { }
         while (_playerDamageQueue.TryDequeue(out _)) { }
         while (_enemyDamageQueue.TryDequeue(out _)) { }
+        while (_enemyFlashQueue.TryDequeue(out _)) { }
+        
+        // フラッシュタイマーをリセット
+        for (int i = 0; i < _enemyFlashTimers.Count; i++)
+        {
+            _enemyFlashTimers[i] = 0f;
+        }
         
         // タイマーをリセット
         _timer = 0f;
