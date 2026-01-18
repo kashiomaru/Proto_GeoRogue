@@ -7,6 +7,7 @@ public class RenderManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private Mesh enemyMesh;
     [SerializeField] private Material enemyMaterial;
+    [Serializefield] private float flashIntensity = 0.8f;
 
     // 一度に描画できる最大数（API制限）
     private const int BATCH_SIZE = 1023;
@@ -51,7 +52,7 @@ public class RenderManager : MonoBehaviour
             if (flashTimers[i] > 0f)
             {
                 // 強烈な白（HDR）
-                _emissionColors[batchIndex] = new Vector4(3f, 3f, 3f, 1f); 
+                _emissionColors[batchIndex] = new Vector4(flashIntensity, flashIntensity, flashIntensity, 1f); 
             }
             else
             {
