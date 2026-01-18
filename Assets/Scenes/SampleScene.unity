@@ -1639,6 +1639,8 @@ MonoBehaviour:
   - {fileID: 1028181119}
   gameOverPanel: {fileID: 1235017847}
   retryButton: {fileID: 1302607572}
+  hpBar: {fileID: 76444060}
+  player: {fileID: 322285198}
 --- !u!114 &614781148
 MonoBehaviour:
   m_ObjectHideFlags: 0

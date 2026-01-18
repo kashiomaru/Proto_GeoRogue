@@ -15,6 +15,10 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private Button retryButton;
     
+    [Header("HP Bar")]
+    [SerializeField] private Slider hpBar;
+    [SerializeField] private Player player;
+    
     // レベルアップ選択時のコールバック
     private Action<UpgradeType> _onUpgradeSelected;
     // リトライ時のコールバック
@@ -38,6 +42,25 @@ public class UIManager : MonoBehaviour
         {
             retryButton.onClick.RemoveAllListeners();
             retryButton.onClick.AddListener(OnRetryButtonClicked);
+        }
+        
+        // HPバーの初期化
+        UpdateHpBar();
+    }
+    
+    void Update()
+    {
+        // HPバーを更新
+        UpdateHpBar();
+    }
+    
+    void UpdateHpBar()
+    {
+        if (hpBar != null && player != null)
+        {
+            // 現在のHPと最大HPから割合を計算
+            float hpRatio = (float)player.CurrentHp / player.MaxHp;
+            hpBar.value = hpRatio;
         }
     }
     
