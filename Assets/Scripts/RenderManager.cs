@@ -7,7 +7,7 @@ public class RenderManager : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private Mesh enemyMesh;
     [SerializeField] private Material enemyMaterial;
-    [Serializefield] private float flashIntensity = 0.8f;
+    [SerializeField] private float flashIntensity = 0.8f;
 
     // 一度に描画できる最大数（API制限）
     private const int BATCH_SIZE = 1023;
