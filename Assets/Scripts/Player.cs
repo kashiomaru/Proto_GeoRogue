@@ -10,16 +10,22 @@ public class Player : MonoBehaviour
     [Header("Camera Reference")]
     [SerializeField] private Camera playerCamera; // カメラ参照（未設定の場合はMainCameraを自動取得）
     
-    [Header("Experience")]
-    public int currentExp = 0; // 現在の経験値
-    
     [Header("Health")]
     [SerializeField] private int maxHp = 10;
     [SerializeField] private float invincibleDuration = 1.0f; // 無敵時間（秒）
     
+    [Header("Level System")]
+    [SerializeField] private int maxLevel = 99;
+    [SerializeField] private LevelUpManager levelUpManager; // レベルアップ時の参照
+    
     private int _currentHp;
     private float _invincibleTimer = 0f;
     private bool _isInvincible = false;
+    
+    // --- Experience & Level ---
+    private int _currentExp = 0;
+    private int _nextLevelExp = 10;
+    private int _currentLevel = 1;
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
     
@@ -28,11 +34,10 @@ public class Player : MonoBehaviour
     public bool IsInvincible => _isInvincible;
     public bool IsDead => _currentHp <= 0;
     
-    // 経験値を追加するメソッド
-    public void AddExp(int amount)
-    {
-        currentExp += amount;
-    }
+    // 経験値・レベル情報のプロパティ
+    public int CurrentExp => _currentExp;
+    public int NextLevelExp => _nextLevelExp;
+    public int CurrentLevel => _currentLevel;
     
     private void Start()
     {
@@ -89,13 +94,37 @@ public class Player : MonoBehaviour
         return actualDamage;
     }
     
+    // 経験値を加算し、レベルアップ判定を行う
+    public void AddExperience(int amount)
+    {
+        if (amount <= 0) return;
+        
+        _currentExp += amount;
+
+        // レベルアップ判定
+        while (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
+        {
+            _currentExp -= _nextLevelExp;
+            _currentLevel++;
+            _nextLevelExp = (int)(_nextLevelExp * 1.2f); // 必要経験値を増やす（カーブは要調整）
+
+            // レベルアップ画面を表示
+            if (levelUpManager != null)
+            {
+                levelUpManager.ShowLevelUpOptions();
+            }
+        }
+    }
+    
     // リセット処理
     public void ResetPlayer()
     {
         _currentHp = maxHp;
         _isInvincible = false;
         _invincibleTimer = 0f;
-        currentExp = 0;
+        _currentExp = 0;
+        _nextLevelExp = 10;
+        _currentLevel = 1;
     }
     
     private void HandleMovement()

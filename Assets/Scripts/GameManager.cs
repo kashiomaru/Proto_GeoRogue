@@ -54,13 +54,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float bulletDamage = 1.0f; // 弾のダメージ
     [SerializeField] private float enemyFlashDuration = 0.1f; // 敵のフラッシュ持続時間（秒）
     
-    [Header("Level System")]
-    [SerializeField] private int maxLevel = 99;
-    
-    // --- Experience & Level ---
-    private int _currentExp = 0;
-    private int _nextLevelExp = 10;
-    private int _currentLevel = 1;
 
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -411,26 +404,12 @@ public class GameManager : MonoBehaviour
     void HandleExperience()
     {
         // GemManagerから回収されたジェムの数を取得して経験値を加算
-        if (gemManager != null)
+        if (gemManager != null && player != null)
         {
             int expGained = gemManager.GetCollectedGemCount();
             if (expGained > 0)
             {
-                _currentExp += expGained;
-            }
-        }
-        
-        // レベルアップ判定
-        while (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
-        {
-            _currentExp -= _nextLevelExp;
-            _currentLevel++;
-            _nextLevelExp = (int)(_nextLevelExp * 1.2f); // 必要経験値を増やす（カーブは要調整）
-
-            // レベルアップ画面を表示！
-            if (levelUpManager != null)
-            {
-                levelUpManager.ShowLevelUpOptions();
+                player.AddExperience(expGained);
             }
         }
     }
@@ -506,10 +485,7 @@ public class GameManager : MonoBehaviour
             player.ResetPlayer();
         }
         
-        // 経験値とレベルをリセット
-        _currentExp = 0;
-        _nextLevelExp = 10;
-        _currentLevel = 1;
+        // 経験値とレベルはPlayerのResetPlayer()でリセットされる
         
         // パラメータをリセット
         fireRate = 0.1f;
@@ -601,4 +577,5 @@ public class GameManager : MonoBehaviour
     {
         bulletCountPerShot = value;
     }
+    
 }

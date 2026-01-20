@@ -19,6 +19,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Slider hpBar;
     [SerializeField] private Player player;
     
+    [Header("Exp Bar")]
+    [SerializeField] private Slider expBar;
+    
     // レベルアップ選択時のコールバック
     private Action<UpgradeType> _onUpgradeSelected;
     // リトライ時のコールバック
@@ -46,12 +49,18 @@ public class UIManager : MonoBehaviour
         
         // HPバーの初期化
         UpdateHpBar();
+        
+        // 経験値バーの初期化
+        UpdateExpBar();
     }
     
     void Update()
     {
         // HPバーを更新
         UpdateHpBar();
+        
+        // 経験値バーを更新
+        UpdateExpBar();
     }
     
     void UpdateHpBar()
@@ -61,6 +70,26 @@ public class UIManager : MonoBehaviour
             // 現在のHPと最大HPから割合を計算
             float hpRatio = (float)player.CurrentHp / player.MaxHp;
             hpBar.value = hpRatio;
+        }
+    }
+    
+    void UpdateExpBar()
+    {
+        if (expBar != null && player != null)
+        {
+            // 現在の経験値と次のレベルまでの必要経験値から割合を計算
+            int currentExp = player.CurrentExp;
+            int nextLevelExp = player.NextLevelExp;
+
+            if (nextLevelExp > 0)
+            {
+                float expRatio = (float)currentExp / nextLevelExp;
+                expBar.value = expRatio;
+            }
+            else
+            {
+                expBar.value = 1f; // 最大レベルの場合は満タン表示
+            }
         }
     }
     
