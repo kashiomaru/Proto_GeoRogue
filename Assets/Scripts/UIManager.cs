@@ -22,10 +22,15 @@ public class UIManager : MonoBehaviour
     [Header("Exp Bar")]
     [SerializeField] private Slider expBar;
     
+    [Header("Level Up")]
+    [SerializeField] private LevelUpManager levelUpManager;
+    
     // レベルアップ選択時のコールバック
     private Action<UpgradeType> _onUpgradeSelected;
     // リトライ時のコールバック
     private Action _onRetryClicked;
+    
+    private bool _isLevelUpUIOpen = false; // レベルアップUIが開いているか
 
     void Start()
     {
@@ -61,6 +66,12 @@ public class UIManager : MonoBehaviour
         
         // 経験値バーを更新
         UpdateExpBar();
+        
+        // レベルアップ可能フラグをチェック
+        if (player != null && player.CanLevelUp && !_isLevelUpUIOpen)
+        {
+            ShowLevelUpUI();
+        }
     }
     
     void UpdateHpBar()
@@ -93,7 +104,71 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    // レベルアップUIを表示
+    // レベルアップUIを表示（内部メソッド）
+    private void ShowLevelUpUI()
+    {
+        if (levelUpManager == null || levelUpPanel == null) return;
+        
+        _isLevelUpUIOpen = true;
+        
+        // ゲームを止める
+        Time.timeScale = 0f;
+        
+        // レベルアップオプションを取得
+        List<UpgradeData> upgradeOptions = levelUpManager.GetRandomUpgrades(3);
+        
+        // パネルを表示
+        levelUpPanel.SetActive(true);
+        
+        // オプションをUIに反映
+        for (int i = 0; i < optionButtons.Length && i < optionTexts.Length && i < upgradeOptions.Count; i++)
+        {
+            UpgradeData data = upgradeOptions[i];
+            
+            // UI反映
+            if (optionTexts[i] != null)
+            {
+                optionTexts[i].text = $"{data.title}\n<size=70%>{data.description}</size>";
+            }
+            
+            // ボタンのクリックイベントをリセットして登録
+            if (optionButtons[i] != null)
+            {
+                optionButtons[i].onClick.RemoveAllListeners();
+                int index = i; // クロージャ用
+                optionButtons[i].onClick.AddListener(() => OnUpgradeButtonClicked(data.type));
+            }
+        }
+    }
+    
+    private void OnUpgradeButtonClicked(UpgradeType type)
+    {
+        // LevelUpManagerに処理を委譲
+        if (levelUpManager != null)
+        {
+            levelUpManager.ApplyUpgrade(type);
+        }
+        
+        // プレイヤーのレベルアップ処理を実行
+        if (player != null)
+        {
+            player.LevelUp();
+        }
+        
+        // パネルを隠す
+        if (levelUpPanel != null)
+        {
+            levelUpPanel.SetActive(false);
+        }
+        
+        // フラグをリセット
+        _isLevelUpUIOpen = false;
+        
+        // ゲーム再開
+        Time.timeScale = 1f;
+    }
+    
+    // レベルアップUIを表示（外部から呼ばれる場合用、互換性のため残す）
     public void ShowLevelUpOptions(List<UpgradeData> upgradeOptions, Action<UpgradeType> onUpgradeSelected)
     {
         _onUpgradeSelected = onUpgradeSelected;
@@ -125,21 +200,6 @@ public class UIManager : MonoBehaviour
                 optionButtons[i].onClick.AddListener(() => OnUpgradeButtonClicked(data.type));
             }
         }
-    }
-    
-    private void OnUpgradeButtonClicked(UpgradeType type)
-    {
-        // コールバックを呼び出し
-        _onUpgradeSelected?.Invoke(type);
-        
-        // パネルを隠す
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(false);
-        }
-        
-        // ゲーム再開
-        Time.timeScale = 1f;
     }
     
     // ゲームオーバーUIを表示

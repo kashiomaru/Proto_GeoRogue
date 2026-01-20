@@ -19,7 +19,7 @@ public class LevelUpManager : MonoBehaviour
         new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot", description = "Shoot multiple bullets!" },
     };
 
-    // 外部（GameManager）から経験値が溜まったら呼ばれる
+    // 外部（GameManager）から経験値が溜まったら呼ばれる（互換性のため残す）
     public void ShowLevelUpOptions()
     {
         // ランダムに3つ選出（重複なし）
@@ -30,6 +30,18 @@ public class LevelUpManager : MonoBehaviour
         {
             uiManager.ShowLevelUpOptions(selectedOptions, OnUpgradeSelected);
         }
+    }
+    
+    // ランダムなアップグレードオプションを取得（UIManager用）
+    public List<UpgradeData> GetRandomUpgrades(int count)
+    {
+        return SelectRandomUpgrades(count);
+    }
+    
+    // アップグレードを適用（UIManager用）
+    public void ApplyUpgrade(UpgradeType type)
+    {
+        ApplyUpgradeEffect(type);
     }
     
     private List<UpgradeData> SelectRandomUpgrades(int count)

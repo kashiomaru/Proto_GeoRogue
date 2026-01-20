@@ -1013,7 +1013,6 @@ MonoBehaviour:
   maxHp: 10
   invincibleDuration: 1
   maxLevel: 99
-  levelUpManager: {fileID: 1420325300}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1818,6 +1817,7 @@ MonoBehaviour:
   hpBar: {fileID: 123334380}
   player: {fileID: 322285198}
   expBar: {fileID: 76444060}
+  levelUpManager: {fileID: 1420325300}
 --- !u!114 &614781148
 MonoBehaviour:
   m_ObjectHideFlags: 0

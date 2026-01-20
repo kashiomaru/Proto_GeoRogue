@@ -16,7 +16,6 @@ public class Player : MonoBehaviour
     
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
-    [SerializeField] private LevelUpManager levelUpManager; // レベルアップ時の参照
     
     private int _currentHp;
     private float _invincibleTimer = 0f;
@@ -26,6 +25,7 @@ public class Player : MonoBehaviour
     private int _currentExp = 0;
     private int _nextLevelExp = 10;
     private int _currentLevel = 1;
+    private bool _canLevelUp = false; // レベルアップ可能フラグ
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
     
@@ -38,6 +38,7 @@ public class Player : MonoBehaviour
     public int CurrentExp => _currentExp;
     public int NextLevelExp => _nextLevelExp;
     public int CurrentLevel => _currentLevel;
+    public bool CanLevelUp => _canLevelUp;
     
     private void Start()
     {
@@ -94,25 +95,39 @@ public class Player : MonoBehaviour
         return actualDamage;
     }
     
-    // 経験値を加算し、レベルアップ判定を行う
+    // 経験値を加算し、レベルアップ可能フラグを設定
     public void AddExperience(int amount)
     {
         if (amount <= 0) return;
         
         _currentExp += amount;
 
-        // レベルアップ判定
-        while (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
+        // レベルアップ可能かチェック
+        if (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
         {
-            _currentExp -= _nextLevelExp;
-            _currentLevel++;
-            _nextLevelExp = (int)(_nextLevelExp * 1.2f); // 必要経験値を増やす（カーブは要調整）
-
-            // レベルアップ画面を表示
-            if (levelUpManager != null)
-            {
-                levelUpManager.ShowLevelUpOptions();
-            }
+            _canLevelUp = true;
+        }
+    }
+    
+    // レベルアップ処理（UIで選択後に呼ばれる）
+    public void LevelUp()
+    {
+        if (!_canLevelUp || _currentLevel >= maxLevel) return;
+        
+        // 経験値をリセット
+        _currentExp -= _nextLevelExp;
+        
+        // レベルを上げる
+        _currentLevel++;
+        _nextLevelExp = (int)(_nextLevelExp * 1.2f); // 必要経験値を増やす（カーブは要調整）
+        
+        // フラグをリセット
+        _canLevelUp = false;
+        
+        // まだレベルアップ可能な場合はフラグを立てる
+        if (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
+        {
+            _canLevelUp = true;
         }
     }
     
@@ -125,6 +140,7 @@ public class Player : MonoBehaviour
         _currentExp = 0;
         _nextLevelExp = 10;
         _currentLevel = 1;
+        _canLevelUp = false;
     }
     
     private void HandleMovement()
