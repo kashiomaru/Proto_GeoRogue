@@ -120,6 +120,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         // カウントダウンタイマーの更新
+        bool wasTimerRunning = _countdownTimer > 0f;
         if (_countdownTimer > 0f)
         {
             _countdownTimer -= Time.deltaTime;
@@ -129,16 +130,22 @@ public class GameManager : MonoBehaviour
             }
         }
         
+        // タイマーがゼロになった瞬間、すべての敵を非アクティブにする
+        if (wasTimerRunning && _countdownTimer <= 0f)
+        {
+            ClearAllEnemies();
+        }
+        
         // 1. 弾の発射（プレイヤー位置から）
         HandleShooting();
+
+        float deltaTime = Time.deltaTime;
+        float3 playerPos = playerTransform.position;
 
         // 2. 空間ハッシュマップのクリア
         if (_spatialMap.IsCreated) _spatialMap.Clear();
         // 敵の数より少し多めに確保（リサイズ回避）
         if (!_spatialMap.IsCreated) _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
-
-        float deltaTime = Time.deltaTime;
-        float3 playerPos = playerTransform.position;
 
         // --- JOB 1: 敵の移動 & グリッド登録 ---
         var enemyJob = new EnemyMoveAndHashJob
@@ -194,8 +201,11 @@ public class GameManager : MonoBehaviour
         // 4. 経験値の取得と加算
         HandleExperience();
 
-        // 5. 敵のリスポーン処理
-        HandleEnemyRespawn(playerPos);
+        // 5. 敵のリスポーン処理（タイマーがゼロでない場合のみ）
+        if (_countdownTimer > 0f)
+        {
+            HandleEnemyRespawn(playerPos);
+        }
 
         // （オプション）死んだ敵を非表示にする処理
         // 本来はCommandBufferやComputeShaderで描画自体をスキップしますが、
@@ -606,6 +616,27 @@ public class GameManager : MonoBehaviour
     public bool IsCountdownFinished()
     {
         return _countdownTimer <= 0f;
+    }
+    
+    // すべての敵を非アクティブにする（タイマーがゼロになった時）
+    private void ClearAllEnemies()
+    {
+        for (int i = 0; i < enemyCount; i++)
+        {
+            _enemyActive[i] = false;
+            if (i < _enemyActiveList.Count)
+            {
+                _enemyActiveList[i] = false;
+            }
+        }
+        
+        // Transform位置を更新するためのJobを実行して、敵を非表示にする
+        var updateRespawnJob = new UpdateRespawnedEnemyPositionJob
+        {
+            positions = _enemyPositions,
+            activeFlags = _enemyActive
+        };
+        updateRespawnJob.Schedule(_enemyTransforms).Complete();
     }
     
 }
