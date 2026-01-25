@@ -36,7 +36,7 @@ public class EnemyManager : MonoBehaviour
     private GameObject _currentBoss; // 現在のボスインスタンス
     
     // ゲームモード
-    private GameMode _currentMode = GameMode.Normal; // 現在のゲームモード
+    private GameMode _currentMode = GameMode.None; // 現在のゲームモード
     
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;

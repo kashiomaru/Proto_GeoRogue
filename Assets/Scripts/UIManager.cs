@@ -115,8 +115,7 @@ public class UIManager : MonoBehaviour
     {
         if (countdownText != null && gameManager != null)
         {
-            // ボスモードの場合はタイマーを非表示
-            if (gameManager.IsBossMode())
+            if (gameManager.IsNormalMode() == false)
             {
                 if (countdownText.gameObject.activeSelf)
                 {

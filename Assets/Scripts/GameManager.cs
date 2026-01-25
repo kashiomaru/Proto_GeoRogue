@@ -24,6 +24,7 @@ public struct EnemyDamageInfo
 // ゲームモード
 public enum GameMode
 {
+    None,   // モードなし（弾も敵も出ない）
     Normal, // 通常モード
     Boss    // ボスモード
 }
@@ -59,7 +60,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
     
     [Header("Game Mode")]
-    [SerializeField] private GameMode initialGameMode = GameMode.Normal; // 初期ゲームモード（インスペクターで設定可能）
+    [SerializeField] private GameMode initialGameMode = GameMode.None; // 初期ゲームモード（インスペクターで設定可能）
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -76,7 +77,7 @@ public class GameManager : MonoBehaviour
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
     private float _countdownTimer; // カウントダウンタイマー
-    private GameMode _currentMode = GameMode.Normal; // 現在のゲームモード
+    private GameMode _currentMode = GameMode.None; // 現在のゲームモード
 
     void Start()
     {
@@ -106,7 +107,13 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // カウントダウンタイマーの更新
+        // Noneモードの場合は処理をスキップ（タイマーも更新しない）
+        if (_currentMode == GameMode.None)
+        {
+            return;
+        }
+        
+        // カウントダウンタイマーの更新（通常モードの場合のみ）
         bool wasTimerRunning = _countdownTimer > 0f;
         if (_countdownTimer > 0f)
         {
@@ -129,7 +136,7 @@ public class GameManager : MonoBehaviour
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 
-        // 2. 敵の移動Jobをスケジュール（通常モードの場合のみ）
+        // 2. 敵の移動Jobをスケジュール
         if (enemyManager != null)
         {
             JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
