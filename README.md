@@ -25,6 +25,7 @@ Unityで開発中のGeoRogueプロトタイププロジェクトです。
 
 ### 最適化関連
 
+- [ ] 敵Prefab削除対応（最適化）
 - [ ] **DrawMeshInstancedによる描画最適化**
   - 現在の実装（GameObject + TransformAccessArray）から、`Graphics.DrawMeshInstanced`または`Graphics.DrawMeshInstancedIndirect`への移行
   - 大量のオブジェクトを個別のGameObjectとして管理するのではなく、GPUインスタンシングを使用して描画コストを削減
@@ -44,13 +45,11 @@ Unityで開発中のGeoRogueプロトタイププロジェクトです。
 - [ ] プレイヤーの移動・操作システム
 - [ ] 弾の衝突判定とダメージシステム
 - [ ] ゲームステート管理の改善
-- [ ] マップのリピート
 - [ ] ステージシステム（敵強化）
 - [ ] ゲーム開始時のUI
 - [ ] 敵バリエーション
 - [ ] アップグレードバリエーション
 - [ ] ウェーブタイマー
-- [ ] レベルアップゲージ
 - [ ] ステージ、ボス
 - [ ] ゲームモード：デフェンス
 - [ ] multi shot 時、fire rate を下げる
@@ -61,6 +60,7 @@ Unityで開発中のGeoRogueプロトタイププロジェクトです。
 ### パフォーマンス改善
 
 - [ ] オブジェクトプーリングの実装
+- [ ] BulletPool、GemPool対応
 - [ ] LOD（Level of Detail）システムの導入
 - [ ] 空間分割（Spatial Partitioning）による衝突判定の最適化
 
