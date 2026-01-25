@@ -27,20 +27,23 @@ public class Boss : MonoBehaviour
     {
         if (playerTransform == null || gameManager == null) return;
         
-        // プレイヤーに向かって移動
         float3 pos = transform.position;
         float3 target = playerTransform.position;
-        float3 dir = math.normalize(target - pos);
-        pos += dir * speed * Time.deltaTime;
-        
-        transform.position = pos;
-        
-        // プレイヤーとの当たり判定
         float distSq = math.distancesq(pos, target);
-        if (distSq < damageRadius * damageRadius)
+        float damageRadiusSq = damageRadius * damageRadius;
+        
+        // ダメージ範囲内かどうかで処理を分岐（二乗で比較してsqrtを回避）
+        if (distSq <= damageRadiusSq)
         {
-            // プレイヤーにダメージを与える
+            // ダメージ範囲内：ダメージを与える（移動しない）
             gameManager.AddPlayerDamage(damageAmount);
+        }
+        else
+        {
+            // ダメージ範囲外：プレイヤーに近づく
+            float3 dir = math.normalize(target - pos);
+            pos += dir * speed * Time.deltaTime;
+            transform.position = pos;
         }
     }
 }
