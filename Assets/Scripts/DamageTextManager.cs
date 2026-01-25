@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class DamageTextManager : MonoBehaviour
 {
     [SerializeField] private GameObject textPrefab; // TMPが入ったプレハブ
-    [SerializeField] private Transform canvasTransform;
+    [SerializeField] private Transform damageTextPoolTransform;
     [SerializeField] private int poolSize = 100;
 
     private List<DamageText> _pool = new List<DamageText>();
@@ -13,7 +13,7 @@ public class DamageTextManager : MonoBehaviour
     {
         for(int i=0; i<poolSize; i++)
         {
-            var obj = Instantiate(textPrefab, canvasTransform);
+            var obj = Instantiate(textPrefab, damageTextPoolTransform);
             obj.SetActive(false);
             _pool.Add(obj.GetComponent<DamageText>());
         }

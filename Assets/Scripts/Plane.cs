@@ -14,7 +14,7 @@ public class Plane : MonoBehaviour
         }
     }
     
-    private void Update()
+    private void LateUpdate()
     {
         if (targetCamera != null)
         {
