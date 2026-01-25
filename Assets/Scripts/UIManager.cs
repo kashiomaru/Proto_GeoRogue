@@ -25,6 +25,10 @@ public class UIManager : MonoBehaviour
     [Header("Level Up")]
     [SerializeField] private LevelUpManager levelUpManager;
     
+    [Header("Countdown Timer")]
+    [SerializeField] private GameManager gameManager; // GameManagerへの参照
+    [SerializeField] private TextMeshProUGUI countdownText; // カウントダウン表示用テキスト
+    
     // レベルアップ選択時のコールバック
     private Action<UpgradeType> _onUpgradeSelected;
     // リトライ時のコールバック
@@ -67,6 +71,9 @@ public class UIManager : MonoBehaviour
         // 経験値バーを更新
         UpdateExpBar();
         
+        // カウントダウンタイマーを更新
+        UpdateCountdownTimer();
+        
         // レベルアップ可能フラグをチェック
         if (player != null && player.CanLevelUp && !_isLevelUpUIOpen)
         {
@@ -101,6 +108,20 @@ public class UIManager : MonoBehaviour
             {
                 expBar.value = 1f; // 最大レベルの場合は満タン表示
             }
+        }
+    }
+    
+    void UpdateCountdownTimer()
+    {
+        if (countdownText != null && gameManager != null)
+        {
+            float remainingTime = gameManager.GetCountdownTime();
+            
+            // MM:SS形式で表示
+            int minutes = Mathf.FloorToInt(remainingTime / 60f);
+            int seconds = Mathf.FloorToInt(remainingTime % 60f);
+            
+            countdownText.text = $"{minutes:00}:{seconds:00}";
         }
     }
     

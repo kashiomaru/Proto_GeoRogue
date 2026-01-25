@@ -54,6 +54,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float bulletDamage = 1.0f; // 弾のダメージ
     [SerializeField] private float enemyFlashDuration = 0.1f; // 敵のフラッシュ持続時間（秒）
     
+    [Header("Countdown Timer")]
+    [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
 
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -92,6 +94,7 @@ public class GameManager : MonoBehaviour
 
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
+    private float _countdownTimer; // カウントダウンタイマー
 
     void Start()
     {
@@ -109,10 +112,23 @@ public class GameManager : MonoBehaviour
         
         // フラッシュタイマー設定用のキューを初期化
         _enemyFlashQueue = new NativeQueue<int>(Allocator.Persistent);
+        
+        // カウントダウンタイマーを初期化
+        _countdownTimer = countdownDuration;
     }
 
     void Update()
     {
+        // カウントダウンタイマーの更新
+        if (_countdownTimer > 0f)
+        {
+            _countdownTimer -= Time.deltaTime;
+            if (_countdownTimer < 0f)
+            {
+                _countdownTimer = 0f;
+            }
+        }
+        
         // 1. 弾の発射（プレイヤー位置から）
         HandleShooting();
 
@@ -540,6 +556,9 @@ public class GameManager : MonoBehaviour
         // タイマーをリセット
         _timer = 0f;
         _bulletIndexHead = 0;
+        
+        // カウントダウンタイマーをリセット
+        _countdownTimer = countdownDuration;
     }
     
     private void OnRetryClicked()
@@ -576,6 +595,17 @@ public class GameManager : MonoBehaviour
     public void SetBulletCountPerShot(int value)
     {
         bulletCountPerShot = value;
+    }
+    
+    // カウントダウンタイマー取得用メソッド
+    public float GetCountdownTime()
+    {
+        return _countdownTimer;
+    }
+    
+    public bool IsCountdownFinished()
+    {
+        return _countdownTimer <= 0f;
     }
     
 }
