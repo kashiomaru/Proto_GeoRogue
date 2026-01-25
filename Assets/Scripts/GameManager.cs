@@ -41,6 +41,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Player player; // Playerへの参照
     [SerializeField] private UIManager uiManager; // UIManagerへの参照
     [SerializeField] private DamageTextManager damageTextManager; // ダメージテキスト表示用
+    [SerializeField] private CameraManager cameraManager; // CameraManagerへの参照
     
     [Header("Combat")]
     [SerializeField] private float bulletDamage = 1.0f; // 弾のダメージ
@@ -396,6 +397,23 @@ public class GameManager : MonoBehaviour
     public bool IsCountdownFinished()
     {
         return _countdownTimer <= 0f;
+    }
+    
+    // カメラ切り替え処理
+    public void SwitchCamera(int cameraIndex)
+    {
+        if (cameraManager != null)
+        {
+            cameraManager.SwitchCamera(cameraIndex);
+        }
+    }
+    
+    public void SwitchCameraByName(string cameraName)
+    {
+        if (cameraManager != null)
+        {
+            cameraManager.SwitchCameraByName(cameraName);
+        }
     }
     
 }
