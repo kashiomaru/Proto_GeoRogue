@@ -24,6 +24,7 @@ public class EnemyManager : MonoBehaviour
     
     [Header("Boss Settings")]
     [SerializeField] private GameObject bossPrefab; // ボスのプレハブ
+    [SerializeField] private float bossSpawnDistance = 20f; // ボス生成位置の距離（プレイヤーからの距離）
     
     [Header("References")]
     [SerializeField] private RenderManager renderManager;
@@ -288,8 +289,8 @@ public class EnemyManager : MonoBehaviour
         while (_enemyFlashQueue.TryDequeue(out _)) { }
     }
     
-    // ボスを生成
-    public void SpawnBoss(Vector3 position)
+    // ボスを生成（プレイヤーの位置と方向を受け取る）
+    public void SpawnBoss(Vector3 playerPosition, Vector3 playerForward)
     {
         // 既存のボスがいる場合は削除
         if (_currentBoss != null)
@@ -297,10 +298,14 @@ public class EnemyManager : MonoBehaviour
             Destroy(_currentBoss);
         }
         
-        // ボスを生成
+        // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
+        Vector3 playerBackward = -playerForward; // プレイヤーの後ろ方向
+        Vector3 bossPosition = playerPosition + playerBackward * bossSpawnDistance; // 指定距離の位置
+        bossPosition.y = 0f; // Y座標を0に固定
+        
         if (bossPrefab != null)
         {
-            _currentBoss = Instantiate(bossPrefab, position, Quaternion.identity);
+            _currentBoss = Instantiate(bossPrefab, bossPosition, Quaternion.identity);
         }
         else
         {

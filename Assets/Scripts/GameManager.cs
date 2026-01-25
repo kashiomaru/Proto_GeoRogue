@@ -57,10 +57,6 @@ public class GameManager : MonoBehaviour
     
     [Header("Countdown Timer")]
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
-    
-    [Header("Boss Settings")]
-    [SerializeField] private float bossSpawnDistance = 10f; // ボス生成位置の距離（プレイヤーからの距離）
-    [SerializeField] private LookAtConstraint bossCameraLookAtConstraint; // ボスカメラ用のLookAtConstraint（Animation Rigging）
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -453,24 +449,20 @@ public class GameManager : MonoBehaviour
             enemyManager.ClearAllEnemies();
         }
         
-        // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
+        // ボスを生成（プレイヤーの位置と方向を渡す）
         if (enemyManager != null && playerTransform != null)
         {
             Vector3 playerPosition = playerTransform.position;
-            Vector3 playerBackward = -playerTransform.forward; // プレイヤーの後ろ方向
-            Vector3 bossPosition = playerPosition + playerBackward * bossSpawnDistance; // 指定距離の位置
-            bossPosition.y = 0f; // Y座標を0に固定
+            Vector3 playerForward = playerTransform.forward;
+            enemyManager.SpawnBoss(playerPosition, playerForward);
             
-            enemyManager.SpawnBoss(bossPosition);
-            
-            // LookAtConstraintのターゲットにボスのTransformを設定
-            if (bossCameraLookAtConstraint != null)
+            // ボスのTransformをLookAtConstraintのターゲットに設定
+            if (cameraManager != null)
             {
                 GameObject boss = enemyManager.GetCurrentBoss();
                 if (boss != null)
                 {
-                    List<ConstraintSource> sources = new () { new ConstraintSource { sourceTransform = boss.transform, weight = 1f } };
-                    bossCameraLookAtConstraint.SetSources(sources);
+                    cameraManager.SetBossLookAtTarget(boss.transform);
                 }
             }
         }
