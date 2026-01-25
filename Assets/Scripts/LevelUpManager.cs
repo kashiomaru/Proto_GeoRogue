@@ -105,7 +105,5 @@ public class LevelUpManager : MonoBehaviour
                 }
                 break;
         }
-        
-        Debug.Log($"Upgraded: {type}");
     }
 }

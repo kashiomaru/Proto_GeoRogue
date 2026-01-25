@@ -115,6 +115,22 @@ public class UIManager : MonoBehaviour
     {
         if (countdownText != null && gameManager != null)
         {
+            // ボスモードの場合はタイマーを非表示
+            if (gameManager.IsBossMode())
+            {
+                if (countdownText.gameObject.activeSelf)
+                {
+                    countdownText.gameObject.SetActive(false);
+                }
+                return;
+            }
+            
+            // タイマーが表示されていない場合は表示
+            if (!countdownText.gameObject.activeSelf)
+            {
+                countdownText.gameObject.SetActive(true);
+            }
+            
             float remainingTime = gameManager.GetCountdownTime();
             
             // MM:SS形式で表示
@@ -122,6 +138,24 @@ public class UIManager : MonoBehaviour
             int seconds = Mathf.FloorToInt(remainingTime % 60f);
             
             countdownText.text = $"{minutes:00}:{seconds:00}";
+        }
+    }
+    
+    // タイマーを非表示にする
+    public void HideCountdownTimer()
+    {
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(false);
+        }
+    }
+    
+    // タイマーを表示する
+    public void ShowCountdownTimer()
+    {
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(true);
         }
     }
     

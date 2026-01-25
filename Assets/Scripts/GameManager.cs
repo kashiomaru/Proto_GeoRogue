@@ -19,6 +19,13 @@ public struct EnemyDamageInfo
     }
 }
 
+// ゲームモード
+public enum GameMode
+{
+    Normal, // 通常モード
+    Boss    // ボスモード
+}
+
 public class GameManager : MonoBehaviour
 {
     [Header("Settings")]
@@ -64,6 +71,7 @@ public class GameManager : MonoBehaviour
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
     private float _countdownTimer; // カウントダウンタイマー
+    private GameMode _currentMode = GameMode.Normal; // 現在のゲームモード
 
     void Start()
     {
@@ -89,13 +97,10 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        // タイマーがゼロになった瞬間、すべての敵を非アクティブにする
+        // タイマーがゼロになった瞬間、ボスモードに切り替える
         if (wasTimerRunning && _countdownTimer <= 0f)
         {
-            if (enemyManager != null)
-            {
-                enemyManager.ClearAllEnemies();
-            }
+            SwitchToBossMode();
         }
         
         // 1. 弾の発射（プレイヤー位置から）
@@ -350,6 +355,21 @@ public class GameManager : MonoBehaviour
         
         // カウントダウンタイマーをリセット
         _countdownTimer = countdownDuration;
+        
+        // 通常モードに戻す
+        _currentMode = GameMode.Normal;
+        
+        // タイマーを表示する
+        if (uiManager != null)
+        {
+            uiManager.ShowCountdownTimer();
+        }
+        
+        // カメラをインデックス0に戻す
+        if (cameraManager != null)
+        {
+            cameraManager.SwitchCamera(0);
+        }
     }
     
     private void OnRetryClicked()
@@ -414,6 +434,48 @@ public class GameManager : MonoBehaviour
         {
             cameraManager.SwitchCameraByName(cameraName);
         }
+    }
+    
+    // ボスモードに切り替え
+    private void SwitchToBossMode()
+    {
+        _currentMode = GameMode.Boss;
+        
+        // すべての敵を非アクティブにする
+        if (enemyManager != null)
+        {
+            enemyManager.ClearAllEnemies();
+        }
+        
+        // カメラをインデックス0から1に切り替え
+        if (cameraManager != null)
+        {
+            cameraManager.SwitchCamera(1);
+        }
+        
+        // タイマーを非表示にする
+        if (uiManager != null)
+        {
+            uiManager.HideCountdownTimer();
+        }
+    }
+    
+    // 現在のゲームモードを取得
+    public GameMode GetCurrentMode()
+    {
+        return _currentMode;
+    }
+    
+    // 通常モードかどうか
+    public bool IsNormalMode()
+    {
+        return _currentMode == GameMode.Normal;
+    }
+    
+    // ボスモードかどうか
+    public bool IsBossMode()
+    {
+        return _currentMode == GameMode.Boss;
     }
     
 }
