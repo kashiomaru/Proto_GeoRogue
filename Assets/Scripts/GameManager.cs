@@ -483,4 +483,14 @@ public class GameManager : MonoBehaviour
             _playerDamageQueue.Enqueue(damage);
         }
     }
+    
+    // プレイヤーの位置を取得（ボス用）
+    public Vector3 GetPlayerPosition()
+    {
+        if (playerTransform != null)
+        {
+            return playerTransform.position;
+        }
+        return Vector3.zero;
+    }
 }

@@ -341,9 +341,9 @@ public class EnemyManager : MonoBehaviour
             
             // Bossコンポーネントを取得して初期化
             Boss bossComponent = _currentBoss.GetComponent<Boss>();
-            if (bossComponent != null && playerTransform != null && gameManager != null)
+            if (bossComponent != null && gameManager != null)
             {
-                bossComponent.Initialize(playerTransform, gameManager);
+                bossComponent.Initialize(gameManager);
             }
             else
             {
