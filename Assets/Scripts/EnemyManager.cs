@@ -30,7 +30,7 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private RenderManager renderManager;
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private GemManager gemManager; // GemManagerへの参照
-    [SerializeField] private Transform playerTransform; // プレイヤーのTransform
+    [SerializeField] private GameManager gameManager; // GameManagerへの参照
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
@@ -110,13 +110,13 @@ public class EnemyManager : MonoBehaviour
     
     void Update()
     {
-        if (playerTransform == null) return;
+        if (gameManager == null) return;
         
         // 通常モードでない場合は処理をスキップ
         if (_currentMode != GameMode.Normal) return;
         
         float deltaTime = Time.deltaTime;
-        float3 playerPos = playerTransform.position;
+        float3 playerPos = (float3)gameManager.GetPlayerPosition();
         
         // 1. 敵の移動Jobをスケジュール（JobHandleは返すが、ここでは完了待ちしない）
         // GameManagerでbulletHandleの依存関係として使用されるため、publicメソッドとして残す
@@ -321,8 +321,8 @@ public class EnemyManager : MonoBehaviour
         while (_enemyFlashQueue.TryDequeue(out _)) { }
     }
     
-    // ボスを生成（プレイヤーの位置と方向、GameManagerを受け取る）
-    public void SpawnBoss(Vector3 playerPosition, Vector3 playerForward, GameManager gameManager)
+    // ボスを生成（プレイヤーの位置と方向を受け取る）
+    public void SpawnBoss(Vector3 playerPosition, Vector3 playerForward)
     {
         // 既存のボスがいる場合は削除
         if (_currentBoss != null)

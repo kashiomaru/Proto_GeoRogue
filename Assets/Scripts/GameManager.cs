@@ -189,13 +189,13 @@ public class GameManager : MonoBehaviour
             }
             else if (_currentMode == GameMode.Boss)
             {
-                // ボスを生成（プレイヤーの位置と方向、GameManagerを渡す）
+                // ボスを生成（プレイヤーの位置と方向を渡す）
                 if (enemyManager != null && playerTransform != null)
                 {
                     Vector3 playerPosition = playerTransform.position;
                     Vector3 playerForward = playerTransform.forward;
                     
-                    enemyManager.SpawnBoss(playerPosition, playerForward, this);
+                    enemyManager.SpawnBoss(playerPosition, playerForward);
                 }
                 
                 // カメラをインデックス0から1に切り替え
