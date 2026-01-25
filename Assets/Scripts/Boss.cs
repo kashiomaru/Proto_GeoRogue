@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Mathematics;
+using System;
 
 public class Boss : MonoBehaviour
 {
@@ -8,24 +9,27 @@ public class Boss : MonoBehaviour
     [SerializeField] private float damageRadius = 1.0f; // プレイヤーとの当たり判定半径
     [SerializeField] private int damageAmount = 1; // プレイヤーへのダメージ量
     
-    // 参照（生成時に設定）
-    private GameManager gameManager; // GameManagerへの参照
+    // デリゲート（生成時に設定）
+    private Func<Vector3> getPlayerPosition; // プレイヤー位置を取得する関数
+    private Action<int> addPlayerDamage; // プレイヤーにダメージを与える関数
     
     /// <summary>
     /// ボスの初期化（生成時に呼び出す）
     /// </summary>
-    /// <param name="gameManager">GameManagerへの参照</param>
-    public void Initialize(GameManager gameManager)
+    /// <param name="getPlayerPosition">プレイヤー位置を取得する関数</param>
+    /// <param name="addPlayerDamage">プレイヤーにダメージを与える関数</param>
+    public void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage)
     {
-        this.gameManager = gameManager;
+        this.getPlayerPosition = getPlayerPosition;
+        this.addPlayerDamage = addPlayerDamage;
     }
     
     private void Update()
     {
-        if (gameManager == null) return;
+        if (getPlayerPosition == null || addPlayerDamage == null) return;
         
         float3 pos = transform.position;
-        float3 target = (float3)gameManager.GetPlayerPosition();
+        float3 target = (float3)getPlayerPosition();
         float distSq = math.distancesq(pos, target);
         float damageRadiusSq = damageRadius * damageRadius;
         
@@ -33,7 +37,7 @@ public class Boss : MonoBehaviour
         if (distSq <= damageRadiusSq)
         {
             // ダメージ範囲内：ダメージを与える（移動しない）
-            gameManager.AddPlayerDamage(damageAmount);
+            addPlayerDamage(damageAmount);
         }
         else
         {

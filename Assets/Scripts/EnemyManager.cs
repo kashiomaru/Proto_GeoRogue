@@ -343,7 +343,10 @@ public class EnemyManager : MonoBehaviour
             Boss bossComponent = _currentBoss.GetComponent<Boss>();
             if (bossComponent != null && gameManager != null)
             {
-                bossComponent.Initialize(gameManager);
+                bossComponent.Initialize(
+                    () => gameManager.GetPlayerPosition(),
+                    (damage) => gameManager.AddPlayerDamage(damage)
+                );
             }
             else
             {
