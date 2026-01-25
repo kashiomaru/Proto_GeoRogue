@@ -4,6 +4,7 @@ public class Plane : MonoBehaviour
 {
     [Header("Camera Reference")]
     [SerializeField] private Camera targetCamera; // カメラ参照（未設定の場合はMainCameraを自動取得）
+    [SerializeField] private float yOffset = -0.5f;
     
     private void Start()
     {
@@ -20,7 +21,7 @@ public class Plane : MonoBehaviour
         {
             // カメラのx, z座標を取得し、y座標は0に固定
             Vector3 cameraPosition = targetCamera.transform.position;
-            transform.position = new Vector3(cameraPosition.x, 0f, cameraPosition.z);
+            transform.position = new Vector3(cameraPosition.x, yOffset, cameraPosition.z);
         }
     }
 }
