@@ -29,9 +29,14 @@ public class EnemyManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private RenderManager renderManager;
     [SerializeField] private DamageTextManager damageTextManager;
+    [SerializeField] private GemManager gemManager; // GemManagerへの参照
+    [SerializeField] private Transform playerTransform; // プレイヤーのTransform
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
+    
+    // ゲームモード
+    private GameMode _currentMode = GameMode.Normal; // 現在のゲームモード
     
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -76,6 +81,33 @@ public class EnemyManager : MonoBehaviour
         _enemyFlashQueue = new NativeQueue<int>(Allocator.Persistent);
     }
     
+    void Update()
+    {
+        if (playerTransform == null) return;
+        
+        // 通常モードでない場合は処理をスキップ
+        if (_currentMode != GameMode.Normal) return;
+        
+        float deltaTime = Time.deltaTime;
+        float3 playerPos = playerTransform.position;
+        
+        // 1. 敵の移動Jobをスケジュール（JobHandleは返すが、ここでは完了待ちしない）
+        // GameManagerでbulletHandleの依存関係として使用されるため、publicメソッドとして残す
+        // 実際の処理はGameManagerのUpdateで行う
+        
+        // 2. 死んだ敵の位置からジェムを生成
+        ProcessDeadEnemies(gemManager);
+        
+        // 3. 敵へのダメージ表示処理
+        ProcessEnemyDamage();
+        
+        // 4. 敵のリスポーン処理（通常モードの場合のみ実行）
+        HandleRespawn(playerPos);
+        
+        // 5. フラッシュタイマーの更新とRenderManagerによる描画
+        UpdateAndRender(deltaTime);
+    }
+    
     void InitializeEnemies()
     {
         _enemyTransforms = new TransformAccessArray(enemyCount);
@@ -109,8 +141,11 @@ public class EnemyManager : MonoBehaviour
     // 敵の移動Jobをスケジュール
     public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
     {
+        if (_currentMode != GameMode.Normal) return default;
+
         // 空間ハッシュマップのクリア
         if (_spatialMap.IsCreated) _spatialMap.Clear();
+
         // 敵の数より少し多めに確保（リサイズ回避）
         if (!_spatialMap.IsCreated) _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
         
@@ -333,6 +368,18 @@ public class EnemyManager : MonoBehaviour
     public NativeQueue<int>.ParallelWriter GetEnemyFlashQueueWriter()
     {
         return _enemyFlashQueue.AsParallelWriter();
+    }
+    
+    // ゲームモードを設定
+    public void SetGameMode(GameMode mode)
+    {
+        _currentMode = mode;
+    }
+    
+    // 現在のゲームモードを取得
+    public GameMode GetCurrentMode()
+    {
+        return _currentMode;
     }
     
     void OnDestroy()

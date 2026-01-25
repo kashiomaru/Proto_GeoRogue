@@ -3725,6 +3725,8 @@ MonoBehaviour:
   bossSpawnDistance: 20
   renderManager: {fileID: 454398054}
   damageTextManager: {fileID: 614781148}
+  gemManager: {fileID: 420920856}
+  playerTransform: {fileID: 322285197}
 --- !u!4 &1856169497
 Transform:
   m_ObjectHideFlags: 0

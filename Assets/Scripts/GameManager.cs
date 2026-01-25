@@ -91,6 +91,12 @@ public class GameManager : MonoBehaviour
         // 初期ゲームモードを設定
         _currentMode = initialGameMode;
         
+        // EnemyManagerにモードを設定
+        if (enemyManager != null)
+        {
+            enemyManager.SetGameMode(_currentMode);
+        }
+        
         // 初期モードがボスモードの場合、ボスモードに切り替える
         if (_currentMode == GameMode.Boss)
         {
@@ -123,18 +129,13 @@ public class GameManager : MonoBehaviour
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 
-        // 2. 敵の移動Jobをスケジュール
-        JobHandle enemyHandle = default;
+        // 2. 敵の移動Jobをスケジュール（通常モードの場合のみ）
         if (enemyManager != null)
         {
-            enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
-        }
+            JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
 
-        // --- JOB 2: 弾の移動 & 衝突判定 ---
-        // 敵の移動が終わってから実行する必要があるため、enemyHandleに依存させる
-        JobHandle bulletHandle = default;
-        if (enemyManager != null)
-        {
+            // --- JOB 2: 弾の移動 & 衝突判定 ---
+            // 敵の移動が終わってから実行する必要があるため、enemyHandleに依存させる
             var bulletJob = new BulletMoveAndCollideJob
             {
                 deltaTime = deltaTime,
@@ -155,25 +156,10 @@ public class GameManager : MonoBehaviour
                 enemyFlashQueue = enemyManager.GetEnemyFlashQueueWriter() // フラッシュタイマー設定用
             };
         
-            bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
-        }
+            JobHandle bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
 
-        // 完了待ち
-        if (enemyManager != null)
-        {
+            // 完了待ち
             bulletHandle.Complete();
-        }
-        
-        // 死んだ敵の位置からジェムを生成
-        if (enemyManager != null)
-        {
-            enemyManager.ProcessDeadEnemies(gemManager);
-        }
-        
-        // 3. 敵へのダメージ表示処理
-        if (enemyManager != null)
-        {
-            enemyManager.ProcessEnemyDamage();
         }
         
         // 4. プレイヤーへのダメージ処理
@@ -181,18 +167,6 @@ public class GameManager : MonoBehaviour
         
         // 5. 経験値の取得と加算
         HandleExperience();
-
-        // 6. 敵のリスポーン処理（タイマーがゼロでない場合のみ）
-        if (_countdownTimer > 0f && enemyManager != null)
-        {
-            enemyManager.HandleRespawn(playerPos);
-        }
-        
-        // 7. フラッシュタイマーの更新とRenderManagerによる描画
-        if (enemyManager != null)
-        {
-            enemyManager.UpdateAndRender(deltaTime);
-        }
     }
     
     // --- 初期化 & ユーティリティ ---
@@ -373,6 +347,12 @@ public class GameManager : MonoBehaviour
         // 通常モードに戻す
         _currentMode = GameMode.Normal;
         
+        // EnemyManagerにモードを設定
+        if (enemyManager != null)
+        {
+            enemyManager.SetGameMode(_currentMode);
+        }
+        
         // タイマーを表示する
         if (uiManager != null)
         {
@@ -455,9 +435,10 @@ public class GameManager : MonoBehaviour
     {
         _currentMode = GameMode.Boss;
         
-        // すべての敵を非アクティブにする
+        // EnemyManagerにモードを設定
         if (enemyManager != null)
         {
+            enemyManager.SetGameMode(_currentMode);
             enemyManager.ClearAllEnemies();
         }
         
