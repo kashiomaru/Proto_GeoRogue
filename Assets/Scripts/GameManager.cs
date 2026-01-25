@@ -57,6 +57,9 @@ public class GameManager : MonoBehaviour
     
     [Header("Countdown Timer")]
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
+    
+    [Header("Game Mode")]
+    [SerializeField] private GameMode initialGameMode = GameMode.Normal; // 初期ゲームモード（インスペクターで設定可能）
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -84,6 +87,15 @@ public class GameManager : MonoBehaviour
         
         // カウントダウンタイマーを初期化
         _countdownTimer = countdownDuration;
+        
+        // 初期ゲームモードを設定
+        _currentMode = initialGameMode;
+        
+        // 初期モードがボスモードの場合、ボスモードに切り替える
+        if (_currentMode == GameMode.Boss)
+        {
+            SwitchToBossMode();
+        }
     }
 
     void Update()
@@ -123,25 +135,25 @@ public class GameManager : MonoBehaviour
         JobHandle bulletHandle = default;
         if (enemyManager != null)
         {
-        var bulletJob = new BulletMoveAndCollideJob
-        {
-            deltaTime = deltaTime,
-            speed = bulletSpeed,
+            var bulletJob = new BulletMoveAndCollideJob
+            {
+                deltaTime = deltaTime,
+                speed = bulletSpeed,
                 cellSize = enemyManager.CellSize,
                 spatialMap = enemyManager.SpatialMap, // 読み込みのみ
                 enemyPositions = enemyManager.EnemyPositions, // 敵の位置参照
-            bulletPositions = _bulletPositions,
-            bulletDirections = _bulletDirections, // 弾の方向（後方互換性のため）
-            bulletVelocities = _bulletVelocities, // 弾の速度ベクトル
-            bulletActive = _bulletActive,
-            bulletLifeTime = _bulletLifeTime,
+                bulletPositions = _bulletPositions,
+                bulletDirections = _bulletDirections, // 弾の方向（後方互換性のため）
+                bulletVelocities = _bulletVelocities, // 弾の速度ベクトル
+                bulletActive = _bulletActive,
+                bulletLifeTime = _bulletLifeTime,
                 enemyActive = enemyManager.EnemyActive, // ヒットしたらfalseにする
                 enemyHp = enemyManager.EnemyHp, // 敵のHP配列
-            bulletDamage = bulletDamage, // 弾のダメージ
+                bulletDamage = bulletDamage, // 弾のダメージ
                 deadEnemyPositions = enemyManager.GetDeadEnemyPositionsWriter(), // 死んだ敵の位置を記録
                 enemyDamageQueue = enemyManager.GetEnemyDamageQueueWriter(), // 敵へのダメージ情報を記録
                 enemyFlashQueue = enemyManager.GetEnemyFlashQueueWriter() // フラッシュタイマー設定用
-        };
+            };
         
             bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
         }
@@ -149,7 +161,7 @@ public class GameManager : MonoBehaviour
         // 完了待ち
         if (enemyManager != null)
         {
-        bulletHandle.Complete();
+            bulletHandle.Complete();
         }
         
         // 死んだ敵の位置からジェムを生成
@@ -496,6 +508,15 @@ public class GameManager : MonoBehaviour
     public bool IsBossMode()
     {
         return _currentMode == GameMode.Boss;
+    }
+    
+    // プレイヤーへのダメージを追加（ボス用）
+    public void AddPlayerDamage(int damage)
+    {
+        if (_playerDamageQueue.IsCreated)
+        {
+            _playerDamageQueue.Enqueue(damage);
+        }
     }
     
 }

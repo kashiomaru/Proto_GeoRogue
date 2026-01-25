@@ -102,7 +102,7 @@ public class EnemyManager : MonoBehaviour
             
             // TransformAccessArrayに入れるタイミングでListにも入れておく
             _enemyTransformList.Add(obj.transform);
-            _enemyActiveList.Add(true);
+            _enemyActiveList.Add(false);
         }
     }
     
