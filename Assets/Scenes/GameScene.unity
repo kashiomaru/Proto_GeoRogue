@@ -1520,7 +1520,7 @@ MonoBehaviour:
   bulletDamage: 1
   countdownDuration: 60
   bossSpawnDistance: 10
-  bossCameraLookAtConstraint: {fileID: 1182133972}
+  bossCameraLookAtConstraint: {fileID: 1182133973}
 --- !u!4 &379471279
 Transform:
   m_ObjectHideFlags: 0

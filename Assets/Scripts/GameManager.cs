@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.Jobs;
+using UnityEngine.Animations;
+using UnityEngine.Animations.Rigging;
 using Unity.Collections;
 using Unity.Burst;
 using Unity.Jobs;
@@ -58,7 +60,7 @@ public class GameManager : MonoBehaviour
     
     [Header("Boss Settings")]
     [SerializeField] private float bossSpawnDistance = 10f; // ボス生成位置の距離（プレイヤーからの距離）
-    [SerializeField] private Component bossCameraLookAtConstraint; // ボスカメラ用のLookAtConstraint（Animation Rigging）
+    [SerializeField] private LookAtConstraint bossCameraLookAtConstraint; // ボスカメラ用のLookAtConstraint（Animation Rigging）
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -467,44 +469,8 @@ public class GameManager : MonoBehaviour
                 GameObject boss = enemyManager.GetCurrentBoss();
                 if (boss != null)
                 {
-                    // リフレクションを使ってLookAtConstraintのソースを設定
-                    var constraintType = bossCameraLookAtConstraint.GetType();
-                    var dataProperty = constraintType.GetProperty("data");
-                    if (dataProperty != null)
-                    {
-                        var data = dataProperty.GetValue(bossCameraLookAtConstraint);
-                        if (data != null)
-                        {
-                            var sourceObjectsProperty = data.GetType().GetProperty("sourceObjects");
-                            if (sourceObjectsProperty != null)
-                            {
-                                // WeightedTransformArrayを作成
-                                var weightedTransformType = System.Type.GetType("Unity.Animations.Rigging.WeightedTransform, Unity.Animation.Rigging");
-                                var arrayType = System.Type.GetType("Unity.Animations.Rigging.WeightedTransformArray, Unity.Animation.Rigging");
-                                
-                                if (weightedTransformType != null && arrayType != null)
-                                {
-                                    // 配列を作成
-                                    var array = System.Array.CreateInstance(weightedTransformType, 1);
-                                    var weightedTransform = System.Activator.CreateInstance(weightedTransformType);
-                                    
-                                    // TransformとWeightを設定
-                                    weightedTransformType.GetField("transform")?.SetValue(weightedTransform, boss.transform);
-                                    weightedTransformType.GetField("weight")?.SetValue(weightedTransform, 1f);
-                                    
-                                    array.SetValue(weightedTransform, 0);
-                                    
-                                    // WeightedTransformArrayのコンストラクタを呼び出し
-                                    var arrayConstructor = arrayType.GetConstructor(new System.Type[] { array.GetType() });
-                                    if (arrayConstructor != null)
-                                    {
-                                        var weightedArray = arrayConstructor.Invoke(new object[] { array });
-                                        sourceObjectsProperty.SetValue(data, weightedArray);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    List<ConstraintSource> sources = new () { new ConstraintSource { sourceTransform = boss.transform, weight = 1f } };
+                    bossCameraLookAtConstraint.SetSources(sources);
                 }
             }
         }
