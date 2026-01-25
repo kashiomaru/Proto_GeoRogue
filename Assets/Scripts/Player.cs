@@ -13,6 +13,8 @@ public class Player : MonoBehaviour
     [Header("Health")]
     [SerializeField] private int maxHp = 10;
     [SerializeField] private float invincibleDuration = 1.0f; // 無敵時間（秒）
+    [SerializeField] private float flashIntensity = 0.8f; // フラッシュの最大強度
+    [SerializeField] private float initialFlashInterval = 0.1f; // 最初の点滅の間隔（秒）
     
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
@@ -20,6 +22,12 @@ public class Player : MonoBehaviour
     private int _currentHp;
     private float _invincibleTimer = 0f;
     private bool _isInvincible = false;
+    private float _initialFlashTimer = 0f; // 最初の点滅タイマー
+    
+    // レンダリング関連
+    private Renderer _renderer;
+    private MaterialPropertyBlock _mpb;
+    private int _propertyID_EmissionColor;
     
     // --- Experience & Level ---
     private int _currentExp = 0;
@@ -50,6 +58,14 @@ public class Player : MonoBehaviour
         
         // HP初期化
         _currentHp = maxHp;
+        
+        // レンダラーとMaterialPropertyBlockを初期化
+        _renderer = GetComponent<Renderer>();
+        if (_renderer != null)
+        {
+            _mpb = new MaterialPropertyBlock();
+            _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+        }
     }
     
     private void Update()
@@ -63,6 +79,19 @@ public class Player : MonoBehaviour
                 _isInvincible = false;
             }
         }
+        
+        // 最初の点滅タイマーの更新
+        if (_initialFlashTimer > 0f)
+        {
+            _initialFlashTimer -= Time.deltaTime;
+            if (_initialFlashTimer < 0f)
+            {
+                _initialFlashTimer = 0f;
+            }
+        }
+        
+        // エミッション色の更新
+        UpdateFlashColor();
         
         HandleMovement();
     }
@@ -90,6 +119,8 @@ public class Player : MonoBehaviour
         {
             _isInvincible = true;
             _invincibleTimer = invincibleDuration;
+            // 最初の点滅を開始（2回の点滅 = ON/OFF）
+            _initialFlashTimer = initialFlashInterval * 2f;
         }
         
         return actualDamage;
@@ -137,10 +168,76 @@ public class Player : MonoBehaviour
         _currentHp = maxHp;
         _isInvincible = false;
         _invincibleTimer = 0f;
+        _initialFlashTimer = 0f;
         _currentExp = 0;
         _nextLevelExp = 10;
         _currentLevel = 1;
         _canLevelUp = false;
+        
+        // フラッシュ色をリセット
+        UpdateFlashColor();
+    }
+    
+    // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
+    private void UpdateFlashColor()
+    {
+        if (_renderer == null || _mpb == null) return;
+        
+        // 無敵時間中
+        if (_isInvincible && _invincibleTimer > 0f)
+        {
+            // 最初の点滅中かどうか
+            if (_initialFlashTimer > 0f)
+            {
+                // 最初の点滅：ON/OFFを繰り返す
+                float timeSinceFlash = (initialFlashInterval * 2f) - _initialFlashTimer;
+                int flashCycle = Mathf.FloorToInt(timeSinceFlash / initialFlashInterval);
+                bool isFlashing = (flashCycle % 2 == 0); // 偶数サイクルで点灯
+                
+                if (isFlashing)
+                {
+                    // 強烈な白（HDR）
+                    _mpb.SetColor(_propertyID_EmissionColor, new Color(flashIntensity, flashIntensity, flashIntensity, 1f));
+                }
+                else
+                {
+                    // 通常色（黒）
+                    _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+                }
+            }
+            else
+            {
+                // 最初の点滅が終わった後：光が徐々に弱くなる
+                // 最初の点滅が終わってからの経過時間を計算
+                float timeAfterInitialFlash = invincibleDuration - _invincibleTimer - (initialFlashInterval * 2f);
+                float fadeDuration = invincibleDuration - (initialFlashInterval * 2f); // 減衰にかける時間
+                
+                if (fadeDuration > 0f)
+                {
+                    // 減衰の割合を計算（1.0 = 点滅直後、0.0 = 無敵時間終了時）
+                    float fadeRatio = 1f - (timeAfterInitialFlash / fadeDuration);
+                    fadeRatio = Mathf.Clamp01(fadeRatio);
+                    
+                    // 残り時間に応じてエミッション強度を線形に減衰
+                    float currentIntensity = flashIntensity * fadeRatio;
+                    
+                    // エミッション色を設定（時間が経つほど暗くなる）
+                    _mpb.SetColor(_propertyID_EmissionColor, new Color(currentIntensity, currentIntensity, currentIntensity, 1f));
+                }
+                else
+                {
+                    // 減衰時間が0以下の場合は通常色
+                    _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+                }
+            }
+        }
+        else
+        {
+            // 無敵時間外は通常色
+            _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+        }
+        
+        _renderer.SetPropertyBlock(_mpb);
     }
     
     private void HandleMovement()
