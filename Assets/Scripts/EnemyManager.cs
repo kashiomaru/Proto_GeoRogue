@@ -321,8 +321,8 @@ public class EnemyManager : MonoBehaviour
         while (_enemyFlashQueue.TryDequeue(out _)) { }
     }
     
-    // ボスを生成（プレイヤーの位置と方向を受け取る）
-    public void SpawnBoss(Vector3 playerPosition, Vector3 playerForward)
+    // ボスを生成（プレイヤーの位置と方向、GameManagerを受け取る）
+    public void SpawnBoss(Vector3 playerPosition, Vector3 playerForward, GameManager gameManager)
     {
         // 既存のボスがいる場合は削除
         if (_currentBoss != null)
@@ -338,6 +338,17 @@ public class EnemyManager : MonoBehaviour
         if (bossPrefab != null)
         {
             _currentBoss = Instantiate(bossPrefab, bossPosition, Quaternion.identity);
+            
+            // Bossコンポーネントを取得して初期化
+            Boss bossComponent = _currentBoss.GetComponent<Boss>();
+            if (bossComponent != null && playerTransform != null && gameManager != null)
+            {
+                bossComponent.Initialize(playerTransform, gameManager);
+            }
+            else
+            {
+                Debug.LogWarning("EnemyManager: Failed to initialize Boss component!");
+            }
         }
         else
         {

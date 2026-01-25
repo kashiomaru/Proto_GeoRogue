@@ -8,9 +8,20 @@ public class Boss : MonoBehaviour
     [SerializeField] private float damageRadius = 1.0f; // プレイヤーとの当たり判定半径
     [SerializeField] private int damageAmount = 1; // プレイヤーへのダメージ量
     
-    [Header("References")]
-    [SerializeField] private Transform playerTransform; // プレイヤーのTransform
-    [SerializeField] private GameManager gameManager; // GameManagerへの参照
+    // 参照（生成時に設定）
+    private Transform playerTransform; // プレイヤーのTransform
+    private GameManager gameManager; // GameManagerへの参照
+    
+    /// <summary>
+    /// ボスの初期化（生成時に呼び出す）
+    /// </summary>
+    /// <param name="playerTransform">プレイヤーのTransform</param>
+    /// <param name="gameManager">GameManagerへの参照</param>
+    public void Initialize(Transform playerTransform, GameManager gameManager)
+    {
+        this.playerTransform = playerTransform;
+        this.gameManager = gameManager;
+    }
     
     private void Update()
     {
