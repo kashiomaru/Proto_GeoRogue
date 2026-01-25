@@ -183,7 +183,7 @@ public class UIManager : MonoBehaviour
             // UI反映
             if (optionTexts[i] != null)
             {
-                optionTexts[i].text = $"{data.title}\n<size=70%>{data.description}</size>";
+                optionTexts[i].text = data.title;
             }
             
             // ボタンのクリックイベントをリセットして登録
@@ -244,7 +244,7 @@ public class UIManager : MonoBehaviour
             // UI反映
             if (optionTexts[i] != null)
             {
-                optionTexts[i].text = $"{data.title}\n<size=70%>{data.description}</size>";
+                optionTexts[i].text = data.title;
             }
             
             // ボタンのクリックイベントをリセットして登録

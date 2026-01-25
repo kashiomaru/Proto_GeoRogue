@@ -12,11 +12,11 @@ public class LevelUpManager : MonoBehaviour
     // 抽選テーブル（本来はScriptableObjectやCSVからロード推奨）
     private List<UpgradeData> _upgradeDatabase = new List<UpgradeData>()
     {
-        new UpgradeData { type = UpgradeType.FireRateUp, title = "Fire Rate", description = "Shoot faster!" },
-        new UpgradeData { type = UpgradeType.BulletSpeedUp, title = "Bullet Speed", description = "Faster bullets!" },
-        new UpgradeData { type = UpgradeType.MoveSpeedUp, title = "Move Speed", description = "Run faster!" },
-        new UpgradeData { type = UpgradeType.MagnetRange, title = "Magnet", description = "Larger collection range!" },
-        new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot", description = "Shoot multiple bullets!" },
+        new UpgradeData { type = UpgradeType.FireRateUp, title = "Fire Rate" },
+        new UpgradeData { type = UpgradeType.BulletSpeedUp, title = "Bullet Speed" },
+        new UpgradeData { type = UpgradeType.MoveSpeedUp, title = "Move Speed" },
+        new UpgradeData { type = UpgradeType.MagnetRange, title = "Magnet" },
+        new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot" },
     };
 
     // 外部（GameManager）から経験値が溜まったら呼ばれる（互換性のため残す）
