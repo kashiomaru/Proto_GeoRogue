@@ -78,6 +78,9 @@ public class GameManager : MonoBehaviour
     private int _bulletIndexHead = 0; // リングバッファ用
     private float _countdownTimer; // カウントダウンタイマー
     private GameMode _currentMode = GameMode.None; // 現在のゲームモード
+    private GameMode _reservedMode = GameMode.None; // 予約モード
+
+    public GameMode CurrentMode => _currentMode;
 
     void Start()
     {
@@ -89,20 +92,8 @@ public class GameManager : MonoBehaviour
         // カウントダウンタイマーを初期化
         _countdownTimer = countdownDuration;
         
-        // 初期ゲームモードを設定
-        _currentMode = initialGameMode;
-        
-        // EnemyManagerにモードを設定
-        if (enemyManager != null)
-        {
-            enemyManager.SetGameMode(_currentMode);
-        }
-        
-        // 初期モードがボスモードの場合、ボスモードに切り替える
-        if (_currentMode == GameMode.Boss)
-        {
-            SwitchToBossMode();
-        }
+        // 予約モードを初期化
+        _reservedMode = initialGameMode;
     }
 
     void Update()
@@ -127,7 +118,7 @@ public class GameManager : MonoBehaviour
         // タイマーがゼロになった瞬間、ボスモードに切り替える
         if (wasTimerRunning && _countdownTimer <= 0f)
         {
-            SwitchToBossMode();
+            _reservedMode = GameMode.Boss;
         }
         
         // 1. 弾の発射（プレイヤー位置から）
@@ -174,6 +165,54 @@ public class GameManager : MonoBehaviour
         
         // 5. 経験値の取得と加算
         HandleExperience();
+    }
+
+    void LateUpdate()
+    {
+        if (_currentMode != _reservedMode)
+        {
+            _currentMode = _reservedMode;
+
+            // EnemyManagerにモードを設定
+            if (enemyManager != null)
+            {
+                enemyManager.SetGameMode(_currentMode);
+            }
+
+            if (_currentMode == GameMode.None)
+            {
+                uiManager?.HideCountdownTimer();
+            }
+            else if (_currentMode == GameMode.Normal)
+            {
+                uiManager?.ShowCountdownTimer();
+            }
+            else if (_currentMode == GameMode.Boss)
+            {
+                // ボスを生成（プレイヤーの位置と方向を渡す）
+                if (enemyManager != null && playerTransform != null)
+                {
+                    Vector3 playerPosition = playerTransform.position;
+                    Vector3 playerForward = playerTransform.forward;
+                    
+                    enemyManager.SpawnBoss(playerPosition, playerForward);
+                }
+                
+                // カメラをインデックス0から1に切り替え
+                if (cameraManager != null)
+                {
+                    // ボスのTransformをLookAtConstraintのターゲットに設定
+                    GameObject boss = enemyManager.GetCurrentBoss();
+                    if (boss != null)
+                    {
+                        cameraManager.SwitchCamera(1);
+                        cameraManager.SetBossLookAtTarget(boss.transform);
+                    }
+                }
+                
+                uiManager?.HideCountdownTimer();
+            }
+        }
     }
     
     // --- 初期化 & ユーティリティ ---
@@ -245,7 +284,6 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    
     
     void HandlePlayerDamage()
     {
@@ -437,67 +475,6 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    // ボスモードに切り替え
-    private void SwitchToBossMode()
-    {
-        _currentMode = GameMode.Boss;
-        
-        // EnemyManagerにモードを設定
-        if (enemyManager != null)
-        {
-            enemyManager.SetGameMode(_currentMode);
-            enemyManager.ClearAllEnemies();
-        }
-        
-        // ボスを生成（プレイヤーの位置と方向を渡す）
-        if (enemyManager != null && playerTransform != null)
-        {
-            Vector3 playerPosition = playerTransform.position;
-            Vector3 playerForward = playerTransform.forward;
-            enemyManager.SpawnBoss(playerPosition, playerForward);
-            
-            // ボスのTransformをLookAtConstraintのターゲットに設定
-            if (cameraManager != null)
-            {
-                GameObject boss = enemyManager.GetCurrentBoss();
-                if (boss != null)
-                {
-                    cameraManager.SetBossLookAtTarget(boss.transform);
-                }
-            }
-        }
-        
-        // カメラをインデックス0から1に切り替え
-        if (cameraManager != null)
-        {
-            cameraManager.SwitchCamera(1);
-        }
-        
-        // タイマーを非表示にする
-        if (uiManager != null)
-        {
-            uiManager.HideCountdownTimer();
-        }
-    }
-    
-    // 現在のゲームモードを取得
-    public GameMode GetCurrentMode()
-    {
-        return _currentMode;
-    }
-    
-    // 通常モードかどうか
-    public bool IsNormalMode()
-    {
-        return _currentMode == GameMode.Normal;
-    }
-    
-    // ボスモードかどうか
-    public bool IsBossMode()
-    {
-        return _currentMode == GameMode.Boss;
-    }
-    
     // プレイヤーへのダメージを追加（ボス用）
     public void AddPlayerDamage(int damage)
     {
@@ -506,5 +483,4 @@ public class GameManager : MonoBehaviour
             _playerDamageQueue.Enqueue(damage);
         }
     }
-    
 }

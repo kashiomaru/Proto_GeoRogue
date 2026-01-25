@@ -69,7 +69,34 @@ public class EnemyManager : MonoBehaviour
     
     void Start()
     {
-        InitializeEnemies();
+        _enemyTransforms = new TransformAccessArray(enemyCount);
+        _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
+        _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
+        _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
+        
+        // RenderManager用のリストを初期化
+        _enemyFlashTimers = new List<float>(new float[enemyCount]);
+        _enemyTransformList = new List<Transform>(enemyCount);
+        _enemyActiveList = new List<bool>(enemyCount);
+
+        for (int i = 0; i < enemyCount; i++)
+        {
+            var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
+            pos.y = 0;
+            var obj = Instantiate(cubePrefab, pos, Quaternion.identity);
+            if(obj.TryGetComponent<Collider>(out var col)) col.enabled = false; // コライダー必須OFF
+            
+            _enemyTransforms.Add(obj.transform);
+            _enemyPositions[i] = pos;
+            _enemyActive[i] = true;
+            _enemyHp[i] = enemyMaxHp; // HPを最大値に設定
+            
+            // TransformAccessArrayに入れるタイミングでListにも入れておく
+            _enemyTransformList.Add(obj.transform);
+            _enemyActiveList.Add(false);
+        }
+
+        _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
         
         // 死んだ敵の位置を記録するキューを初期化
         _deadEnemyPositions = new NativeQueue<float3>(Allocator.Persistent);
@@ -106,36 +133,6 @@ public class EnemyManager : MonoBehaviour
         
         // 5. フラッシュタイマーの更新とRenderManagerによる描画
         UpdateAndRender(deltaTime);
-    }
-    
-    void InitializeEnemies()
-    {
-        _enemyTransforms = new TransformAccessArray(enemyCount);
-        _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
-        _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
-        _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
-        
-        // RenderManager用のリストを初期化
-        _enemyFlashTimers = new List<float>(new float[enemyCount]);
-        _enemyTransformList = new List<Transform>(enemyCount);
-        _enemyActiveList = new List<bool>(enemyCount);
-
-        for (int i = 0; i < enemyCount; i++)
-        {
-            var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
-            pos.y = 0;
-            var obj = Instantiate(cubePrefab, pos, Quaternion.identity);
-            if(obj.TryGetComponent<Collider>(out var col)) col.enabled = false; // コライダー必須OFF
-            
-            _enemyTransforms.Add(obj.transform);
-            _enemyPositions[i] = pos;
-            _enemyActive[i] = true;
-            _enemyHp[i] = enemyMaxHp; // HPを最大値に設定
-            
-            // TransformAccessArrayに入れるタイミングでListにも入れておく
-            _enemyTransformList.Add(obj.transform);
-            _enemyActiveList.Add(false);
-        }
     }
     
     // 敵の移動Jobをスケジュール
@@ -374,6 +371,11 @@ public class EnemyManager : MonoBehaviour
     public void SetGameMode(GameMode mode)
     {
         _currentMode = mode;
+
+        if (_currentMode != GameMode.Normal)
+        {
+            ClearAllEnemies();
+        }
     }
     
     // 現在のゲームモードを取得

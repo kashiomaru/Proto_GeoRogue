@@ -115,12 +115,13 @@ public class UIManager : MonoBehaviour
     {
         if (countdownText != null && gameManager != null)
         {
-            if (gameManager.IsNormalMode() == false)
+            if (gameManager.CurrentMode != GameMode.Normal)
             {
                 if (countdownText.gameObject.activeSelf)
                 {
                     countdownText.gameObject.SetActive(false);
                 }
+                
                 return;
             }
             
