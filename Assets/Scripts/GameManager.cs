@@ -55,6 +55,10 @@ public class GameManager : MonoBehaviour
     
     [Header("Countdown Timer")]
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
+    
+    [Header("Boss Settings")]
+    [SerializeField] private float bossSpawnDistance = 10f; // ボス生成位置の距離（プレイヤーからの距離）
+    [SerializeField] private Component bossCameraLookAtConstraint; // ボスカメラ用のLookAtConstraint（Animation Rigging）
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -121,33 +125,33 @@ public class GameManager : MonoBehaviour
         JobHandle bulletHandle = default;
         if (enemyManager != null)
         {
-            var bulletJob = new BulletMoveAndCollideJob
-            {
-                deltaTime = deltaTime,
-                speed = bulletSpeed,
+        var bulletJob = new BulletMoveAndCollideJob
+        {
+            deltaTime = deltaTime,
+            speed = bulletSpeed,
                 cellSize = enemyManager.CellSize,
                 spatialMap = enemyManager.SpatialMap, // 読み込みのみ
                 enemyPositions = enemyManager.EnemyPositions, // 敵の位置参照
-                bulletPositions = _bulletPositions,
-                bulletDirections = _bulletDirections, // 弾の方向（後方互換性のため）
-                bulletVelocities = _bulletVelocities, // 弾の速度ベクトル
-                bulletActive = _bulletActive,
-                bulletLifeTime = _bulletLifeTime,
+            bulletPositions = _bulletPositions,
+            bulletDirections = _bulletDirections, // 弾の方向（後方互換性のため）
+            bulletVelocities = _bulletVelocities, // 弾の速度ベクトル
+            bulletActive = _bulletActive,
+            bulletLifeTime = _bulletLifeTime,
                 enemyActive = enemyManager.EnemyActive, // ヒットしたらfalseにする
                 enemyHp = enemyManager.EnemyHp, // 敵のHP配列
-                bulletDamage = bulletDamage, // 弾のダメージ
+            bulletDamage = bulletDamage, // 弾のダメージ
                 deadEnemyPositions = enemyManager.GetDeadEnemyPositionsWriter(), // 死んだ敵の位置を記録
                 enemyDamageQueue = enemyManager.GetEnemyDamageQueueWriter(), // 敵へのダメージ情報を記録
                 enemyFlashQueue = enemyManager.GetEnemyFlashQueueWriter() // フラッシュタイマー設定用
-            };
-            
+        };
+        
             bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
         }
 
         // 完了待ち
         if (enemyManager != null)
         {
-            bulletHandle.Complete();
+        bulletHandle.Complete();
         }
         
         // 死んだ敵の位置からジェムを生成
@@ -182,7 +186,7 @@ public class GameManager : MonoBehaviour
     }
     
     // --- 初期化 & ユーティリティ ---
-    
+
     void InitializeBullets()
     {
         _bulletTransforms = new TransformAccessArray(maxBullets);
@@ -445,6 +449,64 @@ public class GameManager : MonoBehaviour
         if (enemyManager != null)
         {
             enemyManager.ClearAllEnemies();
+        }
+        
+        // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
+        if (enemyManager != null && playerTransform != null)
+        {
+            Vector3 playerPosition = playerTransform.position;
+            Vector3 playerBackward = -playerTransform.forward; // プレイヤーの後ろ方向
+            Vector3 bossPosition = playerPosition + playerBackward * bossSpawnDistance; // 指定距離の位置
+            bossPosition.y = 0f; // Y座標を0に固定
+            
+            enemyManager.SpawnBoss(bossPosition);
+            
+            // LookAtConstraintのターゲットにボスのTransformを設定
+            if (bossCameraLookAtConstraint != null)
+            {
+                GameObject boss = enemyManager.GetCurrentBoss();
+                if (boss != null)
+                {
+                    // リフレクションを使ってLookAtConstraintのソースを設定
+                    var constraintType = bossCameraLookAtConstraint.GetType();
+                    var dataProperty = constraintType.GetProperty("data");
+                    if (dataProperty != null)
+                    {
+                        var data = dataProperty.GetValue(bossCameraLookAtConstraint);
+                        if (data != null)
+                        {
+                            var sourceObjectsProperty = data.GetType().GetProperty("sourceObjects");
+                            if (sourceObjectsProperty != null)
+                            {
+                                // WeightedTransformArrayを作成
+                                var weightedTransformType = System.Type.GetType("Unity.Animations.Rigging.WeightedTransform, Unity.Animation.Rigging");
+                                var arrayType = System.Type.GetType("Unity.Animations.Rigging.WeightedTransformArray, Unity.Animation.Rigging");
+                                
+                                if (weightedTransformType != null && arrayType != null)
+                                {
+                                    // 配列を作成
+                                    var array = System.Array.CreateInstance(weightedTransformType, 1);
+                                    var weightedTransform = System.Activator.CreateInstance(weightedTransformType);
+                                    
+                                    // TransformとWeightを設定
+                                    weightedTransformType.GetField("transform")?.SetValue(weightedTransform, boss.transform);
+                                    weightedTransformType.GetField("weight")?.SetValue(weightedTransform, 1f);
+                                    
+                                    array.SetValue(weightedTransform, 0);
+                                    
+                                    // WeightedTransformArrayのコンストラクタを呼び出し
+                                    var arrayConstructor = arrayType.GetConstructor(new System.Type[] { array.GetType() });
+                                    if (arrayConstructor != null)
+                                    {
+                                        var weightedArray = arrayConstructor.Invoke(new object[] { array });
+                                        sourceObjectsProperty.SetValue(data, weightedArray);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         // カメラをインデックス0から1に切り替え

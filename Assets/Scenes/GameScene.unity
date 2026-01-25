@@ -1519,6 +1519,8 @@ MonoBehaviour:
   cameraManager: {fileID: 1642372745}
   bulletDamage: 1
   countdownDuration: 60
+  bossSpawnDistance: 10
+  bossCameraLookAtConstraint: {fileID: 1182133972}
 --- !u!4 &379471279
 Transform:
   m_ObjectHideFlags: 0
@@ -3719,6 +3721,7 @@ MonoBehaviour:
   respawnDistance: 50
   respawnMinRadius: 20
   respawnMaxRadius: 30
+  bossPrefab: {fileID: 1309990021478730655, guid: 6e16e97244c5649bd88f0a234774caba, type: 3}
   renderManager: {fileID: 454398054}
   damageTextManager: {fileID: 614781148}
 --- !u!4 &1856169497

@@ -22,9 +22,15 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private float respawnMinRadius = 20f;
     [SerializeField] private float respawnMaxRadius = 30f;
     
+    [Header("Boss Settings")]
+    [SerializeField] private GameObject bossPrefab; // ボスのプレハブ
+    
     [Header("References")]
     [SerializeField] private RenderManager renderManager;
     [SerializeField] private DamageTextManager damageTextManager;
+    
+    // ボス関連
+    private GameObject _currentBoss; // 現在のボスインスタンス
     
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -282,6 +288,32 @@ public class EnemyManager : MonoBehaviour
         while (_enemyFlashQueue.TryDequeue(out _)) { }
     }
     
+    // ボスを生成
+    public void SpawnBoss(Vector3 position)
+    {
+        // 既存のボスがいる場合は削除
+        if (_currentBoss != null)
+        {
+            Destroy(_currentBoss);
+        }
+        
+        // ボスを生成
+        if (bossPrefab != null)
+        {
+            _currentBoss = Instantiate(bossPrefab, position, Quaternion.identity);
+        }
+        else
+        {
+            Debug.LogWarning("EnemyManager: Boss prefab is not assigned!");
+        }
+    }
+    
+    // 現在のボスを取得
+    public GameObject GetCurrentBoss()
+    {
+        return _currentBoss;
+    }
+    
     // キューへのアクセス（BulletMoveAndCollideJob用）
     public NativeQueue<float3>.ParallelWriter GetDeadEnemyPositionsWriter()
     {
@@ -310,6 +342,13 @@ public class EnemyManager : MonoBehaviour
         if (_deadEnemyPositions.IsCreated) _deadEnemyPositions.Dispose();
         if (_enemyDamageQueue.IsCreated) _enemyDamageQueue.Dispose();
         if (_enemyFlashQueue.IsCreated) _enemyFlashQueue.Dispose();
+        
+        // ボスを削除
+        if (_currentBoss != null)
+        {
+            Destroy(_currentBoss);
+        }
+        
         // _enemyFlashTimersはList<float>なので、Dispose()は不要（ガベージコレクタが自動管理）
     }
 }
