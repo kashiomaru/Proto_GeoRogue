@@ -18,7 +18,7 @@ public class Boss : MonoBehaviour
     [SerializeField] private float flashIntensity = 0.4f; // フラッシュの強度
     
     [Header("References")]
-    [SerializeField] private Renderer renderer; // レンダラー参照
+    [SerializeField] private Renderer bossRenderer; // レンダラー参照
     
     // HP
     private float _currentHp;
@@ -47,7 +47,7 @@ public class Boss : MonoBehaviour
         _currentHp = maxHp; // HPを初期化
         
         // MaterialPropertyBlockを初期化
-        if (renderer != null)
+        if (bossRenderer != null)
         {
             _mpb = new MaterialPropertyBlock();
             _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
@@ -146,7 +146,7 @@ public class Boss : MonoBehaviour
     /// </summary>
     private void UpdateFlashColor()
     {
-        if (renderer == null || _mpb == null) return;
+        if (bossRenderer == null || _mpb == null) return;
 
         // フラッシュタイマーの更新
         if (_flashTimer > 0f)
@@ -187,6 +187,6 @@ public class Boss : MonoBehaviour
             _mpb.SetColor(_propertyID_EmissionColor, Color.black);
         }
         
-        renderer.SetPropertyBlock(_mpb);
+        bossRenderer.SetPropertyBlock(_mpb);
     }
 }

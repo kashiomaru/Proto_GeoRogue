@@ -135,7 +135,7 @@ MonoBehaviour:
   flashDuration: 0.1
   flashInterval: 0.1
   flashIntensity: 0.4
-  renderer: {fileID: 8381658876499619347}
+  bossRenderer: {fileID: 8381658876499619347}
 --- !u!1 &5417951661456623780
 GameObject:
   m_ObjectHideFlags: 0

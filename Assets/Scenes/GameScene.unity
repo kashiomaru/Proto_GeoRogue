@@ -1519,7 +1519,7 @@ MonoBehaviour:
   cameraManager: {fileID: 1642372745}
   bulletDamage: 1
   countdownDuration: 60
-  initialGameMode: 2
+  initialGameMode: 1
 --- !u!4 &379471279
 Transform:
   m_ObjectHideFlags: 0

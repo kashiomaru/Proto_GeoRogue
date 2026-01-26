@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Jobs;
+using UnityEngine.Assertions;
 using Unity.Collections;
 using Unity.Burst;
 using Unity.Jobs;
@@ -110,49 +111,59 @@ public class EnemyManager : MonoBehaviour
     
     void Update()
     {
-        if (gameManager == null) return;
+        if (gameManager == null)
+        {
+            return;
+        }
         
         // ボスモード時：ボスの死亡チェック
         if (_currentMode == GameMode.Boss)
         {
             CheckBossDeath();
-            return; // ボスモード時は通常の敵処理をスキップ
+
+            return;
         }
         
         // 通常モードでない場合は処理をスキップ
-        if (_currentMode != GameMode.Normal) return;
-        
-        float deltaTime = Time.deltaTime;
-        float3 playerPos = (float3)gameManager.GetPlayerPosition();
-        
-        // 1. 敵の移動Jobをスケジュール（JobHandleは返すが、ここでは完了待ちしない）
-        // GameManagerでbulletHandleの依存関係として使用されるため、publicメソッドとして残す
-        // 実際の処理はGameManagerのUpdateで行う
-        
-        // 2. 死んだ敵の位置からジェムを生成
-        ProcessDeadEnemies(gemManager);
-        
-        // 3. 敵へのダメージ表示処理
-        ProcessEnemyDamage();
-        
-        // 4. 敵のリスポーン処理（通常モードの場合のみ実行）
-        HandleRespawn(playerPos);
-        
-        // 5. フラッシュタイマーの更新とRenderManagerによる描画
-        UpdateAndRender(deltaTime);
+        if (_currentMode == GameMode.Normal)
+        {
+            // 1. 敵の移動Jobをスケジュール（JobHandleは返すが、ここでは完了待ちしない）
+            // GameManagerでbulletHandleの依存関係として使用されるため、publicメソッドとして残す
+            // 実際の処理はGameManagerのUpdateで行う
+            
+            // 2. 死んだ敵の位置からジェムを生成
+            ProcessDeadEnemies(gemManager);
+            
+            // 3. 敵へのダメージ表示処理
+            ProcessEnemyDamage();
+            
+            // 4. 敵のリスポーン処理（通常モードの場合のみ実行）
+            HandleRespawn();
+            
+            // 5. フラッシュタイマーの更新とRenderManagerによる描画
+            UpdateFlashTimers();            
+            RenderEnemies();
+        }
     }
     
     // 敵の移動Jobをスケジュール
     public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
     {
-        if (_currentMode != GameMode.Normal) return default;
+        if (_currentMode != GameMode.Normal)
+        {
+            return default;
+        }
 
         // 空間ハッシュマップのクリア
-        if (_spatialMap.IsCreated) _spatialMap.Clear();
+        if (_spatialMap.IsCreated)
+        {
+            _spatialMap.Clear();
+        }
+        else
+        {
+            _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
+        }
 
-        // 敵の数より少し多めに確保（リサイズ回避）
-        if (!_spatialMap.IsCreated) _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
-        
         var enemyJob = new EnemyMoveAndHashJob
         {
             deltaTime = deltaTime,
@@ -210,8 +221,10 @@ public class EnemyManager : MonoBehaviour
     }
     
     // 敵のリスポーン処理
-    public void HandleRespawn(float3 playerPos)
+    public void HandleRespawn()
     {
+        float3 playerPos = (float3)gameManager.GetPlayerPosition();
+
         // 死んでいる敵（または画面外にはるか遠くに行った敵）を見つけて再配置
         float deleteDistSq = respawnDistance * respawnDistance;
         
@@ -242,26 +255,20 @@ public class EnemyManager : MonoBehaviour
         updateRespawnJob.Schedule(_enemyTransforms).Complete();
     }
     
-    // フラッシュタイマーの更新と描画
-    public void UpdateAndRender(float deltaTime)
-    {
-        UpdateFlashTimers(deltaTime);
-        RenderEnemies();
-    }
-    
-    void UpdateFlashTimers(float deltaTime)
+    void UpdateFlashTimers()
     {
         // --- フラッシュタイマーの更新 ---
         for (int i = 0; i < _enemyFlashTimers.Count; i++)
         {
             if (_enemyFlashTimers[i] > 0)
             {
-                _enemyFlashTimers[i] -= deltaTime;
+                _enemyFlashTimers[i] -= Time.deltaTime;
             }
         }
         
         // アクティブフラグを同期
-        for (int i = 0; i < enemyCount && i < _enemyActiveList.Count; i++)
+        Assert.IsTrue(enemyCount == _enemyActiveList.Count);
+        for (int i = 0; i < enemyCount; i++)
         {
             _enemyActiveList[i] = _enemyActive[i];
         }
@@ -269,7 +276,10 @@ public class EnemyManager : MonoBehaviour
     
     void RenderEnemies()
     {
-        if (renderManager == null) return;
+        if (renderManager == null)
+        {
+            return;
+        }
         
         // --- 描画呼び出し ---
         renderManager.RenderEnemies(_enemyTransformList, _enemyFlashTimers, _enemyActiveList);
@@ -281,10 +291,7 @@ public class EnemyManager : MonoBehaviour
         for (int i = 0; i < enemyCount; i++)
         {
             _enemyActive[i] = false;
-            if (i < _enemyActiveList.Count)
-            {
-                _enemyActiveList[i] = false;
-            }
+            _enemyActiveList[i] = false;
         }
         
         // Transform位置を更新するためのJobを実行して、敵を非表示にする
