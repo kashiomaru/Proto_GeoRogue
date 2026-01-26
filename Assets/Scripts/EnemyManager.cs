@@ -39,6 +39,9 @@ public class EnemyManager : MonoBehaviour
     // ゲームモード
     private GameMode _currentMode = GameMode.None; // 現在のゲームモード
     
+    // 初期化フラグ
+    private bool _initialized = false; // 初期化済みかどうか
+    
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
     private NativeArray<float3> _enemyPositions;
@@ -70,43 +73,7 @@ public class EnemyManager : MonoBehaviour
     
     void Start()
     {
-        _enemyTransforms = new TransformAccessArray(enemyCount);
-        _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
-        _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
-        _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
-        
-        // RenderManager用のリストを初期化
-        _enemyFlashTimers = new List<float>(new float[enemyCount]);
-        _enemyTransformList = new List<Transform>(enemyCount);
-        _enemyActiveList = new List<bool>(enemyCount);
-
-        for (int i = 0; i < enemyCount; i++)
-        {
-            var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
-            pos.y = 0;
-            var obj = Instantiate(cubePrefab, pos, Quaternion.identity);
-            if(obj.TryGetComponent<Collider>(out var col)) col.enabled = false; // コライダー必須OFF
-            
-            _enemyTransforms.Add(obj.transform);
-            _enemyPositions[i] = pos;
-            _enemyActive[i] = true;
-            _enemyHp[i] = enemyMaxHp; // HPを最大値に設定
-            
-            // TransformAccessArrayに入れるタイミングでListにも入れておく
-            _enemyTransformList.Add(obj.transform);
-            _enemyActiveList.Add(false);
-        }
-
-        _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
-        
-        // 死んだ敵の位置を記録するキューを初期化
-        _deadEnemyPositions = new NativeQueue<float3>(Allocator.Persistent);
-        
-        // 敵へのダメージ情報を記録するキューを初期化
-        _enemyDamageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
-        
-        // フラッシュタイマー設定用のキューを初期化
-        _enemyFlashQueue = new NativeQueue<int>(Allocator.Persistent);
+        Initialize();
     }
     
     void Update()
@@ -144,6 +111,61 @@ public class EnemyManager : MonoBehaviour
             UpdateFlashTimers();            
             RenderEnemies();
         }
+    }
+
+    public void Initialize(GameMode mode)
+    {
+        Initialize();
+
+        SetGameMode(mode);
+    }
+
+    void Initialize()
+    {
+        if (_initialized)
+        {
+            return;
+        }
+
+        _initialized = true;
+
+        _enemyTransforms = new TransformAccessArray(enemyCount);
+        _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
+        _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
+        _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
+        
+        // RenderManager用のリストを初期化
+        _enemyFlashTimers = new List<float>(new float[enemyCount]);
+        _enemyTransformList = new List<Transform>(enemyCount);
+        _enemyActiveList = new List<bool>(enemyCount);
+
+        for (int i = 0; i < enemyCount; i++)
+        {
+            var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
+            pos.y = 0;
+            var obj = Instantiate(cubePrefab, pos, Quaternion.identity);
+            if(obj.TryGetComponent<Collider>(out var col)) col.enabled = false; // コライダー必須OFF
+            
+            _enemyTransforms.Add(obj.transform);
+            _enemyPositions[i] = pos;
+            _enemyActive[i] = true;
+            _enemyHp[i] = enemyMaxHp; // HPを最大値に設定
+            
+            // TransformAccessArrayに入れるタイミングでListにも入れておく
+            _enemyTransformList.Add(obj.transform);
+            _enemyActiveList.Add(false);
+        }
+
+        _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
+        
+        // 死んだ敵の位置を記録するキューを初期化
+        _deadEnemyPositions = new NativeQueue<float3>(Allocator.Persistent);
+        
+        // 敵へのダメージ情報を記録するキューを初期化
+        _enemyDamageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
+        
+        // フラッシュタイマー設定用のキューを初期化
+        _enemyFlashQueue = new NativeQueue<int>(Allocator.Persistent);
     }
     
     // 敵の移動Jobをスケジュール
@@ -446,5 +468,7 @@ public class EnemyManager : MonoBehaviour
         }
         
         // _enemyFlashTimersはList<float>なので、Dispose()は不要（ガベージコレクタが自動管理）
+
+        _initialized = false;
     }
 }

@@ -116,10 +116,7 @@ public class GameManager : MonoBehaviour
         _stateMachine.Initialize(initialGameMode);
         
         // EnemyManagerにモードを設定
-        if (enemyManager != null)
-        {
-            enemyManager.SetGameMode(initialGameMode);
-        }
+        enemyManager?.Initialize(initialGameMode);
     }
 
     void Update()
