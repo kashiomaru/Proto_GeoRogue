@@ -266,32 +266,37 @@ public class Player : MonoBehaviour
         Vector3 direction = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
         bool hasInput = direction.magnitude >= 0.1f;
         
+        // スペースキーが押されているかチェック
+        bool isSpacePressed = keyboard.spaceKey.isPressed;
+        
         // 移動処理
-        if (hasInput && playerCamera != null)
+        if (hasInput)
         {
             // カメラの向きを基準に移動方向を計算
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + playerCamera.transform.eulerAngles.y;
+            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
             
-            // キャラクターの向きを滑らかに補間
-            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            // スペースキーが押されていない場合のみ回転
+            if (!isSpacePressed)
+            {
+                // キャラクターの向きを滑らかに補間
+                float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            }
             
             // 移動ベクトルを作成（カメラ基準）
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
             transform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
         }
-        else if (hasInput)
+    }
+
+    private float GetPlayerCameraAngle()
+    {
+        if (playerCamera == null)
         {
-            // カメラがない場合は従来通りワールド空間で移動
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
-            
-            // キャラクターの向きを滑らかに補間
-            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
-            
-            // 移動
-            transform.position += direction * moveSpeed * Time.deltaTime;
+            return 0f;
         }
+
+        return playerCamera.transform.eulerAngles.y;
     }
     
     // LevelUpManager用のパラメータ取得・設定メソッド
