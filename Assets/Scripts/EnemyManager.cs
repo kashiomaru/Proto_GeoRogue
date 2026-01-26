@@ -112,6 +112,13 @@ public class EnemyManager : MonoBehaviour
     {
         if (gameManager == null) return;
         
+        // ボスモード時：ボスの死亡チェック
+        if (_currentMode == GameMode.Boss)
+        {
+            CheckBossDeath();
+            return; // ボスモード時は通常の敵処理をスキップ
+        }
+        
         // 通常モードでない場合は処理をスキップ
         if (_currentMode != GameMode.Normal) return;
         
@@ -363,6 +370,20 @@ public class EnemyManager : MonoBehaviour
     public GameObject GetCurrentBoss()
     {
         return _currentBoss;
+    }
+    
+    // ボスの死亡チェックと削除処理
+    private void CheckBossDeath()
+    {
+        if (_currentBoss == null) return;
+        
+        Boss boss = _currentBoss.GetComponent<Boss>();
+        if (boss != null && boss.IsDead)
+        {
+            // ボスが死亡したら削除
+            Destroy(_currentBoss);
+            _currentBoss = null;
+        }
     }
     
     // キューへのアクセス（BulletMoveAndCollideJob用）

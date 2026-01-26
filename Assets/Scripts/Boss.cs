@@ -9,6 +9,11 @@ public class Boss : MonoBehaviour
     [SerializeField] private float rotationSpeed = 3f; // 回転速度（Playerと同じ単位）
     [SerializeField] private float damageRadius = 1.0f; // プレイヤーとの当たり判定半径
     [SerializeField] private int damageAmount = 1; // プレイヤーへのダメージ量
+    [SerializeField] private float maxHp = 100f; // ボスの最大HP
+    [SerializeField] private float collisionRadius = 2.0f; // 弾との当たり判定半径
+    
+    // HP
+    private float _currentHp;
     
     // デリゲート（生成時に設定）
     private Func<Vector3> getPlayerPosition; // プレイヤー位置を取得する関数
@@ -25,7 +30,52 @@ public class Boss : MonoBehaviour
     {
         this.getPlayerPosition = getPlayerPosition;
         this.addPlayerDamage = addPlayerDamage;
+        _currentHp = maxHp; // HPを初期化
     }
+    
+    /// <summary>
+    /// ボスにダメージを与える
+    /// </summary>
+    /// <param name="damage">ダメージ量</param>
+    /// <returns>実際に与えたダメージ</returns>
+    public float TakeDamage(float damage)
+    {
+        float actualDamage = math.min(damage, _currentHp);
+        _currentHp -= actualDamage;
+        
+        if (_currentHp <= 0f)
+        {
+            _currentHp = 0f;
+            // ボス死亡時の処理は呼び出し側で行う
+        }
+        
+        return actualDamage;
+    }
+    
+    /// <summary>
+    /// ボスの現在のHPを取得
+    /// </summary>
+    public float CurrentHp => _currentHp;
+    
+    /// <summary>
+    /// ボスの最大HPを取得
+    /// </summary>
+    public float MaxHp => maxHp;
+    
+    /// <summary>
+    /// ボスが死亡しているかどうか
+    /// </summary>
+    public bool IsDead => _currentHp <= 0f;
+    
+    /// <summary>
+    /// ボスの位置を取得
+    /// </summary>
+    public Vector3 Position => transform.position;
+    
+    /// <summary>
+    /// ボスの当たり判定半径を取得
+    /// </summary>
+    public float CollisionRadius => collisionRadius;
     
     private void Update()
     {

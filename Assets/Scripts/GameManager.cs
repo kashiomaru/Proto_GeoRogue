@@ -160,6 +160,12 @@ public class GameManager : MonoBehaviour
             bulletHandle.Complete();
         }
         
+        // 3. ボスモード時：ボスと弾の当たり判定
+        if (_currentMode == GameMode.Boss && enemyManager != null)
+        {
+            CheckBossBulletCollision();
+        }
+        
         // 4. プレイヤーへのダメージ処理
         HandlePlayerDamage();
         
@@ -492,5 +498,53 @@ public class GameManager : MonoBehaviour
             return playerTransform.position;
         }
         return Vector3.zero;
+    }
+    
+    // ボスと弾の当たり判定
+    private void CheckBossBulletCollision()
+    {
+        if (enemyManager == null) return;
+        
+        GameObject bossObject = enemyManager.GetCurrentBoss();
+        if (bossObject == null) return;
+        
+        Boss boss = bossObject.GetComponent<Boss>();
+        if (boss == null || boss.IsDead) return;
+        
+        float3 bossPos = (float3)boss.Position;
+        float bossRadius = boss.CollisionRadius;
+        float bossRadiusSq = bossRadius * bossRadius;
+        
+        // 全てのアクティブな弾をチェック
+        for (int i = 0; i < maxBullets; i++)
+        {
+            if (!_bulletActive[i]) continue;
+            
+            float3 bulletPos = _bulletPositions[i];
+            float distSq = math.distancesq(bulletPos, bossPos);
+            
+            // 当たり判定
+            if (distSq < bossRadiusSq)
+            {
+                // ヒット！
+                float actualDamage = boss.TakeDamage(bulletDamage);
+                
+                // 弾を無効化
+                _bulletActive[i] = false;
+                if (_bulletTransforms.isCreated && i < _bulletTransforms.length)
+                {
+                    _bulletTransforms[i].position = new Vector3(0, -100, 0);
+                }
+                _bulletPositions[i] = new float3(0, -100, 0);
+                
+                // ボスが死亡した場合、それ以降の弾のチェックをスキップ
+                if (boss.IsDead)
+                {
+                    // ボスを削除（EnemyManagerで処理される可能性もあるが、念のため）
+                    // ここではGameManagerからは削除しない（EnemyManagerに任せる）
+                    break; // ボスが死んだら、それ以降の弾のチェックをスキップ
+                }
+            }
+        }
     }
 }
