@@ -289,8 +289,8 @@ public class Player : MonoBehaviour
             float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
             
-        // 移動
-        transform.position += direction * moveSpeed * Time.deltaTime;
+            // 移動
+            transform.position += direction * moveSpeed * Time.deltaTime;
         }
     }
     

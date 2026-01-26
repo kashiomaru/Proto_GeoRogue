@@ -12,6 +12,14 @@ public class Boss : MonoBehaviour
     [SerializeField] private float maxHp = 100f; // ボスの最大HP
     [SerializeField] private float collisionRadius = 2.0f; // 弾との当たり判定半径
     
+    [Header("Flash Settings")]
+    [SerializeField] private float flashDuration = 0.1f; // ヒットフラッシュの持続時間
+    [SerializeField] private float flashInterval = 0.1f; // 点滅の間隔（秒）
+    [SerializeField] private float flashIntensity = 0.4f; // フラッシュの強度
+    
+    [Header("References")]
+    [SerializeField] private Renderer renderer; // レンダラー参照
+    
     // HP
     private float _currentHp;
     
@@ -20,6 +28,12 @@ public class Boss : MonoBehaviour
     private Action<int> addPlayerDamage; // プレイヤーにダメージを与える関数
     
     private float _currentRotationVelocity; // 回転の滑らかさ用（Playerと同じ方式）
+    
+    // フラッシュ関連
+    private float _flashTimer = 0f; // フラッシュタイマー
+    private float _flashTotalTime = 0f; // フラッシュの総時間
+    private MaterialPropertyBlock _mpb; // MaterialPropertyBlock
+    private int _propertyID_EmissionColor; // エミッション色のプロパティID
     
     /// <summary>
     /// ボスの初期化（生成時に呼び出す）
@@ -31,6 +45,13 @@ public class Boss : MonoBehaviour
         this.getPlayerPosition = getPlayerPosition;
         this.addPlayerDamage = addPlayerDamage;
         _currentHp = maxHp; // HPを初期化
+        
+        // MaterialPropertyBlockを初期化
+        if (renderer != null)
+        {
+            _mpb = new MaterialPropertyBlock();
+            _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+        }
     }
     
     /// <summary>
@@ -42,6 +63,9 @@ public class Boss : MonoBehaviour
     {
         float actualDamage = math.min(damage, _currentHp);
         _currentHp -= actualDamage;
+        
+        // ヒットフラッシュを開始
+        _flashTimer = flashDuration;
         
         if (_currentHp <= 0f)
         {
@@ -81,6 +105,9 @@ public class Boss : MonoBehaviour
     {
         if (getPlayerPosition == null || addPlayerDamage == null) return;
         
+        // フラッシュ色の更新
+        UpdateFlashColor();
+        
         float3 pos = transform.position;
         float3 target = (float3)getPlayerPosition();
         float distSq = math.distancesq(pos, target);
@@ -112,5 +139,54 @@ public class Boss : MonoBehaviour
             pos += dir * speed * Time.deltaTime;
             transform.position = pos;
         }
+    }
+    
+    /// <summary>
+    /// ヒットフラッシュの色を更新（点滅する）
+    /// </summary>
+    private void UpdateFlashColor()
+    {
+        if (renderer == null || _mpb == null) return;
+
+        // フラッシュタイマーの更新
+        if (_flashTimer > 0f)
+        {
+            _flashTimer -= Time.deltaTime;
+            _flashTotalTime += Time.deltaTime;
+
+            if (_flashTimer < 0f)
+            {
+                _flashTimer = 0f;
+                _flashTotalTime = 0f;
+            }
+        }
+        
+        if (_flashTimer > 0f)
+        {
+            // フラッシュ中：点滅する
+            // 残り時間から点滅サイクルを計算
+            if (_flashTotalTime > flashDuration + flashInterval)
+            {
+                _flashTotalTime -= flashDuration + flashInterval;
+            }
+            
+            if (_flashTotalTime < flashDuration)
+            {
+                // 白く光る
+                _mpb.SetColor(_propertyID_EmissionColor, new Color(flashIntensity, flashIntensity, flashIntensity, 1f));
+            }
+            else
+            {
+                // 通常色（黒）
+                _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+            }
+        }
+        else
+        {
+            // 通常時：黒（エミッションなし）
+            _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+        }
+        
+        renderer.SetPropertyBlock(_mpb);
     }
 }

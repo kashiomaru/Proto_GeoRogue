@@ -126,12 +126,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b1345779ef34ff48bd8e476a1c2851, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Boss
-  speed: 4
+  speed: 3
   rotationSpeed: 3
   damageRadius: 1
   damageAmount: 1
-  maxHp: 10
+  maxHp: 100
   collisionRadius: 2
+  flashDuration: 0.1
+  flashInterval: 0.1
+  flashIntensity: 0.4
+  renderer: {fileID: 8381658876499619347}
 --- !u!1 &5417951661456623780
 GameObject:
   m_ObjectHideFlags: 0
@@ -199,7 +203,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 42d4253e4f39e415ab65d7de8deda854, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
