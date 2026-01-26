@@ -2805,7 +2805,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1182133972}
   - component: {fileID: 1182133974}
-  - component: {fileID: 1182133973}
+  - component: {fileID: 1182133975}
   m_Layer: 0
   m_Name: LockOnAnchor
   m_TagString: Untagged
@@ -2828,26 +2828,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1183024399 &1182133973
-LookAtConstraint:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1182133971}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Weight: 1
-  m_RotationAtRest: {x: 0, y: 0, z: 0}
-  m_RotationOffset: {x: 0, y: 0, z: 0}
-  m_Roll: 0
-  m_WorldUpObject: {fileID: 0}
-  m_UseUpObject: 0
-  m_Active: 1
-  m_IsLocked: 0
-  m_Sources:
-  - sourceTransform: {fileID: 0}
-    weight: 1
 --- !u!1818360608 &1182133974
 PositionConstraint:
   m_ObjectHideFlags: 0
@@ -2868,6 +2848,18 @@ PositionConstraint:
   m_Sources:
   - sourceTransform: {fileID: 322285197}
     weight: 1
+--- !u!114 &1182133975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182133971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a33103154a4df437897c340b90e54d1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LookAtController
 --- !u!1 &1204864510
 GameObject:
   m_ObjectHideFlags: 0
@@ -3485,7 +3477,7 @@ MonoBehaviour:
   - {fileID: 860696624}
   - {fileID: 1173848199}
   defaultCameraIndex: 0
-  bossCameraLookAtConstraint: {fileID: 1182133973}
+  lookAtController: {fileID: 1182133975}
 --- !u!1 &1659336174
 GameObject:
   m_ObjectHideFlags: 0

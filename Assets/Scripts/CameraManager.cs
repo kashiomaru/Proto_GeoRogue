@@ -1,8 +1,5 @@
 using UnityEngine;
 using Unity.Cinemachine;
-using UnityEngine.Animations;
-using UnityEngine.Animations.Rigging;
-using System.Collections.Generic;
 
 public class CameraManager : MonoBehaviour
 {
@@ -11,7 +8,7 @@ public class CameraManager : MonoBehaviour
     
     [Header("Settings")]
     [SerializeField] private int defaultCameraIndex = 0; // デフォルトのカメラインデックス
-    [SerializeField] private LookAtConstraint bossCameraLookAtConstraint; // ボスカメラ用のLookAtConstraint（Animation Rigging）
+    [SerializeField] private LookAtController lookAtController; // 回転処理を行うLookAtControllerへの参照
     
     private int _currentCameraIndex = -1;
     
@@ -83,13 +80,13 @@ public class CameraManager : MonoBehaviour
         return virtualCameras != null ? virtualCameras.Length : 0;
     }
     
-    // ボスのTransformをLookAtConstraintのターゲットに設定
+    // ボスのTransformをLookAtターゲットに設定
     public void SetBossLookAtTarget(Transform bossTransform)
     {
-        if (bossCameraLookAtConstraint != null && bossTransform != null)
+        // LookAtControllerにTransformを設定（nullの場合は回転を停止）
+        if (lookAtController != null)
         {
-            List<ConstraintSource> sources = new List<ConstraintSource> { new ConstraintSource { sourceTransform = bossTransform, weight = 1f } };
-            bossCameraLookAtConstraint.SetSources(sources);
+            lookAtController.SetLookAtTarget(bossTransform);
         }
     }
 }
