@@ -24,9 +24,17 @@ public abstract class InitializeMonobehaviour : MonoBehaviour
     {
         if (!_initialized)
         {
-            InitializeInternal();
-
-            _initialized = true;
+            try
+            {
+                InitializeInternal();
+                _initialized = true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[{GetType().Name}] InitializeInternal()で例外が発生しました: {ex.Message}\n{ex.StackTrace}");
+                // 例外を再スロー（初期化が失敗した状態を維持）
+                throw;
+            }
         }
     }
     
@@ -46,19 +54,29 @@ public abstract class InitializeMonobehaviour : MonoBehaviour
     
     void OnDestroy()
     {
-        FinalizeNotYet();
+        FinalizeIfInitialized();
     }
 
     /// <summary>
-    /// ファイナライズを実行します。
+    /// 初期化済みの場合にファイナライズを実行します。
     /// </summary>
-    protected void FinalizeNotYet()
+    protected void FinalizeIfInitialized()
     {
         if (_initialized)
         {
-            FinalizeInternal();
-
-            _initialized = false;
+            try
+            {
+                FinalizeInternal();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[{GetType().Name}] FinalizeInternal()で例外が発生しました: {ex.Message}\n{ex.StackTrace}");
+                // ファイナライズ時の例外は再スローしない（破棄処理中なので）
+            }
+            finally
+            {
+                _initialized = false;
+            }
         }
     }
     
