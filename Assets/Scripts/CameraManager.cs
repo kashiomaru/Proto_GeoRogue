@@ -1,7 +1,7 @@
 using UnityEngine;
 using Unity.Cinemachine;
 
-public class CameraManager : MonoBehaviour
+public class CameraManager : InitializeMonobehaviour
 {
     [Header("Cinemachine Cameras")]
     [SerializeField] private CinemachineCamera[] virtualCameras; // 切り替え可能なカメラの配列
@@ -11,14 +11,19 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private LookAtController lookAtController; // 回転処理を行うLookAtControllerへの参照
     
     private int _currentCameraIndex = -1;
-    
-    void Start()
+
+    protected override void InitializeInternal()
     {
         // デフォルトカメラを設定
         if (virtualCameras != null && virtualCameras.Length > 0)
         {
             SwitchCamera(defaultCameraIndex);
         }
+    }
+    
+    protected override void FinalizeInternal()
+    {
+        // クリーンアップ処理が必要な場合はここに実装
     }
     
     // カメラを切り替える（インデックス指定）

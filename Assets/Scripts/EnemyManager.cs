@@ -7,7 +7,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
-public class EnemyManager : MonoBehaviour
+public class EnemyManager : InitializeMonobehaviour
 {
     [Header("Enemy Settings")]
     [SerializeField] private GameObject cubePrefab;
@@ -39,9 +39,6 @@ public class EnemyManager : MonoBehaviour
     // ゲームモード
     private GameMode _currentMode = GameMode.None; // 現在のゲームモード
     
-    // 初期化フラグ
-    private bool _initialized = false; // 初期化済みかどうか
-    
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
     private NativeArray<float3> _enemyPositions;
@@ -70,11 +67,6 @@ public class EnemyManager : MonoBehaviour
     public float CellSize => cellSize;
     public float EnemyDamageRadius => enemyDamageRadius;
     public float EnemyMaxHp => enemyMaxHp;
-    
-    void Start()
-    {
-        Initialize();
-    }
     
     void Update()
     {
@@ -113,21 +105,10 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
-    public void Initialize(GameMode mode)
+
+    protected override void InitializeInternal()
     {
-        Initialize();
-
-        SetGameMode(mode);
-    }
-
-    void Initialize()
-    {
-        if (_initialized)
-        {
-            return;
-        }
-
-        _initialized = true;
+        // 基底クラスで初期化フラグがチェックされるため、ここではチェック不要
 
         _enemyTransforms = new TransformAccessArray(enemyCount);
         _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
@@ -448,7 +429,7 @@ public class EnemyManager : MonoBehaviour
         return _currentMode;
     }
     
-    void OnDestroy()
+    protected override void FinalizeInternal()
     {
         if (_enemyTransforms.isCreated) _enemyTransforms.Dispose();
         if (_enemyPositions.IsCreated) _enemyPositions.Dispose();
@@ -468,7 +449,5 @@ public class EnemyManager : MonoBehaviour
         }
         
         // _enemyFlashTimersはList<float>なので、Dispose()は不要（ガベージコレクタが自動管理）
-
-        _initialized = false;
     }
 }

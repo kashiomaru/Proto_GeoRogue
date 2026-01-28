@@ -105,6 +105,10 @@ public class GameManager : MonoBehaviour
     
     void InitializeStateMachine()
     {
+        cameraManager?.Initialize();
+        enemyManager?.Initialize();
+        enemyManager?.SetGameMode(initialGameMode);
+
         _stateMachine = new StateMachine<GameMode, GameManager>(this);
         
         // 各ステートを登録
@@ -114,9 +118,6 @@ public class GameManager : MonoBehaviour
         
         // 初期ステートを設定
         _stateMachine.Initialize(initialGameMode);
-        
-        // EnemyManagerにモードを設定
-        enemyManager?.Initialize(initialGameMode);
     }
 
     void Update()
