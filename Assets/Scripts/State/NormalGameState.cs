@@ -6,11 +6,8 @@ public class NormalGameState : GameStateBase
 {
     public override void OnEnter(GameManager context)
     {
-        // UIのタイマーを表示
-        if (context.UIManager != null)
-        {
-            context.UIManager.ShowCountdownTimer();
-        }
+        context.UIManager?.ShowStatus();
+        context.UIManager?.ShowCountdownTimer();
     }
     
     public override void OnUpdate(GameManager context)
@@ -30,6 +27,6 @@ public class NormalGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
-        // 終了時の処理（必要に応じて）
+        context.UIManager?.HideStatus();
     }
 }

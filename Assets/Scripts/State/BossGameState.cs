@@ -28,12 +28,6 @@ public class BossGameState : GameStateBase
                 context.CameraManager.SetBossLookAtTarget(boss.transform);
             }
         }
-        
-        // UIのタイマーを非表示
-        if (context.UIManager != null)
-        {
-            context.UIManager.HideCountdownTimer();
-        }
     }
     
     public override void OnUpdate(GameManager context)
@@ -60,6 +54,5 @@ public class BossGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
-        // 終了時の処理（必要に応じて）
     }
 }

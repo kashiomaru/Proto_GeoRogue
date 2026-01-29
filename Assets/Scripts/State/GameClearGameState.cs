@@ -6,20 +6,16 @@ public class GameClearGameState : GameStateBase
 {
     public override void OnEnter(GameManager context)
     {
-        // UIのタイマーを非表示
-        if (context.UIManager != null)
-        {
-            context.UIManager.HideCountdownTimer();
-        }
+        context.UIManager?.ShowGameClear();
     }
     
     public override void OnUpdate(GameManager context)
     {
-        // ゲームクリアでは何も処理しない（リトライ等はUIなどで処理）
+        // todo: OKボタンでタイトル画面に戻る
     }
     
     public override void OnExit(GameManager context)
     {
-        // 終了時の処理（必要に応じて）
+        context.UIManager?.HideGameClear();
     }
 }

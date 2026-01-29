@@ -15,11 +15,24 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private Button retryButton;
     
-    [Header("HP Bar")]
+    [Header("Title UI")]
+    [SerializeField] private GameObject titlePanel; // タイトルのベースパネル
+    [SerializeField] private Button startButton;   // Startボタン
+    
+    /// <summary>Startボタン（他スクリプトからクリック登録用）</summary>
+    public Button StartButton => startButton;
+    
+    [Header("Game Clear UI")]
+    [SerializeField] private GameObject gameClearPanel; // ゲームクリアのベースパネル
+    [SerializeField] private Button gameClearOkButton; // タイトルに戻るOKボタン
+    
+    /// <summary>ゲームクリアOKボタン（他スクリプトからクリック登録用）</summary>
+    public Button GameClearOkButton => gameClearOkButton;
+    
+    [Header("Status (HP / EXP Bar)")]
+    [SerializeField] private GameObject statusParent; // HPバーとEXPバーの親
     [SerializeField] private Slider hpBar;
     [SerializeField] private Player player;
-    
-    [Header("Exp Bar")]
     [SerializeField] private Slider expBar;
     
     [Header("Level Up")]
@@ -156,6 +169,72 @@ public class UIManager : MonoBehaviour
         if (countdownText != null)
         {
             countdownText.gameObject.SetActive(true);
+        }
+    }
+    
+    /// <summary>
+    /// タイトルを表示する
+    /// </summary>
+    public void ShowTitle()
+    {
+        if (titlePanel != null)
+        {
+            titlePanel.SetActive(true);
+        }
+    }
+    
+    /// <summary>
+    /// タイトルを非表示にする
+    /// </summary>
+    public void HideTitle()
+    {
+        if (titlePanel != null)
+        {
+            titlePanel.SetActive(false);
+        }
+    }
+    
+    /// <summary>
+    /// ゲームクリアを表示する
+    /// </summary>
+    public void ShowGameClear()
+    {
+        if (gameClearPanel != null)
+        {
+            gameClearPanel.SetActive(true);
+        }
+    }
+    
+    /// <summary>
+    /// ゲームクリアを非表示にする
+    /// </summary>
+    public void HideGameClear()
+    {
+        if (gameClearPanel != null)
+        {
+            gameClearPanel.SetActive(false);
+        }
+    }
+    
+    /// <summary>
+    /// HPバーとEXPバーの親を表示する
+    /// </summary>
+    public void ShowStatus()
+    {
+        if (statusParent != null)
+        {
+            statusParent.SetActive(true);
+        }
+    }
+    
+    /// <summary>
+    /// HPバーとEXPバーの親を非表示にする
+    /// </summary>
+    public void HideStatus()
+    {
+        if (statusParent != null)
+        {
+            statusParent.SetActive(false);
         }
     }
     

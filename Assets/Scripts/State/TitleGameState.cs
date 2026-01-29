@@ -6,20 +6,19 @@ public class TitleGameState : GameStateBase
 {
     public override void OnEnter(GameManager context)
     {
-        // UIのタイマーを非表示
-        if (context.UIManager != null)
-        {
-            context.UIManager.HideCountdownTimer();
-        }
+        context.UIManager?.ShowTitle();
     }
     
     public override void OnUpdate(GameManager context)
     {
-        // タイトルでは何も処理しない（開始入力はUIなどで処理）
+        if (context.UIManager?.StartButton.onClick.GetPersistentEventCount() > 0)
+        {
+            context.ChangeGameMode(GameMode.Normal);
+        }
     }
     
     public override void OnExit(GameManager context)
     {
-        // 終了時の処理（必要に応じて）
+        context.UIManager?.HideTitle();
     }
 }
