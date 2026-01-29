@@ -1,3 +1,5 @@
+using UnityEngine;
+
 /// <summary>
 /// タイトルモードのステート
 /// タイトル画面の状態
@@ -7,14 +9,13 @@ public class TitleGameState : GameStateBase
     public override void OnEnter(GameManager context)
     {
         context.UIManager?.ShowTitle();
+
+        context.UIManager?.StartButton.onClick.AddListener(() => context.ChangeGameMode(GameMode.Normal));
     }
-    
+
     public override void OnUpdate(GameManager context)
     {
-        if (context.UIManager?.StartButton.onClick.GetPersistentEventCount() > 0)
-        {
-            context.ChangeGameMode(GameMode.Normal);
-        }
+        // 何もしない
     }
     
     public override void OnExit(GameManager context)

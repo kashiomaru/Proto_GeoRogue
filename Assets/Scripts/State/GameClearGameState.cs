@@ -7,11 +7,12 @@ public class GameClearGameState : GameStateBase
     public override void OnEnter(GameManager context)
     {
         context.UIManager?.ShowGameClear();
+        context.UIManager?.GameClearOkButton.onClick.AddListener(() => context.ChangeGameMode(GameMode.Title));
     }
-    
+
     public override void OnUpdate(GameManager context)
     {
-        // todo: OKボタンでタイトル画面に戻る
+        // 何もしない
     }
     
     public override void OnExit(GameManager context)
