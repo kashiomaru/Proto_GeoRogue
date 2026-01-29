@@ -42,6 +42,19 @@ public class BossGameState : GameStateBase
         if (context.EnemyManager != null)
         {
             context.CheckBossBulletCollision();
+            
+            // ボス撃破時はゲームクリアへ遷移
+            var bossObj = context.EnemyManager.GetCurrentBoss();
+            if (bossObj == null)
+            {
+                context.ChangeGameMode(GameMode.GameClear);
+                return;
+            }
+            var boss = bossObj.GetComponent<Boss>();
+            if (boss != null && boss.IsDead)
+            {
+                context.ChangeGameMode(GameMode.GameClear);
+            }
         }
     }
     

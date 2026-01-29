@@ -421,6 +421,13 @@ public class EnemyManager : InitializeMonobehaviour
         {
             ClearAllEnemies();
         }
+        
+        // ボスモード以外へ切り替えた場合はボスを破棄
+        if (_currentMode != GameMode.Boss && _currentBoss != null)
+        {
+            Destroy(_currentBoss);
+            _currentBoss = null;
+        }
     }
     
     // 現在のゲームモードを取得

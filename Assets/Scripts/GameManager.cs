@@ -24,9 +24,11 @@ public struct EnemyDamageInfo
 // ゲームモード
 public enum GameMode
 {
-    None,   // モードなし（弾も敵も出ない）
-    Normal, // 通常モード
-    Boss    // ボスモード
+    None,       // モードなし（弾も敵も出ない）
+    Title,      // タイトル
+    Normal,     // 通常モード
+    Boss,       // ボスモード
+    GameClear   // ゲームクリア
 }
 
 public class GameManager : MonoBehaviour
@@ -113,8 +115,10 @@ public class GameManager : MonoBehaviour
         
         // 各ステートを登録
         _stateMachine.RegisterState(GameMode.None, new NoneGameState());
+        _stateMachine.RegisterState(GameMode.Title, new TitleGameState());
         _stateMachine.RegisterState(GameMode.Normal, new NormalGameState());
         _stateMachine.RegisterState(GameMode.Boss, new BossGameState());
+        _stateMachine.RegisterState(GameMode.GameClear, new GameClearGameState());
         
         // 初期ステートを設定
         _stateMachine.Initialize(initialGameMode);
@@ -128,8 +132,8 @@ public class GameManager : MonoBehaviour
             _stateMachine.Update();
         }
         
-        // Noneモードの場合は処理をスキップ
-        if (CurrentMode == GameMode.None)
+        // プレイ中でないモードの場合は処理をスキップ
+        if (CurrentMode == GameMode.None || CurrentMode == GameMode.Title || CurrentMode == GameMode.GameClear)
         {
             return;
         }
