@@ -368,14 +368,8 @@ public class GameManager : MonoBehaviour
         // カウントダウンタイマーをリセット
         _countdownTimer = countdownDuration;
         
-        // 通常モードに戻す
+        // 通常モードに戻す（NormalGameState.OnEnter でカメラ0に即時切り替えされる）
         ChangeGameMode(GameMode.Normal);
-        
-        // カメラをインデックス0に戻す
-        if (cameraManager != null)
-        {
-            cameraManager.SwitchCamera(0);
-        }
     }
     
     private void OnRetryClicked()
@@ -510,11 +504,12 @@ public class GameManager : MonoBehaviour
     }
     
     // カメラ切り替え処理
-    public void SwitchCamera(int cameraIndex)
+    // immediate: true のときブレンドなしで即時切り替え、false のときはブレンド補間
+    public void SwitchCamera(int cameraIndex, bool immediate = false)
     {
         if (cameraManager != null)
         {
-            cameraManager.SwitchCamera(cameraIndex);
+            cameraManager.SwitchCamera(cameraIndex, immediate);
         }
     }
     

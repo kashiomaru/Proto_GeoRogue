@@ -9,6 +9,7 @@ public class CameraManager : InitializeMonobehaviour
     [Header("Settings")]
     [SerializeField] private int defaultCameraIndex = 0; // デフォルトのカメラインデックス
     [SerializeField] private LookAtController lookAtController; // 回転処理を行うLookAtControllerへの参照
+    [SerializeField] private CinemachineBrain cinemachineBrain; // 即時切り替え時に使用（未設定ならシーンから取得）
     
     private int _currentCameraIndex = -1;
 
@@ -27,7 +28,8 @@ public class CameraManager : InitializeMonobehaviour
     }
     
     // カメラを切り替える（インデックス指定）
-    public void SwitchCamera(int cameraIndex)
+    // immediate: true のときブレンドなしで即時切り替え、false のときはブレンド補間
+    public void SwitchCamera(int cameraIndex, bool immediate = false)
     {
         if (virtualCameras == null || cameraIndex < 0 || cameraIndex >= virtualCameras.Length)
         {
@@ -53,6 +55,14 @@ public class CameraManager : InitializeMonobehaviour
         else
         {
             Debug.LogWarning($"CameraManager: Camera at index {cameraIndex} is null");
+            return;
+        }
+        
+        // 即時切り替えのときはブレンドをキャンセルして即座に反映
+        if (immediate)
+        {
+            var brain = cinemachineBrain != null ? cinemachineBrain : FindFirstObjectByType<CinemachineBrain>();
+            brain?.ResetState();
         }
     }
     

@@ -4428,6 +4428,7 @@ MonoBehaviour:
   - {fileID: 1173848199}
   defaultCameraIndex: 0
   lookAtController: {fileID: 1182133975}
+  cinemachineBrain: {fileID: 330585548}
 --- !u!1 &1659336174
 GameObject:
   m_ObjectHideFlags: 0
