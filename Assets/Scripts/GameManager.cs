@@ -321,8 +321,10 @@ public class GameManager : MonoBehaviour
         if (_playerDamageQueue.IsCreated) _playerDamageQueue.Dispose();
     }
     
-    // ゲームリセット処理
-    public void ResetGame()
+    /// <summary>
+    /// ゲーム状態のみリセット（モードは切り替えない）。タイトルに戻る前やリトライ時に使用。
+    /// </summary>
+    public void ResetGameState()
     {
         // プレイヤーをリセット
         if (player != null)
@@ -367,14 +369,14 @@ public class GameManager : MonoBehaviour
         
         // カウントダウンタイマーをリセット
         _countdownTimer = countdownDuration;
-        
-        // 通常モードに戻す（NormalGameState.OnEnter でカメラ0に即時切り替えされる）
-        ChangeGameMode(GameMode.Normal);
     }
     
     private void OnRetryClicked()
     {
-        ResetGame();
+        ResetGameState();
+
+        // 通常モードに戻す（NormalGameState.OnEnter でカメラ0に即時切り替えされる）
+        ChangeGameMode(GameMode.Normal);
     }
     
     // LevelUpManager用のパラメータ取得・設定メソッド

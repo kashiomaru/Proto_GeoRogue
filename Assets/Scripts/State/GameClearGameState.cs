@@ -8,7 +8,11 @@ public class GameClearGameState : GameStateBase
     {
         UnityEngine.Time.timeScale = 0f;
         context.UIManager?.ShowGameClear();
-        context.UIManager?.GameClearOkButton.onClick.AddListener(() => context.ChangeGameMode(GameMode.Title));
+        context.UIManager?.GameClearOkButton.onClick.AddListener(() =>
+        {
+            context.ResetGameState();
+            context.ChangeGameMode(GameMode.Title);
+        });
     }
 
     public override void OnUpdate(GameManager context)
