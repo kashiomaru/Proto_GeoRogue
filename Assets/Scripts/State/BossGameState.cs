@@ -6,6 +6,8 @@ using UnityEngine;
 /// </summary>
 public class BossGameState : GameStateBase
 {
+    public override bool IsPlaying => true;
+
     public override void OnEnter(GameManager context)
     {
         context.UIManager?.ShowStatus();

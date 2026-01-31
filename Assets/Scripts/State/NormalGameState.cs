@@ -4,6 +4,8 @@
 /// </summary>
 public class NormalGameState : GameStateBase
 {
+    public override bool IsPlaying => true;
+
     public override void OnEnter(GameManager context)
     {
         context.SwitchCamera(0, immediate: true);

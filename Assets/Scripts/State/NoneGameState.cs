@@ -4,6 +4,8 @@
 /// </summary>
 public class NoneGameState : GameStateBase
 {
+    public override bool IsPlaying => false;
+
     public override void OnEnter(GameManager context)
     {
         // UIのタイマーを非表示

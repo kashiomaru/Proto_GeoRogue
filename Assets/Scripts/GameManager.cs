@@ -95,7 +95,12 @@ public class GameManager : MonoBehaviour
     private StateMachine<GameMode, GameManager> _stateMachine;
 
     public GameMode CurrentMode => _stateMachine?.CurrentStateKey ?? GameMode.None;
-    
+
+    /// <summary>
+    /// プレイ中（弾・敵の処理を行う）かどうか。現在のステートの IsPlaying を返す。
+    /// </summary>
+    public bool IsPlaying => (_stateMachine?.CurrentState as GameStateBase)?.IsPlaying ?? false;
+
     /// <summary>
     /// 遷移先のゲームモード（OnExit 呼び出し中のみ有効。時間復帰の判定に使用）
     /// </summary>
@@ -155,12 +160,12 @@ public class GameManager : MonoBehaviour
             _stateMachine.Update();
         }
         
-        // プレイ中でないモードの場合は処理をスキップ
-        if (CurrentMode == GameMode.None || CurrentMode == GameMode.Title || CurrentMode == GameMode.GameClear || CurrentMode == GameMode.GameOver)
+        // プレイ中でない場合は処理をスキップ
+        if (IsPlaying == false)
         {
             return;
         }
-        
+
         // 1. 弾の発射（プレイヤー位置から）
         HandleShooting();
 

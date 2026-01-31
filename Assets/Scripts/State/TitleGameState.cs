@@ -6,6 +6,8 @@ using UnityEngine;
 /// </summary>
 public class TitleGameState : GameStateBase
 {
+    public override bool IsPlaying => false;
+
     public override void OnEnter(GameManager context)
     {
         Time.timeScale = 0f;

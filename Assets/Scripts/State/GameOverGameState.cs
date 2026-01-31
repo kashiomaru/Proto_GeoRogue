@@ -4,6 +4,8 @@
 /// </summary>
 public class GameOverGameState : GameStateBase
 {
+    public override bool IsPlaying => false;
+
     public override void OnEnter(GameManager context)
     {
         UnityEngine.Time.timeScale = 0f;
