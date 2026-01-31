@@ -7,7 +7,11 @@ public class GameOverGameState : GameStateBase
     public override void OnEnter(GameManager context)
     {
         UnityEngine.Time.timeScale = 0f;
-        context.UIManager?.ShowGameOver(() => context.ResetGame());
+        context.UIManager?.ShowGameOver(() =>
+        {
+            context.ResetGameState();
+            context.ChangeGameMode(GameMode.Normal);
+        });
     }
 
     public override void OnUpdate(GameManager context)

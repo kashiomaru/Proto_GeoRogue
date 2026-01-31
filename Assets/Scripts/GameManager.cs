@@ -373,14 +373,6 @@ public class GameManager : MonoBehaviour
         _countdownTimer = countdownDuration;
     }
     
-    private void OnRetryClicked()
-    {
-        ResetGameState();
-
-        // 通常モードに戻す（NormalGameState.OnEnter でカメラ0に即時切り替えされる）
-        ChangeGameMode(GameMode.Normal);
-    }
-    
     // LevelUpManager用のパラメータ取得・設定メソッド
     public float GetFireRate()
     {

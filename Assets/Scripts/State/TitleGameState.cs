@@ -9,9 +9,7 @@ public class TitleGameState : GameStateBase
     public override void OnEnter(GameManager context)
     {
         Time.timeScale = 0f;
-        context.UIManager?.ShowTitle();
-
-        context.UIManager?.StartButton.onClick.AddListener(() => context.ChangeGameMode(GameMode.Normal));
+        context.UIManager?.ShowTitle(() => context.ChangeGameMode(GameMode.Normal));
     }
 
     public override void OnUpdate(GameManager context)

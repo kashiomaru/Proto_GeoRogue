@@ -18,10 +18,7 @@ public class UIManager : MonoBehaviour
     [Header("Title UI")]
     [SerializeField] private GameObject titlePanel; // タイトルのベースパネル
     [SerializeField] private Button startButton;   // Startボタン
-    
-    /// <summary>Startボタン（他スクリプトからクリック登録用）</summary>
-    public Button StartButton => startButton;
-    
+
     [Header("Game Clear UI")]
     [SerializeField] private GameObject gameClearPanel; // ゲームクリアのベースパネル
     [SerializeField] private Button gameClearOkButton; // タイトルに戻るOKボタン
@@ -45,7 +42,9 @@ public class UIManager : MonoBehaviour
     private Action _onRetryClicked;
     // ゲームクリアOKクリック時のコールバック
     private Action _onGameClearOkClicked;
-    
+    // スタートボタンクリック時のコールバック
+    private Action _onStartClicked;
+
     private bool _isLevelUpUIOpen = false; // レベルアップUIが開いているか
 
     void Start()
@@ -73,6 +72,13 @@ public class UIManager : MonoBehaviour
         {
             gameClearOkButton.onClick.RemoveAllListeners();
             gameClearOkButton.onClick.AddListener(OnGameClearOkButtonClicked);
+        }
+
+        // スタートボタンのイベントを設定
+        if (startButton != null)
+        {
+            startButton.onClick.RemoveAllListeners();
+            startButton.onClick.AddListener(OnStartButtonClicked);
         }
 
         // HPバーの初期化
@@ -179,14 +185,20 @@ public class UIManager : MonoBehaviour
     }
     
     /// <summary>
-    /// タイトルを表示する
+    /// タイトルを表示する。スタートボタン押下時に onStartClicked が呼ばれる。
     /// </summary>
-    public void ShowTitle()
+    public void ShowTitle(Action onStartClicked)
     {
+        _onStartClicked = onStartClicked;
         if (titlePanel != null)
         {
             titlePanel.SetActive(true);
         }
+    }
+
+    private void OnStartButtonClicked()
+    {
+        _onStartClicked?.Invoke();
     }
     
     /// <summary>
