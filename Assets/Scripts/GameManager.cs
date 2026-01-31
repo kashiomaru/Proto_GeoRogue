@@ -366,21 +366,26 @@ public class GameManager : MonoBehaviour
         if (gemManager != null)
         {
             gemManager.SetMagnetDist(5.0f);
+            gemManager.ResetGems();
         }
-        
+
         // 敵をリセット
         if (enemyManager != null)
         {
             enemyManager.ResetEnemies();
         }
         
-        // 弾をリセット
+        // 弾をリセット（配列とTransformの両方を画面外に）
         for (int i = 0; i < maxBullets; i++)
         {
             _bulletActive[i] = false;
             _bulletPositions[i] = new float3(0, -100, 0);
+            if (_bulletTransforms.isCreated && i < _bulletTransforms.length)
+            {
+                _bulletTransforms[i].position = new Vector3(0, -100, 0);
+            }
         }
-        
+
         // キューをクリア
         while (_playerDamageQueue.TryDequeue(out _)) { }
         

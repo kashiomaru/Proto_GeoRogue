@@ -122,6 +122,27 @@ public class GemManager : MonoBehaviour
         magnetDist = value;
     }
     
+    /// <summary>
+    /// ジェムをすべて非表示にし、キューをクリアする。ゲームリセット時（タイトル戻り・リトライ）に呼ぶ。
+    /// </summary>
+    public void ResetGems()
+    {
+        for (int i = 0; i < maxGems; i++)
+        {
+            _gemActive[i] = false;
+            _gemIsFlying[i] = false;
+            _gemPositions[i] = new float3(0, -500, 0);
+        }
+        while (_collectedGemQueue.TryDequeue(out _)) { }
+        // Transformの位置を反映
+        var updatePosJob = new UpdateGemPositionJob
+        {
+            positions = _gemPositions,
+            activeFlags = _gemActive
+        };
+        updatePosJob.Schedule(_gemTransforms).Complete();
+    }
+
     // GameManager用：回収されたジェムの数を取得（キューから取得して返す）
     public int GetCollectedGemCount()
     {
