@@ -6,6 +6,12 @@ public class Player : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float rotationSpeed = 10f; // 回転速度
+
+    [Header("Upgrade Params (LevelUp で変化、Reset で初期値に戻る)")]
+    [SerializeField] private float fireRate = 0.1f;
+    [SerializeField] private float bulletSpeed = 20f;
+    [SerializeField] private int bulletCountPerShot = 1;
+    [SerializeField] private float magnetDist = 5f;
     
     [Header("Camera Reference")]
     [SerializeField] private Camera playerCamera; // カメラ参照（未設定の場合はMainCameraを自動取得）
@@ -36,7 +42,14 @@ public class Player : MonoBehaviour
     private bool _canLevelUp = false; // レベルアップ可能フラグ
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
-    
+
+    // リセット用の初期値（Start で保存）
+    private float _initialMoveSpeed;
+    private float _initialFireRate;
+    private float _initialBulletSpeed;
+    private int _initialBulletCountPerShot;
+    private float _initialMagnetDist;
+
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
     public bool IsInvincible => _isInvincible;
@@ -58,7 +71,14 @@ public class Player : MonoBehaviour
         
         // HP初期化
         _currentHp = maxHp;
-        
+
+        // リセット用にアップグレードパラメータの初期値を保存
+        _initialMoveSpeed = moveSpeed;
+        _initialFireRate = fireRate;
+        _initialBulletSpeed = bulletSpeed;
+        _initialBulletCountPerShot = bulletCountPerShot;
+        _initialMagnetDist = magnetDist;
+
         // レンダラーとMaterialPropertyBlockを初期化
         _renderer = GetComponent<Renderer>();
         if (_renderer != null)
@@ -162,8 +182,10 @@ public class Player : MonoBehaviour
         }
     }
     
-    // リセット処理
-    public void ResetPlayer()
+    /// <summary>
+    /// プレイヤーを初期状態にリセット（HP・経験値・レベル・アップグレードパラメータ）
+    /// </summary>
+    public void Reset()
     {
         _currentHp = maxHp;
         _isInvincible = false;
@@ -173,10 +195,30 @@ public class Player : MonoBehaviour
         _nextLevelExp = 10;
         _currentLevel = 1;
         _canLevelUp = false;
-        
-        // フラッシュ色をリセット
+
+        moveSpeed = _initialMoveSpeed;
+        fireRate = _initialFireRate;
+        bulletSpeed = _initialBulletSpeed;
+        bulletCountPerShot = _initialBulletCountPerShot;
+        magnetDist = _initialMagnetDist;
+
         UpdateFlashColor();
     }
+
+    // 後方互換のため残す（Reset を呼ぶ）
+    public void ResetPlayer()
+    {
+        Reset();
+    }
+
+    public float GetFireRate() => fireRate;
+    public void SetFireRate(float value) { fireRate = value; }
+    public float GetBulletSpeed() => bulletSpeed;
+    public void SetBulletSpeed(float value) { bulletSpeed = value; }
+    public int GetBulletCountPerShot() => bulletCountPerShot;
+    public void SetBulletCountPerShot(int value) { bulletCountPerShot = value; }
+    public float GetMagnetDist() => magnetDist;
+    public void SetMagnetDist(float value) { magnetDist = value; }
     
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()

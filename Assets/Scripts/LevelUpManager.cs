@@ -5,9 +5,7 @@ public class LevelUpManager : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private UIManager uiManager; // UIManagerへの参照
-    [SerializeField] private GameManager gameManager; // パラメータ変更用
-    [SerializeField] private Player player; // プレイヤー参照
-    [SerializeField] private GemManager gemManager; // GemManager参照
+    [SerializeField] private Player player; // アップグレードパラメータはすべて Player で保持
 
     // 抽選テーブル（本来はScriptableObjectやCSVからロード推奨）
     private List<UpgradeData> _upgradeDatabase = new List<UpgradeData>()
@@ -68,41 +66,24 @@ public class LevelUpManager : MonoBehaviour
 
     private void ApplyUpgradeEffect(UpgradeType type)
     {
-        // ここでGameManagerのpublic変数などを直接書き換えます
-        // ※GameManager側にはメソッドを用意して呼ぶのが行儀が良いです
-        
+        if (player == null) return;
+
         switch (type)
         {
             case UpgradeType.FireRateUp:
-                if (gameManager != null)
-                {
-                    gameManager.SetFireRate(gameManager.GetFireRate() * 0.9f); // 10%短縮
-                }
+                player.SetFireRate(player.GetFireRate() * 0.9f); // 10%短縮
                 break;
             case UpgradeType.BulletSpeedUp:
-                if (gameManager != null)
-                {
-                    gameManager.SetBulletSpeed(gameManager.GetBulletSpeed() + 5f);
-                }
+                player.SetBulletSpeed(player.GetBulletSpeed() + 5f);
                 break;
             case UpgradeType.MoveSpeedUp:
-                if (player != null)
-                {
-                    player.SetMoveSpeed(player.GetMoveSpeed() + 1f);
-                }
+                player.SetMoveSpeed(player.GetMoveSpeed() + 1f);
                 break;
             case UpgradeType.MagnetRange:
-                if (gemManager != null)
-                {
-                    gemManager.SetMagnetDist(gemManager.GetMagnetDist() + 2.0f);
-                }
+                player.SetMagnetDist(player.GetMagnetDist() + 2.0f);
                 break;
-                
             case UpgradeType.MultiShot:
-                if (gameManager != null)
-                {
-                    gameManager.SetBulletCountPerShot(gameManager.GetBulletCountPerShot() + 1);
-                }
+                player.SetBulletCountPerShot(player.GetBulletCountPerShot() + 1);
                 break;
         }
     }

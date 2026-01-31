@@ -9,11 +9,10 @@ public class GemManager : MonoBehaviour
     [SerializeField] private GameObject gemPrefab; // 小さな光るCube/Sphere
     [SerializeField] private int maxGems = 2000;
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private float magnetDist = 5.0f; // 吸い寄せ開始距離
     [SerializeField] private float gemSpeed = 15.0f;  // 吸い寄せ速度
-    
+
     [Header("References")]
-    [SerializeField] private Player player; // Playerへの参照
+    [SerializeField] private Player player; // 吸い寄せ距離は Player.GetMagnetDist() から取得
 
     private TransformAccessArray _gemTransforms;
     private NativeArray<float3> _gemPositions; // ジェムの位置配列
@@ -75,6 +74,7 @@ public class GemManager : MonoBehaviour
         // プレイヤーのレベルアップ管理などはここで行う
 
         // --- JOB: Gemの吸い寄せと回収 ---
+        float magnetDist = player != null ? player.GetMagnetDist() : 5f;
         var gemJob = new GemMagnetJob
         {
             deltaTime = Time.deltaTime,
@@ -109,17 +109,6 @@ public class GemManager : MonoBehaviour
         if (_gemActive.IsCreated) _gemActive.Dispose();
         if (_gemIsFlying.IsCreated) _gemIsFlying.Dispose();
         if (_collectedGemQueue.IsCreated) _collectedGemQueue.Dispose();
-    }
-    
-    // LevelUpManager用のパラメータ取得・設定メソッド
-    public float GetMagnetDist()
-    {
-        return magnetDist;
-    }
-    
-    public void SetMagnetDist(float value)
-    {
-        magnetDist = value;
     }
     
     /// <summary>

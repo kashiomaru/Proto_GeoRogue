@@ -40,12 +40,9 @@ public class GameManager : MonoBehaviour
     
     [Header("Params")]
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private float bulletSpeed = 20f;
-    [SerializeField] private float fireRate = 0.1f;
-    
+
     [Header("MultiShot Settings")]
-    public int bulletCountPerShot = 1; // 1回の発射数（レベルアップでこれを増やす）
-    [SerializeField] private float multiShotSpreadAngle = 10f; // 弾の拡散角度（10度ずつ広がるなど）
+    [SerializeField] private float multiShotSpreadAngle = 10f; // 弾の拡散角度（発射数は Player で保持）
     
     [Header("References")]
     [SerializeField] private EnemyManager enemyManager; // EnemyManagerへの参照
@@ -93,7 +90,7 @@ public class GameManager : MonoBehaviour
     private float _timer;
     private int _bulletIndexHead = 0; // リングバッファ用
     private float _countdownTimer; // カウントダウンタイマー
-    
+
     // ステートマシン
     private StateMachine<GameMode, GameManager> _stateMachine;
 
@@ -113,13 +110,13 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         InitializeBullets();
-        
+
         // プレイヤーへのダメージを記録するキューを初期化
         _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
-        
+
         // カウントダウンタイマーを初期化
         _countdownTimer = GetEffectiveCountdownDuration();
-        
+
         // ステートマシンを初期化
         InitializeStateMachine();
     }
@@ -177,6 +174,7 @@ public class GameManager : MonoBehaviour
 
             // --- JOB 2: 弾の移動 & 衝突判定 ---
             // 敵の移動が終わってから実行する必要があるため、enemyHandleに依存させる
+            float bulletSpeed = player != null ? player.GetBulletSpeed() : 20f;
             var bulletJob = new BulletMoveAndCollideJob
             {
                 deltaTime = deltaTime,
@@ -238,13 +236,18 @@ public class GameManager : MonoBehaviour
 
     void HandleShooting()
     {
+        if (player == null) return;
+        float fireRate = player.GetFireRate();
+        int bulletCountPerShot = player.GetBulletCountPerShot();
+        float bulletSpeed = player.GetBulletSpeed();
+
         _timer += Time.deltaTime;
         if (_timer >= fireRate)
         {
             _timer = 0;
 
             // プレイヤーの正面方向
-            Vector3 baseDir = playerTransform.forward; 
+            Vector3 baseDir = playerTransform.forward;
 
             // 発射数ぶんループ
             for (int i = 0; i < bulletCountPerShot; i++)
@@ -284,7 +287,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    
+
     void HandlePlayerDamage()
     {
         // キューからダメージを取得してプレイヤーに適用
@@ -347,25 +350,14 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void ResetGameState()
     {
-        // プレイヤーをリセット
+        // プレイヤーをリセット（HP・経験値・レベル・アップグレードパラメータは Player.Reset() で復元）
         if (player != null)
         {
-            player.ResetPlayer();
+            player.Reset();
         }
-        
-        // 経験値とレベルはPlayerのResetPlayer()でリセットされる
-        
-        // パラメータをリセット
-        fireRate = 0.1f;
-        bulletSpeed = 20f;
-        bulletCountPerShot = 1;
-        if (player != null)
-        {
-            player.SetMoveSpeed(5f);
-        }
+
         if (gemManager != null)
         {
-            gemManager.SetMagnetDist(5.0f);
             gemManager.ResetGems();
         }
 
@@ -425,37 +417,6 @@ public class GameManager : MonoBehaviour
         return null;
     }
 
-    // LevelUpManager用のパラメータ取得・設定メソッド
-    public float GetFireRate()
-    {
-        return fireRate;
-    }
-    
-    public void SetFireRate(float value)
-    {
-        fireRate = value;
-    }
-    
-    public float GetBulletSpeed()
-    {
-        return bulletSpeed;
-    }
-    
-    public void SetBulletSpeed(float value)
-    {
-        bulletSpeed = value;
-    }
-    
-    public int GetBulletCountPerShot()
-    {
-        return bulletCountPerShot;
-    }
-    
-    public void SetBulletCountPerShot(int value)
-    {
-        bulletCountPerShot = value;
-    }
-    
     // カウントダウンタイマー取得用メソッド
     public float GetCountdownTime()
     {
