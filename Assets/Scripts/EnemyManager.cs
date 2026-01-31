@@ -116,20 +116,15 @@ public class EnemyManager : InitializeMonobehaviour
         for (int i = 0; i < maxEnemyCount; i++)
         {
             bool active = i < spawnCount;
-            float3 pos;
+            _enemyActive[i] = active;
             if (active)
             {
-                pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
+                var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
                 pos.y = 0;
+                _enemyPositions[i] = pos;
+                _enemyRotations[i] = quaternion.identity;
+                _enemyHp[i] = enemyMaxHp;
             }
-            else
-            {
-                pos = new float3(0, -500, 0);
-            }
-            _enemyPositions[i] = pos;
-            _enemyRotations[i] = quaternion.identity;
-            _enemyActive[i] = active;
-            _enemyHp[i] = active ? enemyMaxHp : 0f;
             _enemyPositionList.Add(Vector3.zero);
             _enemyRotationList.Add(Quaternion.identity);
             _enemyActiveList.Add(false);
@@ -293,7 +288,6 @@ public class EnemyManager : InitializeMonobehaviour
         for (int i = spawnCount; i < maxEnemyCount; i++)
         {
             _enemyActive[i] = false;
-            _enemyPositions[i] = new float3(0, -500, 0);
         }
 
         // フラッシュタイマーをリセット

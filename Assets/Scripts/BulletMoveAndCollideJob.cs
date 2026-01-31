@@ -45,7 +45,6 @@ public struct BulletMoveAndCollideJob : IJobParallelFor
     {
         if (bulletActive[index] == false)
         {
-            bulletPositions[index] = new float3(0, -100, 0);
             return;
         }
 
@@ -55,7 +54,6 @@ public struct BulletMoveAndCollideJob : IJobParallelFor
         if (life <= 0)
         {
             bulletActive[index] = false;
-            bulletPositions[index] = new float3(0, -100, 0);
             return;
         }
 
@@ -118,7 +116,6 @@ public struct BulletMoveAndCollideJob : IJobParallelFor
                                 }
                             }
                             bulletActive[index] = false;
-                            bulletPositions[index] = new float3(0, -100, 0);
                             return;
                         }
 

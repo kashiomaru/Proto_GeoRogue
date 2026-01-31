@@ -50,10 +50,9 @@ public class BulletManager : InitializeMonobehaviour
 
         for (int i = 0; i < maxBullets; i++)
         {
-            _bulletPositions[i] = new float3(0, -100, 0);
             _bulletActive[i] = false;
-            _bulletPositionList.Add(Vector3.zero);
-            _bulletRotationList.Add(Quaternion.identity);
+            _bulletPositionList.Add(default);
+            _bulletRotationList.Add(default);
             _bulletActiveList.Add(false);
         }
     }
@@ -185,7 +184,6 @@ public class BulletManager : InitializeMonobehaviour
         for (int i = 0; i < maxBullets; i++)
         {
             _bulletActive[i] = false;
-            _bulletPositions[i] = new float3(0, -100, 0);
         }
         _bulletIndexHead = 0;
         _timer = 0f;
@@ -234,7 +232,6 @@ public class BulletManager : InitializeMonobehaviour
             }
 
             _bulletActive[i] = false;
-            _bulletPositions[i] = new float3(0, -100, 0);
 
             if (boss.IsDead)
             {

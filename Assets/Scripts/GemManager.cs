@@ -55,7 +55,7 @@ public class GemManager : InitializeMonobehaviour
         {
             _gemActive[i] = false;
             _gemIsFlying[i] = false;
-            _gemPositionList.Add(Vector3.zero);
+            _gemPositionList.Add(default);
             _gemActiveList.Add(false);
         }
     }
@@ -124,7 +124,6 @@ public class GemManager : InitializeMonobehaviour
         {
             _gemActive[i] = false;
             _gemIsFlying[i] = false;
-            _gemPositions[i] = new float3(0, -500, 0);
         }
         while (_collectedGemQueue.TryDequeue(out _)) { }
     }
