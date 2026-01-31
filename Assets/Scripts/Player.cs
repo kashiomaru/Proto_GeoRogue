@@ -341,24 +341,28 @@ public class Player : MonoBehaviour
         
         // スペースキーが押されているかチェック
         bool isSpacePressed = keyboard.spaceKey.isPressed;
+        // Shift押下時は回転のみ（移動しない）
+        bool shiftOnlyRotate = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
         
-        // 移動処理
+        // 移動・回転処理
         if (hasInput)
         {
             // カメラの向きを基準に移動方向を計算
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
             
-            // スペースキーが押されていない場合のみ回転
+            // 回転：スペースが押されていないときのみ
             if (isSpacePressed == false)
             {
-                // キャラクターの向きを滑らかに補間
                 float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
                 transform.rotation = Quaternion.Euler(0f, angle, 0f);
             }
             
-            // 移動ベクトルを作成（カメラ基準）
-            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-            transform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
+            // 移動：Shiftを押していないときのみ
+            if (shiftOnlyRotate == false)
+            {
+                Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+                transform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
+            }
         }
     }
 
