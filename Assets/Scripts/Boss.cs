@@ -22,6 +22,7 @@ public class Boss : MonoBehaviour
     
     // HP
     private float _currentHp;
+    private float _effectiveMaxHp; // 実際に使用する最大HP（デバッグ上書き時用）
     
     // デリゲート（生成時に設定）
     private Func<Vector3> getPlayerPosition; // プレイヤー位置を取得する関数
@@ -40,11 +41,13 @@ public class Boss : MonoBehaviour
     /// </summary>
     /// <param name="getPlayerPosition">プレイヤー位置を取得する関数</param>
     /// <param name="addPlayerDamage">プレイヤーにダメージを与える関数</param>
-    public void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage)
+    /// <param name="maxHpOverride">デバッグ用の最大HP上書き。null のときは maxHp を使用</param>
+    public void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage, float? maxHpOverride = null)
     {
         this.getPlayerPosition = getPlayerPosition;
         this.addPlayerDamage = addPlayerDamage;
-        _currentHp = maxHp; // HPを初期化
+        _effectiveMaxHp = maxHpOverride ?? maxHp;
+        _currentHp = _effectiveMaxHp;
         
         // MaterialPropertyBlockを初期化
         if (bossRenderer != null)
@@ -84,7 +87,7 @@ public class Boss : MonoBehaviour
     /// <summary>
     /// ボスの最大HPを取得
     /// </summary>
-    public float MaxHp => maxHp;
+    public float MaxHp => _effectiveMaxHp;
     
     /// <summary>
     /// ボスが死亡しているかどうか

@@ -62,8 +62,21 @@ public class GameManager : MonoBehaviour
     [Header("Countdown Timer")]
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
     
-    [Header("Game Mode")]
-    [SerializeField] private GameMode initialGameMode = GameMode.None; // 初期ゲームモード（インスペクターで設定可能）
+    [Header("Debug (Editor Only)")]
+    [Tooltip("初期ゲームモード。エディタでのデバッグ用。ビルドでは無視され、常にタイトルから開始します。")]
+    [SerializeField] private GameMode initialGameMode = GameMode.None;
+
+    [Tooltip("ノーマルステートのカウントダウン時間をデバッグ用に上書きするか。ビルドでは無視されます。")]
+    [SerializeField] private bool enableDebugCountdown = false;
+
+    [Tooltip("有効時、ノーマルステートで使用するカウントダウン時間（秒）。enableDebugCountdown が true のときのみ使用されます。")]
+    [SerializeField] private float debugCountdownTime = 10f;
+
+    [Tooltip("ボスの最大HPをデバッグ用に上書きするか。ビルドでは無視されます。")]
+    [SerializeField] private bool enableDebugBossHp = false;
+
+    [Tooltip("有効時、ボス生成時に使用する最大HP。enableDebugBossHp が true のときのみ使用されます。")]
+    [SerializeField] private float debugBossHp = 10f;
 
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
@@ -105,7 +118,7 @@ public class GameManager : MonoBehaviour
         _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
         
         // カウントダウンタイマーを初期化
-        _countdownTimer = countdownDuration;
+        _countdownTimer = GetEffectiveCountdownDuration();
         
         // ステートマシンを初期化
         InitializeStateMachine();
@@ -115,10 +128,16 @@ public class GameManager : MonoBehaviour
     {
         cameraManager?.Initialize();
         enemyManager?.Initialize();
-        enemyManager?.SetGameMode(initialGameMode);
+
+#if UNITY_EDITOR
+        GameMode startMode = initialGameMode;
+#else
+        GameMode startMode = GameMode.Title;
+#endif
+        enemyManager?.SetGameMode(startMode);
 
         _stateMachine = new StateMachine<GameMode, GameManager>(this);
-        
+
         // 各ステートを登録
         _stateMachine.RegisterState(GameMode.None, new NoneGameState());
         _stateMachine.RegisterState(GameMode.Title, new TitleGameState());
@@ -126,9 +145,9 @@ public class GameManager : MonoBehaviour
         _stateMachine.RegisterState(GameMode.Boss, new BossGameState());
         _stateMachine.RegisterState(GameMode.GameClear, new GameClearGameState());
         _stateMachine.RegisterState(GameMode.GameOver, new GameOverGameState());
-        
+
         // 初期ステートを設定
-        _stateMachine.Initialize(initialGameMode);
+        _stateMachine.Initialize(startMode);
     }
 
     void Update()
@@ -370,9 +389,37 @@ public class GameManager : MonoBehaviour
         _bulletIndexHead = 0;
         
         // カウントダウンタイマーをリセット
-        _countdownTimer = countdownDuration;
+        _countdownTimer = GetEffectiveCountdownDuration();
     }
-    
+
+    /// <summary>
+    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ有効時はデバッグ用の値（エディタのみ）。
+    /// </summary>
+    private float GetEffectiveCountdownDuration()
+    {
+#if UNITY_EDITOR
+        if (enableDebugCountdown)
+        {
+            return debugCountdownTime;
+        }
+#endif
+        return countdownDuration;
+    }
+
+    /// <summary>
+    /// ボス生成時に使用するHPのデバッグ用上書き値。エディタでデバッグ有効時のみ値が入る。ビルドでは常に null。
+    /// </summary>
+    public float? GetDebugBossHpOverride()
+    {
+#if UNITY_EDITOR
+        if (enableDebugBossHp)
+        {
+            return debugBossHp;
+        }
+#endif
+        return null;
+    }
+
     // LevelUpManager用のパラメータ取得・設定メソッド
     public float GetFireRate()
     {

@@ -360,9 +360,11 @@ public class EnemyManager : InitializeMonobehaviour
             Boss bossComponent = _currentBoss.GetComponent<Boss>();
             if (bossComponent != null && gameManager != null)
             {
+                float? bossHpOverride = gameManager.GetDebugBossHpOverride();
                 bossComponent.Initialize(
                     () => gameManager.GetPlayerPosition(),
-                    (damage) => gameManager.AddPlayerDamage(damage)
+                    (damage) => gameManager.AddPlayerDamage(damage),
+                    bossHpOverride
                 );
             }
             else
