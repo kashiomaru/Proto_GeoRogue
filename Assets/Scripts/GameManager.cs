@@ -53,28 +53,12 @@ public class GameManager : MonoBehaviour
     
     [Header("Countdown Timer")]
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
-    
-    [Header("Debug (Editor Only)")]
-    [Tooltip("初期ゲームモード。エディタでのデバッグ用。ビルドでは無視され、常にタイトルから開始します。")]
-    [SerializeField] private GameMode initialGameMode = GameMode.None;
 
-    [Tooltip("ノーマルステートのカウントダウン時間をデバッグ用に上書きするか。ビルドでは無視されます。")]
-    [SerializeField] private bool enableDebugCountdown = false;
-
-    [Tooltip("有効時、ノーマルステートで使用するカウントダウン時間（秒）。enableDebugCountdown が true のときのみ使用されます。")]
-    [SerializeField] private float debugCountdownTime = 10f;
-
-    [Tooltip("ボスの最大HPをデバッグ用に上書きするか。ビルドでは無視されます。")]
-    [SerializeField] private bool enableDebugBossHp = false;
-
-    [Tooltip("有効時、ボス生成時に使用する最大HP。enableDebugBossHp が true のときのみ使用されます。")]
-    [SerializeField] private float debugBossHp = 10f;
-
-    [Tooltip("プレイヤーのHPをデバッグ用に上書きするか。ビルドでは無視されます。")]
-    [SerializeField] private bool enableDebugPlayerHp = false;
-
-    [Tooltip("有効時、プレイヤーの最大HPと現在HPに設定する値。enableDebugPlayerHp が true のときのみ使用されます。")]
-    [SerializeField] private int debugPlayerHp = 1;
+#if UNITY_EDITOR
+    [Header("Debug")]
+    [Tooltip("デバッグ設定。空の場合はデバッグ無効。GameDebugSettings コンポーネントを付けた GameObject を割り当てると、そのインスペクタで一括 On/Off 可能。")]
+    [SerializeField] private GameDebugSettings debugSettings;
+#endif
 
     // プレイヤーへのダメージを記録するキュー（敵移動 Job 内からメインスレッドへ通知）
     private NativeQueue<int> _playerDamageQueue;
@@ -120,9 +104,9 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR
     private void ApplyDebugPlayerHp()
     {
-        if (enableDebugPlayerHp)
+        if (debugSettings != null && debugSettings.EnableDebug && debugSettings.EnableDebugPlayerHp)
         {
-            player?.SetHpForDebug(debugPlayerHp);
+            player?.SetHpForDebug(debugSettings.DebugPlayerHp);
         }
     }
 #endif
@@ -135,7 +119,9 @@ public class GameManager : MonoBehaviour
         gemManager?.Initialize();
 
 #if UNITY_EDITOR
-        GameMode startMode = initialGameMode;
+        GameMode startMode = (debugSettings != null && debugSettings.EnableDebug)
+            ? debugSettings.InitialGameMode
+            : GameMode.Title;
 #else
         GameMode startMode = GameMode.Title;
 #endif
@@ -267,28 +253,28 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ有効時はデバッグ用の値（エディタのみ）。
+    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ有効かつカウントダウン上書き時はデバッグ用の値（エディタのみ）。
     /// </summary>
     private float GetEffectiveCountdownDuration()
     {
 #if UNITY_EDITOR
-        if (enableDebugCountdown)
+        if (debugSettings != null && debugSettings.EnableDebug && debugSettings.EnableDebugCountdown)
         {
-            return debugCountdownTime;
+            return debugSettings.DebugCountdownTime;
         }
 #endif
         return countdownDuration;
     }
 
     /// <summary>
-    /// ボス生成時に使用するHPのデバッグ用上書き値。エディタでデバッグ有効時のみ値が入る。ビルドでは常に null。
+    /// ボス生成時に使用するHPのデバッグ用上書き値。デバッグ有効かつボスHP上書き時のみ値が入る（エディタのみ）。
     /// </summary>
     public float? GetDebugBossHpOverride()
     {
 #if UNITY_EDITOR
-        if (enableDebugBossHp)
+        if (debugSettings != null && debugSettings.EnableDebug && debugSettings.EnableDebugBossHp)
         {
-            return debugBossHp;
+            return debugSettings.DebugBossHp;
         }
 #endif
         return null;
