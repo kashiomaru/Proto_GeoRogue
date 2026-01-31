@@ -225,7 +225,10 @@ public class Player : MonoBehaviour
         Reset();
     }
 
-    public float GetFireRate() => fireRate;
+    /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
+    public float GetFireRate() => fireRate * Mathf.Max(1, bulletCountPerShot);
+    /// <summary>基準の発射間隔（マルチショット補正前）。FireRateUp などで変更する値。</summary>
+    public float GetBaseFireRate() => fireRate;
     public void SetFireRate(float value) { fireRate = value; }
     public float GetBulletSpeed() => bulletSpeed;
     public void SetBulletSpeed(float value) { bulletSpeed = value; }

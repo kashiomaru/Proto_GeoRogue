@@ -71,7 +71,7 @@ public class LevelUpManager : MonoBehaviour
         switch (type)
         {
             case UpgradeType.FireRateUp:
-                player.SetFireRate(player.GetFireRate() * 0.9f); // 10%短縮
+                player.SetFireRate(player.GetBaseFireRate() * 0.9f); // 基準間隔を10%短縮
                 break;
             case UpgradeType.BulletSpeedUp:
                 player.SetBulletSpeed(player.GetBulletSpeed() + 5f);

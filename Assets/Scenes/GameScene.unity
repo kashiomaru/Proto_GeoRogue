@@ -1700,11 +1700,11 @@ MonoBehaviour:
   cameraManager: {fileID: 1642372745}
   countdownDuration: 60
   initialGameMode: 1
-  enableDebugCountdown: 1
+  enableDebugCountdown: 0
   debugCountdownTime: 10
-  enableDebugBossHp: 1
+  enableDebugBossHp: 0
   debugBossHp: 10
-  enableDebugPlayerHp: 1
+  enableDebugPlayerHp: 0
   debugPlayerHp: 1
 --- !u!4 &379471279
 Transform:
