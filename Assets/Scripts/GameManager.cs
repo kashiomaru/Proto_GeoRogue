@@ -548,7 +548,7 @@ public class GameManager : MonoBehaviour
 
                 if (actualDamage > 0)
                 {
-                    damageTextManager?.ShowDamage(boss.Position, (int)actualDamage);
+                    damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage);
                 }
 
                 // 弾を無効化

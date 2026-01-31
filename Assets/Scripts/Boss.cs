@@ -19,6 +19,8 @@ public class Boss : MonoBehaviour
     
     [Header("References")]
     [SerializeField] private Renderer bossRenderer; // レンダラー参照
+    [Tooltip("ダメージテキスト表示位置。未設定の場合はボス中心（Position）を使用")]
+    [SerializeField] private Transform damageTextPositionAnchor;
     
     // HP
     private float _currentHp;
@@ -98,6 +100,14 @@ public class Boss : MonoBehaviour
     /// ボスの位置を取得
     /// </summary>
     public Vector3 Position => transform.position;
+
+    /// <summary>
+    /// ダメージテキストの表示位置を取得。Anchor が設定されていればその位置、なければ Position。
+    /// </summary>
+    public Vector3 GetDamageTextPosition()
+    {
+        return damageTextPositionAnchor?.position ?? transform.position;
+    }
     
     /// <summary>
     /// ボスの当たり判定半径を取得

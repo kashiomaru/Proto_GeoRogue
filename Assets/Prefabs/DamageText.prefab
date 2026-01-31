@@ -151,5 +151,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageText
   tmp: {fileID: 2375101066987842899}
-  lifeTime: 0.8
-  floatSpeed: 50
+  lifeTime: 0.5
+  floatSpeed: 100
