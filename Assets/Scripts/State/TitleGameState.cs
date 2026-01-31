@@ -23,11 +23,6 @@ public class TitleGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
-        // 次のステートがプレイ中（Normal/Boss）のときだけ時間を再開する
-        if (context.NextGameMode is GameMode.Normal or GameMode.Boss)
-        {
-            Time.timeScale = 1f;
-        }
         context.UIManager?.HideTitle();
     }
 }

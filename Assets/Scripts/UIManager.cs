@@ -363,13 +363,10 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    // ゲームオーバーUIを表示
+    // ゲームオーバーUIを表示（タイムスケールは GameOverGameState.OnEnter で設定）
     public void ShowGameOver(Action onRetryClicked)
     {
         _onRetryClicked = onRetryClicked;
-        
-        // ゲームを止める
-        Time.timeScale = 0f;
         
         // パネルを表示
         if (gameOverPanel != null)
@@ -388,9 +385,6 @@ public class UIManager : MonoBehaviour
 
     private void OnRetryButtonClicked()
     {
-        // ゲームを再開
-        Time.timeScale = 1f;
-
         // パネルを隠す
         if (gameOverPanel != null)
         {

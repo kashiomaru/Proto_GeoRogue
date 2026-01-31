@@ -10,6 +10,7 @@ public class BossGameState : GameStateBase
 
     public override void OnEnter(GameManager context)
     {
+        UnityEngine.Time.timeScale = 1f;
         context.UIManager?.ShowStatus();
         
         // ボスを生成（プレイヤーの位置と方向を渡す）

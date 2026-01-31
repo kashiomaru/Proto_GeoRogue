@@ -8,6 +8,7 @@ public class NormalGameState : GameStateBase
 
     public override void OnEnter(GameManager context)
     {
+        UnityEngine.Time.timeScale = 1f;
         context.SwitchCamera(0, immediate: true);
         context.UIManager?.ShowStatus();
         context.UIManager?.ShowCountdownTimer();
