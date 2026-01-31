@@ -50,36 +50,20 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         // パネルを隠す
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(false);
-        }
-        
-        if (gameOverPanel != null)
-        {
-            gameOverPanel.SetActive(false);
-        }
-        
+        levelUpPanel?.SetActive(false);
+        gameOverPanel?.SetActive(false);
+
         // リトライボタンのイベントを設定
-        if (retryButton != null)
-        {
-            retryButton.onClick.RemoveAllListeners();
-            retryButton.onClick.AddListener(OnRetryButtonClicked);
-        }
+        retryButton?.onClick.RemoveAllListeners();
+        retryButton?.onClick.AddListener(OnRetryButtonClicked);
 
         // ゲームクリアOKボタンのイベントを設定
-        if (gameClearOkButton != null)
-        {
-            gameClearOkButton.onClick.RemoveAllListeners();
-            gameClearOkButton.onClick.AddListener(OnGameClearOkButtonClicked);
-        }
+        gameClearOkButton?.onClick.RemoveAllListeners();
+        gameClearOkButton?.onClick.AddListener(OnGameClearOkButtonClicked);
 
         // スタートボタンのイベントを設定
-        if (startButton != null)
-        {
-            startButton.onClick.RemoveAllListeners();
-            startButton.onClick.AddListener(OnStartButtonClicked);
-        }
+        startButton?.onClick.RemoveAllListeners();
+        startButton?.onClick.AddListener(OnStartButtonClicked);
 
         // HPバーの初期化
         UpdateHpBar();
@@ -169,19 +153,13 @@ public class UIManager : MonoBehaviour
     // タイマーを非表示にする
     public void HideCountdownTimer()
     {
-        if (countdownText != null)
-        {
-            countdownText.gameObject.SetActive(false);
-        }
+        countdownText?.gameObject.SetActive(false);
     }
     
     // タイマーを表示する
     public void ShowCountdownTimer()
     {
-        if (countdownText != null)
-        {
-            countdownText.gameObject.SetActive(true);
-        }
+        countdownText?.gameObject.SetActive(true);
     }
     
     /// <summary>
@@ -190,10 +168,7 @@ public class UIManager : MonoBehaviour
     public void ShowTitle(Action onStartClicked)
     {
         _onStartClicked = onStartClicked;
-        if (titlePanel != null)
-        {
-            titlePanel.SetActive(true);
-        }
+        titlePanel?.SetActive(true);
     }
 
     private void OnStartButtonClicked()
@@ -206,10 +181,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void HideTitle()
     {
-        if (titlePanel != null)
-        {
-            titlePanel.SetActive(false);
-        }
+        titlePanel?.SetActive(false);
     }
     
     /// <summary>
@@ -218,10 +190,7 @@ public class UIManager : MonoBehaviour
     public void ShowGameClear(Action onOkClicked)
     {
         _onGameClearOkClicked = onOkClicked;
-        if (gameClearPanel != null)
-        {
-            gameClearPanel.SetActive(true);
-        }
+        gameClearPanel?.SetActive(true);
     }
 
     private void OnGameClearOkButtonClicked()
@@ -234,10 +203,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void HideGameClear()
     {
-        if (gameClearPanel != null)
-        {
-            gameClearPanel.SetActive(false);
-        }
+        gameClearPanel?.SetActive(false);
     }
     
     /// <summary>
@@ -245,10 +211,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void ShowStatus()
     {
-        if (statusParent != null)
-        {
-            statusParent.SetActive(true);
-        }
+        statusParent?.SetActive(true);
     }
     
     /// <summary>
@@ -256,10 +219,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void HideStatus()
     {
-        if (statusParent != null)
-        {
-            statusParent.SetActive(false);
-        }
+        statusParent?.SetActive(false);
     }
     
     // レベルアップUIを表示（内部メソッド）
@@ -304,23 +264,9 @@ public class UIManager : MonoBehaviour
     
     private void OnUpgradeButtonClicked(UpgradeType type)
     {
-        // LevelUpManagerに処理を委譲
-        if (levelUpManager != null)
-        {
-            levelUpManager.ApplyUpgrade(type);
-        }
-        
-        // プレイヤーのレベルアップ処理を実行
-        if (player != null)
-        {
-            player.LevelUp();
-        }
-        
-        // パネルを隠す
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(false);
-        }
+        levelUpManager?.ApplyUpgrade(type);
+        player?.LevelUp();
+        levelUpPanel?.SetActive(false);
         
         // フラグをリセット
         _isLevelUpUIOpen = false;
@@ -337,29 +283,18 @@ public class UIManager : MonoBehaviour
         // ゲームを止める
         Time.timeScale = 0f;
         
-        if (levelUpPanel != null)
-        {
-            levelUpPanel.SetActive(true);
-        }
-        
+        levelUpPanel?.SetActive(true);
+
         // オプションをUIに反映
         for (int i = 0; i < optionButtons.Length && i < optionTexts.Length && i < upgradeOptions.Count; i++)
         {
             UpgradeData data = upgradeOptions[i];
-            
-            // UI反映
             if (optionTexts[i] != null)
             {
                 optionTexts[i].text = data.title;
             }
-            
-            // ボタンのクリックイベントをリセットして登録
-            if (optionButtons[i] != null)
-            {
-                optionButtons[i].onClick.RemoveAllListeners();
-                int index = i; // クロージャ用
-                optionButtons[i].onClick.AddListener(() => OnUpgradeButtonClicked(data.type));
-            }
+            optionButtons[i]?.onClick.RemoveAllListeners();
+            optionButtons[i]?.onClick.AddListener(() => OnUpgradeButtonClicked(data.type));
         }
     }
     
@@ -367,29 +302,17 @@ public class UIManager : MonoBehaviour
     public void ShowGameOver(Action onRetryClicked)
     {
         _onRetryClicked = onRetryClicked;
-        
-        // パネルを表示
-        if (gameOverPanel != null)
-        {
-            gameOverPanel.SetActive(true);
-        }
+        gameOverPanel?.SetActive(true);
     }
     
     public void HideGameOver()
     {
-        if (gameOverPanel != null)
-        {
-            gameOverPanel.SetActive(false);
-        }
+        gameOverPanel?.SetActive(false);
     }
 
     private void OnRetryButtonClicked()
     {
-        // パネルを隠す
-        if (gameOverPanel != null)
-        {
-            gameOverPanel.SetActive(false);
-        }
+        gameOverPanel?.SetActive(false);
 
         // コールバックを呼び出し
         _onRetryClicked?.Invoke();

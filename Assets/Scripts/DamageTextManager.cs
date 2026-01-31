@@ -23,9 +23,20 @@ public class DamageTextManager : MonoBehaviour
     {
         // 非アクティブなものを探す（リングバッファでも可）
         var text = _pool.Find(t => !t.gameObject.activeSelf);
-        if(text != null)
+        text?.Initialize(worldPos, damage);
+    }
+
+    /// <summary>
+    /// 表示中のダメージテキストをすべて非表示にする。タイトルに戻る前のリセット時に呼ぶ。
+    /// </summary>
+    public void Reset()
+    {
+        foreach (var t in _pool)
         {
-            text.Initialize(worldPos, damage);
+            if (t != null && t.gameObject.activeSelf)
+            {
+                t.gameObject.SetActive(false);
+            }
         }
     }
 }

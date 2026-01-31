@@ -9,10 +9,7 @@ public class NoneGameState : GameStateBase
     public override void OnEnter(GameManager context)
     {
         // UIのタイマーを非表示
-        if (context.UIManager != null)
-        {
-            context.UIManager.HideCountdownTimer();
-        }
+        context.UIManager?.HideCountdownTimer();
     }
     
     public override void OnUpdate(GameManager context)

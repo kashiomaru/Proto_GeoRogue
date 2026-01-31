@@ -102,9 +102,6 @@ public class CameraManager : InitializeMonobehaviour
     public void SetBossLookAtTarget(Transform bossTransform)
     {
         // LookAtControllerにTransformを設定（nullの場合は回転を停止）
-        if (lookAtController != null)
-        {
-            lookAtController.SetLookAtTarget(bossTransform);
-        }
+        lookAtController?.SetLookAtTarget(bossTransform);
     }
 }

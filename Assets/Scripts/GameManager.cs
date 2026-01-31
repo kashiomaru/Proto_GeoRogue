@@ -143,9 +143,9 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR
     private void ApplyDebugPlayerHp()
     {
-        if (enableDebugPlayerHp && player != null)
+        if (enableDebugPlayerHp)
         {
-            player.SetHpForDebug(debugPlayerHp);
+            player?.SetHpForDebug(debugPlayerHp);
         }
     }
 #endif
@@ -179,10 +179,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         // ステートマシンを更新
-        if (_stateMachine != null)
-        {
-            _stateMachine.Update();
-        }
+        _stateMachine?.Update();
         
         // プレイ中でない場合は処理をスキップ
         if (IsPlaying == false)
@@ -340,9 +337,9 @@ public class GameManager : MonoBehaviour
                 int actualDamage = player.TakeDamage(totalDamage);
                 
                 // 実際にダメージが与えられた場合のみダメージテキストを表示
-                if (actualDamage > 0 && damageTextManager != null)
+                if (actualDamage > 0)
                 {
-                    damageTextManager.ShowDamage(playerTransform.position, actualDamage);
+                    damageTextManager?.ShowDamage(playerTransform.position, actualDamage);
                 }
                 
                 // HPが0になったらゲームオーバーステートへ
@@ -407,21 +404,12 @@ public class GameManager : MonoBehaviour
     public void ResetGameState()
     {
         // プレイヤーをリセット（HP・経験値・レベル・アップグレードパラメータは Player.Reset() で復元）
-        if (player != null)
-        {
-            player.Reset();
-        }
+        player?.Reset();
 
-        if (gemManager != null)
-        {
-            gemManager.ResetGems();
-        }
+        gemManager?.ResetGems();
 
         // 敵をリセット
-        if (enemyManager != null)
-        {
-            enemyManager.ResetEnemies();
-        }
+        enemyManager?.ResetEnemies();
         
         // 弾をリセット（配列とTransformの両方を画面外に）
         for (int i = 0; i < maxBullets; i++)
@@ -436,7 +424,9 @@ public class GameManager : MonoBehaviour
 
         // キューをクリア
         while (_playerDamageQueue.TryDequeue(out _)) { }
-        
+
+        damageTextManager?.Reset();
+
         // タイマーをリセット
         _timer = 0f;
         _bulletIndexHead = 0;
@@ -509,12 +499,7 @@ public class GameManager : MonoBehaviour
             NextGameMode = newMode;
             _stateMachine.ChangeState(newMode);
             NextGameMode = null;
-            
-            // EnemyManagerにモードを設定
-            if (enemyManager != null)
-            {
-                enemyManager.SetGameMode(newMode);
-            }
+            enemyManager?.SetGameMode(newMode);
         }
     }
     
@@ -561,9 +546,9 @@ public class GameManager : MonoBehaviour
                 // ヒット！
                 float actualDamage = boss.TakeDamage(bulletDamage);
 
-                if (actualDamage > 0 && damageTextManager != null)
+                if (actualDamage > 0)
                 {
-                    damageTextManager.ShowDamage(boss.Position, (int)actualDamage);
+                    damageTextManager?.ShowDamage(boss.Position, (int)actualDamage);
                 }
 
                 // 弾を無効化
@@ -589,18 +574,12 @@ public class GameManager : MonoBehaviour
     // immediate: true のときブレンドなしで即時切り替え、false のときはブレンド補間
     public void SwitchCamera(int cameraIndex, bool immediate = false)
     {
-        if (cameraManager != null)
-        {
-            cameraManager.SwitchCamera(cameraIndex, immediate);
-        }
+        cameraManager?.SwitchCamera(cameraIndex, immediate);
     }
     
     public void SwitchCameraByName(string cameraName)
     {
-        if (cameraManager != null)
-        {
-            cameraManager.SwitchCameraByName(cameraName);
-        }
+        cameraManager?.SwitchCameraByName(cameraName);
     }
     
     // プレイヤーへのダメージを追加（ボス用）
@@ -615,11 +594,7 @@ public class GameManager : MonoBehaviour
     // プレイヤーの位置を取得（ボス用）
     public Vector3 GetPlayerPosition()
     {
-        if (playerTransform != null)
-        {
-            return playerTransform.position;
-        }
-        return Vector3.zero;
+        return playerTransform != null ? playerTransform.position : Vector3.zero;
     }
 
     /// <summary>

@@ -22,16 +22,12 @@ public class BossGameState : GameStateBase
             context.EnemyManager.SpawnBoss(playerPosition, playerForward);
         }
         
-        // カメラをインデックス0から1に切り替え
-        if (context.CameraManager != null)
+        // カメラをインデックス0から1に切り替え（ボスのTransformをLookAtConstraintのターゲットに設定）
+        GameObject boss = context.EnemyManager?.GetCurrentBoss();
+        if (boss != null)
         {
-            // ボスのTransformをLookAtConstraintのターゲットに設定
-            GameObject boss = context.EnemyManager?.GetCurrentBoss();
-            if (boss != null)
-            {
-                context.CameraManager.SwitchCamera(1);
-                context.CameraManager.SetBossLookAtTarget(boss.transform);
-            }
+            context.CameraManager?.SwitchCamera(1);
+            context.CameraManager?.SetBossLookAtTarget(boss.transform);
         }
     }
     

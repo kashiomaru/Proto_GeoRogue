@@ -189,12 +189,9 @@ public class EnemyManager : InitializeMonobehaviour
     // 死んだ敵の位置を取得（ジェム生成用）
     public void ProcessDeadEnemies(GemManager gemManager)
     {
-        if (gemManager != null)
+        while (_deadEnemyPositions.TryDequeue(out float3 position))
         {
-            while (_deadEnemyPositions.TryDequeue(out float3 position))
-            {
-                gemManager.SpawnGem(position);
-            }
+            gemManager?.SpawnGem(position);
         }
     }
     
@@ -202,16 +199,12 @@ public class EnemyManager : InitializeMonobehaviour
     public void ProcessEnemyDamage()
     {
         // キューから敵へのダメージ情報を取得してダメージテキストを表示
-        if (damageTextManager != null)
+        while (_enemyDamageQueue.TryDequeue(out EnemyDamageInfo damageInfo))
         {
-            while (_enemyDamageQueue.TryDequeue(out EnemyDamageInfo damageInfo))
+            int damageInt = (int)damageInfo.damage;
+            if (damageInt > 0)
             {
-                // ダメージをintに変換して表示（小数点以下は切り捨て）
-                int damageInt = (int)damageInfo.damage;
-                if (damageInt > 0)
-                {
-                    damageTextManager.ShowDamage(damageInfo.position, damageInt);
-                }
+                damageTextManager?.ShowDamage(damageInfo.position, damageInt);
             }
         }
         

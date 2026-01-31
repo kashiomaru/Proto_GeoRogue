@@ -48,10 +48,7 @@ public class StateMachine<TState, TContext>
         }
         
         // 現在のステートから出る
-        if (_currentState != null)
-        {
-            _currentState.OnExit(_context);
-        }
+        _currentState?.OnExit(_context);
         
         // 新しいステートに切り替え
         if (_states.TryGetValue(newStateKey, out IState<TContext> newState))
@@ -71,10 +68,7 @@ public class StateMachine<TState, TContext>
     /// </summary>
     public void Update()
     {
-        if (_currentState != null)
-        {
-            _currentState.OnUpdate(_context);
-        }
+        _currentState?.OnUpdate(_context);
     }
     
     /// <summary>

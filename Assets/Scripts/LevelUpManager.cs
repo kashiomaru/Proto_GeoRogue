@@ -24,10 +24,7 @@ public class LevelUpManager : MonoBehaviour
         List<UpgradeData> selectedOptions = SelectRandomUpgrades(3);
         
         // UIManagerに表示を委譲
-        if (uiManager != null)
-        {
-            uiManager.ShowLevelUpOptions(selectedOptions, OnUpgradeSelected);
-        }
+        uiManager?.ShowLevelUpOptions(selectedOptions, OnUpgradeSelected);
     }
     
     // ランダムなアップグレードオプションを取得（UIManager用）
