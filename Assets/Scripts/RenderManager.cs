@@ -37,7 +37,10 @@ public class RenderManager : MonoBehaviour
         // 1023個ずつに区切って描画
         for (int i = 0; i < count; i++)
         {
-            if (!activeFlags[i]) continue; // 死んでる敵はスキップ
+            if (!activeFlags[i])
+            {
+                continue; // 死んでる敵はスキップ
+            }
 
             // 1. 行列（位置・回転・スケール）を作成
             // ※ここが最適化ポイント：回転やスケールが変わらないなら固定値で高速化可

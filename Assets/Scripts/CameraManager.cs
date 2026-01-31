@@ -69,8 +69,11 @@ public class CameraManager : InitializeMonobehaviour
     // カメラを名前で切り替える
     public void SwitchCameraByName(string cameraName)
     {
-        if (virtualCameras == null) return;
-        
+        if (virtualCameras == null)
+        {
+            return;
+        }
+
         for (int i = 0; i < virtualCameras.Length; i++)
         {
             if (virtualCameras[i] != null && virtualCameras[i].name == cameraName)

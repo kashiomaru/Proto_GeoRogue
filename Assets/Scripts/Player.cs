@@ -113,7 +113,10 @@ public class Player : MonoBehaviour
     public int TakeDamage(int damage)
     {
         // 無敵時間中または既に死んでいる場合はダメージを与えない
-        if (_isInvincible || _currentHp <= 0) return 0;
+        if (_isInvincible || _currentHp <= 0)
+        {
+            return 0;
+        }
         
         // 実際に与えるダメージを計算
         int actualDamage = damage;
@@ -142,7 +145,10 @@ public class Player : MonoBehaviour
     // 経験値を加算し、レベルアップ可能フラグを設定
     public void AddExperience(int amount)
     {
-        if (amount <= 0) return;
+        if (amount <= 0)
+        {
+            return;
+        }
         
         _currentExp += amount;
 
@@ -156,7 +162,10 @@ public class Player : MonoBehaviour
     // レベルアップ処理（UIで選択後に呼ばれる）
     public void LevelUp()
     {
-        if (!_canLevelUp || _currentLevel >= maxLevel) return;
+        if (!_canLevelUp || _currentLevel >= maxLevel)
+        {
+            return;
+        }
         
         // 経験値をリセット
         _currentExp -= _nextLevelExp;
@@ -216,7 +225,10 @@ public class Player : MonoBehaviour
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()
     {
-        if (_renderer == null || _mpb == null) return;
+        if (_renderer == null || _mpb == null)
+        {
+            return;
+        }
         
         // 無敵時間中
         if (_isInvincible && _invincibleTimer > 0f)
@@ -279,22 +291,33 @@ public class Player : MonoBehaviour
     {
         // 新しいInput SystemでWASDキー入力を取得
         Keyboard keyboard = Keyboard.current;
-        if (keyboard == null) return;
-        
+        if (keyboard == null)
+        {
+            return;
+        }
+
         float horizontal = 0f;
         float vertical = 0f;
         
         // 左右移動
         if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
+        {
             horizontal -= 1f;
+        }
         if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
+        {
             horizontal += 1f;
-        
+        }
+
         // 前後移動
         if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
+        {
             vertical += 1f;
+        }
         if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
+        {
             vertical -= 1f;
+        }
         
         // 入力方向を計算
         Vector2 moveInput = new Vector2(horizontal, vertical);

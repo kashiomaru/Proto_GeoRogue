@@ -106,8 +106,11 @@ public class Boss : MonoBehaviour
     
     private void Update()
     {
-        if (getPlayerPosition == null || addPlayerDamage == null) return;
-        
+        if (getPlayerPosition == null || addPlayerDamage == null)
+        {
+            return;
+        }
+
         // フラッシュ色の更新
         UpdateFlashColor();
         
@@ -149,7 +152,10 @@ public class Boss : MonoBehaviour
     /// </summary>
     private void UpdateFlashColor()
     {
-        if (bossRenderer == null || _mpb == null) return;
+        if (bossRenderer == null || _mpb == null)
+        {
+            return;
+        }
 
         // フラッシュタイマーの更新
         if (_flashTimer > 0f)

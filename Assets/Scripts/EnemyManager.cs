@@ -125,8 +125,11 @@ public class EnemyManager : InitializeMonobehaviour
             var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
             pos.y = 0;
             var obj = Instantiate(cubePrefab, pos, Quaternion.identity);
-            if(obj.TryGetComponent<Collider>(out var col)) col.enabled = false; // コライダー必須OFF
-            
+            if (obj.TryGetComponent<Collider>(out var col))
+            {
+                col.enabled = false; // コライダー必須OFF
+            }
+
             _enemyTransforms.Add(obj.transform);
             _enemyPositions[i] = pos;
             _enemyActive[i] = true;
@@ -387,8 +390,11 @@ public class EnemyManager : InitializeMonobehaviour
     // ボスの死亡チェックと削除処理
     private void CheckBossDeath()
     {
-        if (_currentBoss == null) return;
-        
+        if (_currentBoss == null)
+        {
+            return;
+        }
+
         Boss boss = _currentBoss.GetComponent<Boss>();
         if (boss != null && boss.IsDead)
         {
@@ -440,17 +446,41 @@ public class EnemyManager : InitializeMonobehaviour
     
     protected override void FinalizeInternal()
     {
-        if (_enemyTransforms.isCreated) _enemyTransforms.Dispose();
-        if (_enemyPositions.IsCreated) _enemyPositions.Dispose();
-        if (_enemyActive.IsCreated) _enemyActive.Dispose();
-        if (_enemyHp.IsCreated) _enemyHp.Dispose();
-        
-        if (_spatialMap.IsCreated) _spatialMap.Dispose();
-        
-        if (_deadEnemyPositions.IsCreated) _deadEnemyPositions.Dispose();
-        if (_enemyDamageQueue.IsCreated) _enemyDamageQueue.Dispose();
-        if (_enemyFlashQueue.IsCreated) _enemyFlashQueue.Dispose();
-        
+        if (_enemyTransforms.isCreated)
+        {
+            _enemyTransforms.Dispose();
+        }
+        if (_enemyPositions.IsCreated)
+        {
+            _enemyPositions.Dispose();
+        }
+        if (_enemyActive.IsCreated)
+        {
+            _enemyActive.Dispose();
+        }
+        if (_enemyHp.IsCreated)
+        {
+            _enemyHp.Dispose();
+        }
+
+        if (_spatialMap.IsCreated)
+        {
+            _spatialMap.Dispose();
+        }
+
+        if (_deadEnemyPositions.IsCreated)
+        {
+            _deadEnemyPositions.Dispose();
+        }
+        if (_enemyDamageQueue.IsCreated)
+        {
+            _enemyDamageQueue.Dispose();
+        }
+        if (_enemyFlashQueue.IsCreated)
+        {
+            _enemyFlashQueue.Dispose();
+        }
+
         // ボスを削除
         if (_currentBoss != null)
         {

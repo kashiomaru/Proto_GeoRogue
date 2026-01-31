@@ -66,7 +66,10 @@ public class LevelUpManager : MonoBehaviour
 
     private void ApplyUpgradeEffect(UpgradeType type)
     {
-        if (player == null) return;
+        if (player == null)
+        {
+            return;
+        }
 
         switch (type)
         {

@@ -104,11 +104,26 @@ public class GemManager : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_gemTransforms.isCreated) _gemTransforms.Dispose();
-        if (_gemPositions.IsCreated) _gemPositions.Dispose();
-        if (_gemActive.IsCreated) _gemActive.Dispose();
-        if (_gemIsFlying.IsCreated) _gemIsFlying.Dispose();
-        if (_collectedGemQueue.IsCreated) _collectedGemQueue.Dispose();
+        if (_gemTransforms.isCreated)
+        {
+            _gemTransforms.Dispose();
+        }
+        if (_gemPositions.IsCreated)
+        {
+            _gemPositions.Dispose();
+        }
+        if (_gemActive.IsCreated)
+        {
+            _gemActive.Dispose();
+        }
+        if (_gemIsFlying.IsCreated)
+        {
+            _gemIsFlying.Dispose();
+        }
+        if (_collectedGemQueue.IsCreated)
+        {
+            _collectedGemQueue.Dispose();
+        }
     }
     
     /// <summary>

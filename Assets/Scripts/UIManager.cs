@@ -265,8 +265,11 @@ public class UIManager : MonoBehaviour
     // レベルアップUIを表示（内部メソッド）
     private void ShowLevelUpUI()
     {
-        if (levelUpManager == null || levelUpPanel == null) return;
-        
+        if (levelUpManager == null || levelUpPanel == null)
+        {
+            return;
+        }
+
         _isLevelUpUIOpen = true;
         
         // ゲームを止める

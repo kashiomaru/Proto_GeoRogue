@@ -88,7 +88,10 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
                     do
                     {
                         // 死んでる敵は無視（マップには入っている可能性があるため念のため）
-                        if (!enemyActive[enemyIndex]) continue;
+                        if (!enemyActive[enemyIndex])
+                        {
+                            continue;
+                        }
 
                         float3 enemyPos = enemyPositions[enemyIndex];
                         float distSq = math.distancesq(pos, enemyPos);

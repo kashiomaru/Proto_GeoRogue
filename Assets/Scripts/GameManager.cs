@@ -228,7 +228,10 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < maxBullets; i++)
         {
             var obj = Instantiate(bulletPrefab, new Vector3(0, -100, 0), Quaternion.identity);
-            if(obj.TryGetComponent<Collider>(out var col)) col.enabled = false;
+            if (obj.TryGetComponent<Collider>(out var col))
+            {
+                col.enabled = false;
+            }
             _bulletTransforms.Add(obj.transform);
             _bulletActive[i] = false;
         }
@@ -236,7 +239,10 @@ public class GameManager : MonoBehaviour
 
     void HandleShooting()
     {
-        if (player == null) return;
+        if (player == null)
+        {
+            return;
+        }
         float fireRate = player.GetFireRate();
         int bulletCountPerShot = player.GetBulletCountPerShot();
         float bulletSpeed = player.GetBulletSpeed();
@@ -335,14 +341,35 @@ public class GameManager : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_bulletTransforms.isCreated) _bulletTransforms.Dispose();
-        if (_bulletPositions.IsCreated) _bulletPositions.Dispose();
-        if (_bulletDirections.IsCreated) _bulletDirections.Dispose();
-        if (_bulletVelocities.IsCreated) _bulletVelocities.Dispose();
-        if (_bulletActive.IsCreated) _bulletActive.Dispose();
-        if (_bulletLifeTime.IsCreated) _bulletLifeTime.Dispose();
-        
-        if (_playerDamageQueue.IsCreated) _playerDamageQueue.Dispose();
+        if (_bulletTransforms.isCreated)
+        {
+            _bulletTransforms.Dispose();
+        }
+        if (_bulletPositions.IsCreated)
+        {
+            _bulletPositions.Dispose();
+        }
+        if (_bulletDirections.IsCreated)
+        {
+            _bulletDirections.Dispose();
+        }
+        if (_bulletVelocities.IsCreated)
+        {
+            _bulletVelocities.Dispose();
+        }
+        if (_bulletActive.IsCreated)
+        {
+            _bulletActive.Dispose();
+        }
+        if (_bulletLifeTime.IsCreated)
+        {
+            _bulletLifeTime.Dispose();
+        }
+
+        if (_playerDamageQueue.IsCreated)
+        {
+            _playerDamageQueue.Dispose();
+        }
     }
     
     /// <summary>
@@ -467,13 +494,22 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void CheckBossBulletCollision()
     {
-        if (enemyManager == null) return;
-        
+        if (enemyManager == null)
+        {
+            return;
+        }
+
         GameObject bossObject = enemyManager.GetCurrentBoss();
-        if (bossObject == null) return;
-        
+        if (bossObject == null)
+        {
+            return;
+        }
+
         Boss boss = bossObject.GetComponent<Boss>();
-        if (boss == null || boss.IsDead) return;
+        if (boss == null || boss.IsDead)
+        {
+            return;
+        }
         
         float3 bossPos = (float3)boss.Position;
         float bossRadius = boss.CollisionRadius;
@@ -482,8 +518,11 @@ public class GameManager : MonoBehaviour
         // 全てのアクティブな弾をチェック
         for (int i = 0; i < maxBullets; i++)
         {
-            if (!_bulletActive[i]) continue;
-            
+            if (!_bulletActive[i])
+            {
+                continue;
+            }
+
             float3 bulletPos = _bulletPositions[i];
             float distSq = math.distancesq(bulletPos, bossPos);
             
