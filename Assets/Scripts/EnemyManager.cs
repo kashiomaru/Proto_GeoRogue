@@ -9,7 +9,10 @@ using System.Collections.Generic;
 public class EnemyManager : InitializeMonobehaviour
 {
     [Header("Enemy Settings")]
-    [SerializeField] private int enemyCount = 10;
+    [Tooltip("管理する敵の最大数（配列・リストのサイズ）。初期化時に固定。")]
+    [SerializeField] private int maxEnemyCount = 1000;
+    [Tooltip("実際に出現させる敵の数。ランタイムで変更可能。")]
+    [SerializeField] private int spawnCount = 10;
     [SerializeField] private float enemySpeed = 4f;
     [SerializeField] private float enemyMaxHp = 1.0f;
     [SerializeField] private float enemyFlashDuration = 0.1f;
@@ -61,7 +64,12 @@ public class EnemyManager : InitializeMonobehaviour
     public NativeArray<bool> EnemyActive => _enemyActive;
     public NativeArray<float> EnemyHp => _enemyHp;
     public NativeParallelMultiHashMap<int, int> SpatialMap => _spatialMap;
-    public int EnemyCount => enemyCount;
+    /// <summary>管理最大数（配列サイズ）。初期化時に固定。</summary>
+    public int MaxEnemyCount => maxEnemyCount;
+    /// <summary>実際に出現させる敵の数。ランタイムで変更可能。</summary>
+    public int SpawnCount { get => spawnCount; set => spawnCount = Mathf.Clamp(value, 1, maxEnemyCount); }
+    /// <summary>敵の処理数（SpawnCount と同じ）。後方互換用。</summary>
+    public int EnemyCount => spawnCount;
     public float EnemySpeed => enemySpeed;
     public float CellSize => cellSize;
     public float EnemyDamageRadius => enemyDamageRadius;
@@ -94,29 +102,40 @@ public class EnemyManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
-        _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
-        _enemyRotations = new NativeArray<quaternion>(enemyCount, Allocator.Persistent);
-        _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
-        _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
-        _enemyFlashTimers = new List<float>(new float[enemyCount]);
-        _enemyPositionList = new List<Vector3>(enemyCount);
-        _enemyRotationList = new List<Quaternion>(enemyCount);
-        _enemyActiveList = new List<bool>(enemyCount);
+        spawnCount = Mathf.Clamp(spawnCount, 1, maxEnemyCount);
 
-        for (int i = 0; i < enemyCount; i++)
+        _enemyPositions = new NativeArray<float3>(maxEnemyCount, Allocator.Persistent);
+        _enemyRotations = new NativeArray<quaternion>(maxEnemyCount, Allocator.Persistent);
+        _enemyActive = new NativeArray<bool>(maxEnemyCount, Allocator.Persistent);
+        _enemyHp = new NativeArray<float>(maxEnemyCount, Allocator.Persistent);
+        _enemyFlashTimers = new List<float>(new float[maxEnemyCount]);
+        _enemyPositionList = new List<Vector3>(maxEnemyCount);
+        _enemyRotationList = new List<Quaternion>(maxEnemyCount);
+        _enemyActiveList = new List<bool>(maxEnemyCount);
+
+        for (int i = 0; i < maxEnemyCount; i++)
         {
-            var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
-            pos.y = 0;
+            bool active = i < spawnCount;
+            float3 pos;
+            if (active)
+            {
+                pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
+                pos.y = 0;
+            }
+            else
+            {
+                pos = new float3(0, -500, 0);
+            }
             _enemyPositions[i] = pos;
             _enemyRotations[i] = quaternion.identity;
-            _enemyActive[i] = true;
-            _enemyHp[i] = enemyMaxHp;
+            _enemyActive[i] = active;
+            _enemyHp[i] = active ? enemyMaxHp : 0f;
             _enemyPositionList.Add(Vector3.zero);
             _enemyRotationList.Add(Quaternion.identity);
             _enemyActiveList.Add(false);
         }
 
-        _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
+        _spatialMap = new NativeParallelMultiHashMap<int, int>(maxEnemyCount, Allocator.Persistent);
         
         // 死んだ敵の位置を記録するキューを初期化
         _deadEnemyPositions = new NativeQueue<float3>(Allocator.Persistent);
@@ -143,7 +162,7 @@ public class EnemyManager : InitializeMonobehaviour
         }
         else
         {
-            _spatialMap = new NativeParallelMultiHashMap<int, int>(enemyCount, Allocator.Persistent);
+            _spatialMap = new NativeParallelMultiHashMap<int, int>(maxEnemyCount, Allocator.Persistent);
         }
 
         var enemyJob = new EnemyMoveAndHashJob
@@ -160,7 +179,7 @@ public class EnemyManager : InitializeMonobehaviour
             damageQueue = playerDamageQueue // プレイヤーへのダメージを記録
         };
         
-        return enemyJob.Schedule(enemyCount, 64);
+        return enemyJob.Schedule(spawnCount, 64);
     }
     
     // 死んだ敵の位置を取得（ジェム生成用）
@@ -188,7 +207,7 @@ public class EnemyManager : InitializeMonobehaviour
         // フラッシュタイマーを設定（ダメージを受けた敵）
         while (_enemyFlashQueue.TryDequeue(out int enemyIndex))
         {
-            if (enemyIndex >= 0 && enemyIndex < enemyCount && enemyIndex < _enemyFlashTimers.Count)
+            if (enemyIndex >= 0 && enemyIndex < spawnCount && enemyIndex < _enemyFlashTimers.Count)
             {
                 // ★ヒットフラッシュ開始（0.1秒光る）
                 _enemyFlashTimers[enemyIndex] = enemyFlashDuration;
@@ -204,7 +223,7 @@ public class EnemyManager : InitializeMonobehaviour
         // 死んでいる敵（または画面外にはるか遠くに行った敵）を見つけて再配置
         float deleteDistSq = respawnDistance * respawnDistance;
         
-        for (int i = 0; i < enemyCount; i++)
+        for (int i = 0; i < spawnCount; i++)
         {
             // アクティブでない、またはプレイヤーから離れすぎた敵をリサイクル
             if (_enemyActive[i] == false || math.distancesq(_enemyPositions[i], playerPos) > deleteDistSq)
@@ -225,16 +244,16 @@ public class EnemyManager : InitializeMonobehaviour
     void UpdateFlashTimers()
     {
         // --- フラッシュタイマーの更新 ---
-        for (int i = 0; i < _enemyFlashTimers.Count; i++)
+        for (int i = 0; i < spawnCount; i++)
         {
-            if (_enemyFlashTimers[i] > 0)
+            if (i < _enemyFlashTimers.Count && _enemyFlashTimers[i] > 0)
             {
                 _enemyFlashTimers[i] -= Time.deltaTime;
             }
         }
         
-        Assert.IsTrue(enemyCount == _enemyActiveList.Count);
-        for (int i = 0; i < enemyCount; i++)
+        Assert.IsTrue(maxEnemyCount == _enemyActiveList.Count);
+        for (int i = 0; i < spawnCount; i++)
         {
             _enemyActiveList[i] = _enemyActive[i];
             _enemyPositionList[i] = _enemyPositions[i];
@@ -249,12 +268,12 @@ public class EnemyManager : InitializeMonobehaviour
         {
             return;
         }
-        renderManager.RenderEnemies(_enemyPositionList, _enemyRotationList, _enemyFlashTimers, _enemyActiveList);
+        renderManager.RenderEnemies(_enemyPositionList, _enemyRotationList, _enemyFlashTimers, _enemyActiveList, spawnCount);
     }
     
     public void ClearAllEnemies()
     {
-        for (int i = 0; i < enemyCount; i++)
+        for (int i = 0; i < spawnCount; i++)
         {
             _enemyActive[i] = false;
             _enemyActiveList[i] = false;
@@ -263,7 +282,7 @@ public class EnemyManager : InitializeMonobehaviour
     
     public void ResetEnemies()
     {
-        for (int i = 0; i < enemyCount; i++)
+        for (int i = 0; i < spawnCount; i++)
         {
             var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
             pos.y = 0;
@@ -271,9 +290,14 @@ public class EnemyManager : InitializeMonobehaviour
             _enemyActive[i] = true;
             _enemyHp[i] = enemyMaxHp;
         }
+        for (int i = spawnCount; i < maxEnemyCount; i++)
+        {
+            _enemyActive[i] = false;
+            _enemyPositions[i] = new float3(0, -500, 0);
+        }
 
         // フラッシュタイマーをリセット
-        for (int i = 0; i < _enemyFlashTimers.Count; i++)
+        for (int i = 0; i < spawnCount && i < _enemyFlashTimers.Count; i++)
         {
             _enemyFlashTimers[i] = 0f;
         }

@@ -30,12 +30,13 @@ public class RenderManager : MonoBehaviour
     /// <summary>
     /// 敵を座標・回転リストで描画。回転は Job で計算済み（プレイヤー方向）。
     /// </summary>
-    public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags)
+    /// <param name="count">描画する敵の数。省略時は positions.Count を使用。</param>
+    public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags, int? count = null)
     {
-        int count = positions.Count;
+        int drawCount = count ?? positions.Count;
         int batchIndex = 0;
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < drawCount; i++)
         {
             if (activeFlags[i] == false)
             {
@@ -66,7 +67,7 @@ public class RenderManager : MonoBehaviour
             // バッチが満タンなら描画実行
             if (batchIndex >= BATCH_SIZE)
             {
-                ExecuteDraw(batchIndex);
+                ExecuteDrawEnemies(batchIndex);
 
                 batchIndex = 0;
             }
@@ -74,9 +75,29 @@ public class RenderManager : MonoBehaviour
 
         if (batchIndex > 0)
         {
-            ExecuteDraw(batchIndex);
+            ExecuteDrawEnemies(batchIndex);
         }
     }
+
+    private void ExecuteDrawEnemies(int count)
+    {
+        // プロパティブロックに配列をセット
+        _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
+
+        // 描画発行
+        // count引数には「実際に配列に入れた数」を渡す（配列全部ではない）
+        Graphics.DrawMeshInstanced(
+            enemyMesh, 
+            0, 
+            enemyMaterial, 
+            _matrices, 
+            count, 
+            _mpb, 
+            UnityEngine.Rendering.ShadowCastingMode.On, 
+            true // Receive Shadows
+        );
+    }
+
 
     /// <summary>
     /// ジェムを座標・アクティブリストで描画（敵と同様に DrawMeshInstanced、Instantiate なし）。
@@ -107,51 +128,29 @@ public class RenderManager : MonoBehaviour
 
             if (batchIndex >= BATCH_SIZE)
             {
-                Graphics.DrawMeshInstanced(
-                    gemMesh,
-                    0,
-                    gemMaterial,
-                    _matrices,
-                    batchIndex,
-                    null,
-                    UnityEngine.Rendering.ShadowCastingMode.On,
-                    true
-                );
+                ExecuteDrawGems(batchIndex);
+
                 batchIndex = 0;
             }
         }
 
         if (batchIndex > 0)
         {
-            Graphics.DrawMeshInstanced(
-                gemMesh,
-                0,
-                gemMaterial,
-                _matrices,
-                batchIndex,
-                null,
-                UnityEngine.Rendering.ShadowCastingMode.On,
-                true
-            );
+            ExecuteDrawGems(batchIndex);
         }
     }
 
-    private void ExecuteDraw(int count)
+    private void ExecuteDrawGems(int count)
     {
-        // プロパティブロックに配列をセット
-        _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
-
-        // 描画発行
-        // count引数には「実際に配列に入れた数」を渡す（配列全部ではない）
         Graphics.DrawMeshInstanced(
-            enemyMesh, 
-            0, 
-            enemyMaterial, 
-            _matrices, 
-            count, 
-            _mpb, 
-            UnityEngine.Rendering.ShadowCastingMode.On, 
-            true // Receive Shadows
+            gemMesh,
+            0,
+            gemMaterial,
+            _matrices,
+            count,
+            null,
+            UnityEngine.Rendering.ShadowCastingMode.On,
+            true
         );
     }
 }
