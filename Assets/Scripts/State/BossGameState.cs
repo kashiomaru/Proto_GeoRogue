@@ -8,6 +8,8 @@ public class BossGameState : GameStateBase
 {
     public override void OnEnter(GameManager context)
     {
+        context.UIManager?.ShowStatus();
+        
         // ボスを生成（プレイヤーの位置と方向を渡す）
         if (context.EnemyManager != null && context.PlayerTransform != null)
         {
