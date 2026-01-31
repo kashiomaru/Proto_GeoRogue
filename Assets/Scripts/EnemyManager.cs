@@ -340,6 +340,14 @@ public class EnemyManager : InitializeMonobehaviour
         {
             _currentBoss = Instantiate(bossPrefab, bossPosition, Quaternion.identity, transform);
 
+            // ボスの向きをプレイヤー方向に設定（Y軸は0で水平面のみ）
+            Vector3 dirToPlayer = playerPosition - bossPosition;
+            dirToPlayer.y = 0f;
+            if (dirToPlayer.sqrMagnitude > 0.001f)
+            {
+                _currentBoss.transform.rotation = Quaternion.LookRotation(dirToPlayer.normalized);
+            }
+
             // Bossコンポーネントを取得して初期化
             Boss bossComponent = _currentBoss.GetComponent<Boss>();
             if (bossComponent != null && gameManager != null)
