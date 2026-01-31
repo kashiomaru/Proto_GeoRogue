@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Jobs;
 using UnityEngine.Assertions;
 using Unity.Collections;
 using Unity.Burst;
@@ -10,7 +9,6 @@ using System.Collections.Generic;
 public class EnemyManager : InitializeMonobehaviour
 {
     [Header("Enemy Settings")]
-    [SerializeField] private GameObject cubePrefab;
     [SerializeField] private int enemyCount = 10;
     [SerializeField] private float enemySpeed = 4f;
     [SerializeField] private float enemyMaxHp = 1.0f;
@@ -40,14 +38,13 @@ public class EnemyManager : InitializeMonobehaviour
     private bool _normalEnemiesEnabled;
     private bool _bossActive;
     
-    // --- Enemy Data ---
-    private TransformAccessArray _enemyTransforms;
+    // --- Enemy Data（座標のみ保持、Prefab インスタンスは生成しない）---
     private NativeArray<float3> _enemyPositions;
-    private NativeArray<bool> _enemyActive; // 生存フラグ
-    private NativeArray<float> _enemyHp; // 敵のHP
-    private List<float> _enemyFlashTimers; // フラッシュの残り時間を管理
-    private List<Transform> _enemyTransformList; // 描画メソッドに渡す用（TransformAccessArrayとは別管理が楽）
-    private List<bool> _enemyActiveList; // 生存フラグ
+    private NativeArray<bool> _enemyActive;
+    private NativeArray<float> _enemyHp;
+    private List<float> _enemyFlashTimers;
+    private List<Vector3> _enemyPositionList; // 描画用（_enemyPositions をコピー）
+    private List<bool> _enemyActiveList;
     
     // --- Spatial Partitioning ---
     private NativeParallelMultiHashMap<int, int> _spatialMap;
@@ -58,7 +55,6 @@ public class EnemyManager : InitializeMonobehaviour
     private NativeQueue<int> _enemyFlashQueue; // ダメージを受けた敵のインデックスを記録するキュー
     
     // プロパティ（外部アクセス用）
-    public TransformAccessArray EnemyTransforms => _enemyTransforms;
     public NativeArray<float3> EnemyPositions => _enemyPositions;
     public NativeArray<bool> EnemyActive => _enemyActive;
     public NativeArray<float> EnemyHp => _enemyHp;
@@ -96,35 +92,21 @@ public class EnemyManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
-        // 基底クラスで初期化フラグがチェックされるため、ここではチェック不要
-
-        _enemyTransforms = new TransformAccessArray(enemyCount);
         _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
         _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
         _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
-        
-        // RenderManager用のリストを初期化
         _enemyFlashTimers = new List<float>(new float[enemyCount]);
-        _enemyTransformList = new List<Transform>(enemyCount);
+        _enemyPositionList = new List<Vector3>(enemyCount);
         _enemyActiveList = new List<bool>(enemyCount);
 
         for (int i = 0; i < enemyCount; i++)
         {
             var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
             pos.y = 0;
-            var obj = Instantiate(cubePrefab, pos, Quaternion.identity, transform);
-            if (obj.TryGetComponent<Collider>(out var col))
-            {
-                col.enabled = false; // コライダー必須OFF
-            }
-
-            _enemyTransforms.Add(obj.transform);
             _enemyPositions[i] = pos;
             _enemyActive[i] = true;
-            _enemyHp[i] = enemyMaxHp; // HPを最大値に設定
-            
-            // TransformAccessArrayに入れるタイミングでListにも入れておく
-            _enemyTransformList.Add(obj.transform);
+            _enemyHp[i] = enemyMaxHp;
+            _enemyPositionList.Add(Vector3.zero);
             _enemyActiveList.Add(false);
         }
 
@@ -171,7 +153,7 @@ public class EnemyManager : InitializeMonobehaviour
             damageQueue = playerDamageQueue // プレイヤーへのダメージを記録
         };
         
-        return enemyJob.Schedule(_enemyTransforms);
+        return enemyJob.Schedule(enemyCount, 64);
     }
     
     // 死んだ敵の位置を取得（ジェム生成用）
@@ -231,17 +213,8 @@ public class EnemyManager : InitializeMonobehaviour
                 _enemyHp[i] = enemyMaxHp; // HPをリセット
             }
         }
-        
-        // Transform位置を更新するためのJobを実行
-        // リスポーンした敵の位置をTransformに反映
-        var updateRespawnJob = new UpdateRespawnedEnemyPositionJob
-        {
-            positions = _enemyPositions,
-            activeFlags = _enemyActive
-        };
-        updateRespawnJob.Schedule(_enemyTransforms).Complete();
     }
-    
+
     void UpdateFlashTimers()
     {
         // --- フラッシュタイマーの更新 ---
@@ -253,26 +226,23 @@ public class EnemyManager : InitializeMonobehaviour
             }
         }
         
-        // アクティブフラグを同期
         Assert.IsTrue(enemyCount == _enemyActiveList.Count);
         for (int i = 0; i < enemyCount; i++)
         {
             _enemyActiveList[i] = _enemyActive[i];
+            _enemyPositionList[i] = _enemyPositions[i];
         }
     }
-    
+
     void RenderEnemies()
     {
         if (renderManager == null)
         {
             return;
         }
-        
-        // --- 描画呼び出し ---
-        renderManager.RenderEnemies(_enemyTransformList, _enemyFlashTimers, _enemyActiveList);
+        renderManager.RenderEnemies(_enemyPositionList, _enemyFlashTimers, _enemyActiveList);
     }
     
-    // すべての敵を非アクティブにする（タイマーがゼロになった時）
     public void ClearAllEnemies()
     {
         for (int i = 0; i < enemyCount; i++)
@@ -280,17 +250,8 @@ public class EnemyManager : InitializeMonobehaviour
             _enemyActive[i] = false;
             _enemyActiveList[i] = false;
         }
-        
-        // Transform位置を更新するためのJobを実行して、敵を非表示にする
-        var updateRespawnJob = new UpdateRespawnedEnemyPositionJob
-        {
-            positions = _enemyPositions,
-            activeFlags = _enemyActive
-        };
-        updateRespawnJob.Schedule(_enemyTransforms).Complete();
     }
     
-    // 敵をリセット
     public void ResetEnemies()
     {
         for (int i = 0; i < enemyCount; i++)
@@ -299,17 +260,9 @@ public class EnemyManager : InitializeMonobehaviour
             pos.y = 0;
             _enemyPositions[i] = pos;
             _enemyActive[i] = true;
-            _enemyHp[i] = enemyMaxHp; // HPをリセット
+            _enemyHp[i] = enemyMaxHp;
         }
-        
-        // 敵のTransform位置を更新
-        var updateRespawnJob = new UpdateRespawnedEnemyPositionJob
-        {
-            positions = _enemyPositions,
-            activeFlags = _enemyActive
-        };
-        updateRespawnJob.Schedule(_enemyTransforms).Complete();
-        
+
         // フラッシュタイマーをリセット
         for (int i = 0; i < _enemyFlashTimers.Count; i++)
         {
@@ -436,10 +389,6 @@ public class EnemyManager : InitializeMonobehaviour
     
     protected override void FinalizeInternal()
     {
-        if (_enemyTransforms.isCreated)
-        {
-            _enemyTransforms.Dispose();
-        }
         if (_enemyPositions.IsCreated)
         {
             _enemyPositions.Dispose();

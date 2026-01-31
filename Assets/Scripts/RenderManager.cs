@@ -1,5 +1,4 @@
 using UnityEngine;
-using Unity.Mathematics;
 using System.Collections.Generic;
 
 public class RenderManager : MonoBehaviour
@@ -9,12 +8,10 @@ public class RenderManager : MonoBehaviour
     [SerializeField] private Material enemyMaterial;
     [SerializeField] private float flashIntensity = 0.8f;
 
-    // 一度に描画できる最大数（API制限）
     private const int BATCH_SIZE = 1023;
 
-    // 描画用データ配列（再利用する）
     private Matrix4x4[] _matrices = new Matrix4x4[BATCH_SIZE];
-    private Vector4[] _emissionColors = new Vector4[BATCH_SIZE]; // ヒットフラッシュ用
+    private Vector4[] _emissionColors = new Vector4[BATCH_SIZE];
 
     private MaterialPropertyBlock _mpb;
     private int _propertyID_EmissionColor;
@@ -25,29 +22,25 @@ public class RenderManager : MonoBehaviour
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
     }
 
-    // 毎フレームGameManagerから呼ばれる描画メソッド
-    // transforms: 敵のTransformリスト
-    // flashTimers: 各敵のフラッシュ残り時間（0なら通常、>0なら白）
-    // activeFlags: 各敵のアクティブフラグ
-    public void RenderEnemies(List<Transform> transforms, List<float> flashTimers, List<bool> activeFlags)
+    /// <summary>
+    /// 敵を座標リストで描画（Transform なし）。位置・回転(identity)・スケール(1)で行列を生成。
+    /// </summary>
+    public void RenderEnemies(IList<Vector3> positions, IList<float> flashTimers, IList<bool> activeFlags)
     {
-        int count = transforms.Count;
-        int batchIndex = 0; // 現在のバッチ内のインデックス
+        int count = positions.Count;
+        int batchIndex = 0;
 
-        // 1023個ずつに区切って描画
         for (int i = 0; i < count; i++)
         {
             if (activeFlags[i] == false)
             {
-                continue; // 死んでる敵はスキップ
+                continue;
             }
 
-            // 1. 行列（位置・回転・スケール）を作成
-            // ※ここが最適化ポイント：回転やスケールが変わらないなら固定値で高速化可
             _matrices[batchIndex] = Matrix4x4.TRS(
-                transforms[i].position, 
-                transforms[i].rotation, 
-                transforms[i].localScale // ヒット時に少し大きくする演出もここで可
+                positions[i],
+                Quaternion.identity,
+                Vector3.one
             );
 
             // 2. フラッシュ色の計算
