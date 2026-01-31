@@ -1,10 +1,10 @@
-using UnityEngine.Jobs;
 using Unity.Collections;
 using Unity.Burst;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 [BurstCompile]
-public struct BulletMoveAndCollideJob : IJobParallelForTransform
+public struct BulletMoveAndCollideJob : IJobParallelFor
 {
     public float deltaTime;
     public float speed;
@@ -41,12 +41,10 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
     // フラッシュタイマー設定用のキュー（並列書き込み用）
     public NativeQueue<int>.ParallelWriter enemyFlashQueue;
 
-    public void Execute(int index, TransformAccess transform)
+    public void Execute(int index)
     {
         if (bulletActive[index] == false)
         {
-            // 非アクティブな弾は画面外に移動
-            transform.position = new float3(0, -100, 0);
             bulletPositions[index] = new float3(0, -100, 0);
             return;
         }
@@ -57,17 +55,14 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
         if (life <= 0)
         {
             bulletActive[index] = false;
-            transform.position = new float3(0, -100, 0);
+            bulletPositions[index] = new float3(0, -100, 0);
             return;
         }
 
         // 弾の移動（速度ベクトルを使用）
         float3 pos = bulletPositions[index];
-        // 速度ベクトルを使用して移動（MultiShot対応）
         float3 velocity = bulletVelocities[index];
-        
         pos += velocity * deltaTime;
-        transform.position = pos;
         bulletPositions[index] = pos;
 
         // --- 衝突判定（空間分割） ---
@@ -122,9 +117,9 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
                                     deadEnemyPositions.Enqueue(enemyPos);
                                 }
                             }
-                            bulletActive[index] = false;     // 弾消滅
-                            transform.position = new float3(0, -100, 0); // 弾隠す
-                            return; // 弾は1回当たったら消える
+                            bulletActive[index] = false;
+                            bulletPositions[index] = new float3(0, -100, 0);
+                            return;
                         }
 
                     } while (spatialMap.TryGetNextValue(out enemyIndex, ref iterator));

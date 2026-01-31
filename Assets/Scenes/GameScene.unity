@@ -1899,13 +1899,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c24c7e145761b4774924117327a792ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletManager
-  bulletPrefab: {fileID: 418365409580796662, guid: ab54663d7eb3d4ceaa4875f81afccdef, type: 3}
   maxBullets: 1000
   playerTransform: {fileID: 322285197}
   multiShotSpreadAngle: 10
   bulletDamage: 1
   player: {fileID: 322285198}
   damageTextManager: {fileID: 614781148}
+  renderManager: {fileID: 454398054}
 --- !u!4 &420466359
 Transform:
   m_ObjectHideFlags: 0
@@ -2005,6 +2005,9 @@ MonoBehaviour:
   gemMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   gemMaterial: {fileID: 2100000, guid: f9af9187d6a0e49b6adf174222c2d463, type: 2}
   gemScale: 0.4
+  bulletMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  bulletMaterial: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
+  bulletScale: 0.5
 --- !u!4 &454398055
 Transform:
   m_ObjectHideFlags: 0
@@ -4715,7 +4718,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2a2439e7363f457bbc4abd6ce3f8e73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyManager
-  enemyCount: 10
+  maxEnemyCount: 1000
+  spawnCount: 10
   enemySpeed: 4
   enemyMaxHp: 1
   enemyFlashDuration: 0.1

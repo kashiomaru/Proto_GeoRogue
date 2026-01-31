@@ -1,13 +1,12 @@
 using UnityEngine;
-using UnityEngine.Jobs;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
 public class BulletManager : InitializeMonobehaviour
 {
     [Header("Settings")]
-    [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private int maxBullets = 1000;
 
     [Header("Params")]
@@ -22,13 +21,16 @@ public class BulletManager : InitializeMonobehaviour
     [Header("References")]
     [SerializeField] private Player player;
     [SerializeField] private DamageTextManager damageTextManager;
+    [SerializeField] private RenderManager renderManager;
 
-    private TransformAccessArray _bulletTransforms;
     private NativeArray<float3> _bulletPositions;
     private NativeArray<float3> _bulletDirections;
     private NativeArray<float3> _bulletVelocities;
     private NativeArray<bool> _bulletActive;
     private NativeArray<float> _bulletLifeTime;
+    private List<Vector3> _bulletPositionList;
+    private List<Quaternion> _bulletRotationList;
+    private List<bool> _bulletActiveList;
 
     private float _timer;
     private int _bulletIndexHead;
@@ -37,31 +39,27 @@ public class BulletManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
-        _bulletTransforms = new TransformAccessArray(maxBullets);
         _bulletPositions = new NativeArray<float3>(maxBullets, Allocator.Persistent);
         _bulletDirections = new NativeArray<float3>(maxBullets, Allocator.Persistent);
         _bulletVelocities = new NativeArray<float3>(maxBullets, Allocator.Persistent);
         _bulletActive = new NativeArray<bool>(maxBullets, Allocator.Persistent);
         _bulletLifeTime = new NativeArray<float>(maxBullets, Allocator.Persistent);
+        _bulletPositionList = new List<Vector3>(maxBullets);
+        _bulletRotationList = new List<Quaternion>(maxBullets);
+        _bulletActiveList = new List<bool>(maxBullets);
 
         for (int i = 0; i < maxBullets; i++)
         {
-            var obj = Instantiate(bulletPrefab, new Vector3(0, -100, 0), Quaternion.identity, transform);
-            if (obj.TryGetComponent<Collider>(out var col))
-            {
-                col.enabled = false;
-            }
-            _bulletTransforms.Add(obj.transform);
+            _bulletPositions[i] = new float3(0, -100, 0);
             _bulletActive[i] = false;
+            _bulletPositionList.Add(Vector3.zero);
+            _bulletRotationList.Add(Quaternion.identity);
+            _bulletActiveList.Add(false);
         }
     }
 
     protected override void FinalizeInternal()
     {
-        if (_bulletTransforms.isCreated)
-        {
-            _bulletTransforms.Dispose();
-        }
         if (_bulletPositions.IsCreated)
         {
             _bulletPositions.Dispose();
@@ -89,7 +87,7 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void HandleShooting()
     {
-        if (player == null)
+        if (IsInitialized == false || player == null)
         {
             return;
         }
@@ -154,7 +152,29 @@ public class BulletManager : InitializeMonobehaviour
             enemyDamageQueue = enemyManager.GetEnemyDamageQueueWriter(),
             enemyFlashQueue = enemyManager.GetEnemyFlashQueueWriter()
         };
-        return bulletJob.Schedule(_bulletTransforms, dependency);
+        return bulletJob.Schedule(maxBullets, 64, dependency);
+    }
+
+    /// <summary>
+    /// 弾の座標をリストにコピーし、RenderManager で描画する。Job 完了後に GameManager から呼ぶ。
+    /// </summary>
+    public void RenderBullets()
+    {
+        if (IsInitialized == false || renderManager == null)
+        {
+            return;
+        }
+        for (int i = 0; i < maxBullets; i++)
+        {
+            _bulletPositionList[i] = _bulletPositions[i];
+            _bulletActiveList[i] = _bulletActive[i];
+            float3 dir = _bulletDirections[i];
+            if (math.lengthsq(dir) > 0.0001f)
+            {
+                _bulletRotationList[i] = Quaternion.LookRotation(dir);
+            }
+        }
+        renderManager.RenderBullets(_bulletPositionList, _bulletRotationList, _bulletActiveList);
     }
 
     /// <summary>
@@ -166,10 +186,6 @@ public class BulletManager : InitializeMonobehaviour
         {
             _bulletActive[i] = false;
             _bulletPositions[i] = new float3(0, -100, 0);
-            if (_bulletTransforms.isCreated && i < _bulletTransforms.length)
-            {
-                _bulletTransforms[i].position = new Vector3(0, -100, 0);
-            }
         }
         _bulletIndexHead = 0;
         _timer = 0f;
@@ -218,10 +234,6 @@ public class BulletManager : InitializeMonobehaviour
             }
 
             _bulletActive[i] = false;
-            if (_bulletTransforms.isCreated && i < _bulletTransforms.length)
-            {
-                _bulletTransforms[i].position = new Vector3(0, -100, 0);
-            }
             _bulletPositions[i] = new float3(0, -100, 0);
 
             if (boss.IsDead)

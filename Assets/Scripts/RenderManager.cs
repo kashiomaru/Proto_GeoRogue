@@ -13,6 +13,11 @@ public class RenderManager : MonoBehaviour
     [SerializeField] private Material gemMaterial;
     [SerializeField] private float gemScale = 0.4f;
 
+    [Header("Bullet Settings")]
+    [SerializeField] private Mesh bulletMesh;
+    [SerializeField] private Material bulletMaterial;
+    [SerializeField] private float bulletScale = 0.5f;
+
     private const int BATCH_SIZE = 1023;
 
     private Matrix4x4[] _matrices = new Matrix4x4[BATCH_SIZE];
@@ -137,6 +142,64 @@ public class RenderManager : MonoBehaviour
         if (batchIndex > 0)
         {
             ExecuteDrawGems(batchIndex);
+        }
+    }
+
+    /// <summary>
+    /// 弾を座標・回転・アクティブリストで描画（敵・ジェムと同様に DrawMeshInstanced、Instantiate なし）。
+    /// </summary>
+    public void RenderBullets(IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
+    {
+        if (bulletMesh == null || bulletMaterial == null)
+        {
+            return;
+        }
+
+        int count = positions.Count;
+        int batchIndex = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (activeFlags[i] == false)
+            {
+                continue;
+            }
+
+            _matrices[batchIndex] = Matrix4x4.TRS(
+                positions[i],
+                rotations[i],
+                Vector3.one * bulletScale
+            );
+            batchIndex++;
+
+            if (batchIndex >= BATCH_SIZE)
+            {
+                Graphics.DrawMeshInstanced(
+                    bulletMesh,
+                    0,
+                    bulletMaterial,
+                    _matrices,
+                    batchIndex,
+                    null,
+                    UnityEngine.Rendering.ShadowCastingMode.On,
+                    true
+                );
+                batchIndex = 0;
+            }
+        }
+
+        if (batchIndex > 0)
+        {
+            Graphics.DrawMeshInstanced(
+                bulletMesh,
+                0,
+                bulletMaterial,
+                _matrices,
+                batchIndex,
+                null,
+                UnityEngine.Rendering.ShadowCastingMode.On,
+                true
+            );
         }
     }
 
