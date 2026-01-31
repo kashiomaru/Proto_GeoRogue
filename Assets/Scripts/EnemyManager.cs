@@ -237,7 +237,7 @@ public class EnemyManager : InitializeMonobehaviour
         for (int i = 0; i < enemyCount; i++)
         {
             // アクティブでない、またはプレイヤーから離れすぎた敵をリサイクル
-            if (!_enemyActive[i] || math.distancesq(_enemyPositions[i], playerPos) > deleteDistSq)
+            if (_enemyActive[i] == false || math.distancesq(_enemyPositions[i], playerPos) > deleteDistSq)
             {
                 // 画面外（半径20〜30mのドーナツ状の範囲）に再配置
                 float angle = UnityEngine.Random.Range(0f, math.PI * 2f);

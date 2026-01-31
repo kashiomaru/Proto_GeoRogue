@@ -162,7 +162,7 @@ public class Player : MonoBehaviour
     // レベルアップ処理（UIで選択後に呼ばれる）
     public void LevelUp()
     {
-        if (!_canLevelUp || _currentLevel >= maxLevel)
+        if (_canLevelUp == false || _currentLevel >= maxLevel)
         {
             return;
         }
@@ -334,7 +334,7 @@ public class Player : MonoBehaviour
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
             
             // スペースキーが押されていない場合のみ回転
-            if (!isSpacePressed)
+            if (isSpacePressed == false)
             {
                 // キャラクターの向きを滑らかに補間
                 float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);

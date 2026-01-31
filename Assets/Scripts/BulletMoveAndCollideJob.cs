@@ -43,7 +43,7 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
 
     public void Execute(int index, TransformAccess transform)
     {
-        if (!bulletActive[index])
+        if (bulletActive[index] == false)
         {
             // 非アクティブな弾は画面外に移動
             transform.position = new float3(0, -100, 0);
@@ -88,7 +88,7 @@ public struct BulletMoveAndCollideJob : IJobParallelForTransform
                     do
                     {
                         // 死んでる敵は無視（マップには入っている可能性があるため念のため）
-                        if (!enemyActive[enemyIndex])
+                        if (enemyActive[enemyIndex] == false)
                         {
                             continue;
                         }

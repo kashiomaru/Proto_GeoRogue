@@ -21,7 +21,7 @@ public struct EnemyMoveAndHashJob : IJobParallelForTransform
 
     public void Execute(int index, TransformAccess transform)
     {
-        if (!activeFlags[index])
+        if (activeFlags[index] == false)
         {
             // 死んでる敵は地獄へ送る（当たり判定除外）
             transform.position = new float3(0, -1000, 0);

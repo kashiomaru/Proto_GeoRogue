@@ -37,7 +37,7 @@ public class RenderManager : MonoBehaviour
         // 1023個ずつに区切って描画
         for (int i = 0; i < count; i++)
         {
-            if (!activeFlags[i])
+            if (activeFlags[i] == false)
             {
                 continue; // 死んでる敵はスキップ
             }

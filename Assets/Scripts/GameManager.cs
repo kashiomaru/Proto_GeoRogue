@@ -297,7 +297,7 @@ public class GameManager : MonoBehaviour
     void HandlePlayerDamage()
     {
         // キューからダメージを取得してプレイヤーに適用
-        if (player != null && !player.IsDead)
+        if (player != null && player.IsDead == false)
         {
             int totalDamage = 0;
             while (_playerDamageQueue.TryDequeue(out int damage))
@@ -518,7 +518,7 @@ public class GameManager : MonoBehaviour
         // 全てのアクティブな弾をチェック
         for (int i = 0; i < maxBullets; i++)
         {
-            if (!_bulletActive[i])
+            if (_bulletActive[i] == false)
             {
                 continue;
             }

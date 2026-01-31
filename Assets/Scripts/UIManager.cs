@@ -100,7 +100,7 @@ public class UIManager : MonoBehaviour
         UpdateCountdownTimer();
         
         // レベルアップ可能フラグをチェック
-        if (player != null && player.CanLevelUp && !_isLevelUpUIOpen)
+        if (player != null && player.CanLevelUp && _isLevelUpUIOpen == false)
         {
             ShowLevelUpUI();
         }
@@ -151,7 +151,7 @@ public class UIManager : MonoBehaviour
             }
             
             // タイマーが表示されていない場合は表示
-            if (!countdownText.gameObject.activeSelf)
+            if (countdownText.gameObject.activeSelf == false)
             {
                 countdownText.gameObject.SetActive(true);
             }

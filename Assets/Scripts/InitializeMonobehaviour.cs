@@ -22,7 +22,7 @@ public abstract class InitializeMonobehaviour : MonoBehaviour
 
     protected void InitializeNotYet()
     {
-        if (!_initialized)
+        if (_initialized == false)
         {
             try
             {

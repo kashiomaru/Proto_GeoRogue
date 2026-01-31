@@ -21,7 +21,7 @@ public struct GemMagnetJob : IJobParallelForTransform
 
     public void Execute(int index, TransformAccess transform)
     {
-        if (!activeFlags[index])
+        if (activeFlags[index] == false)
         {
             // 見えない場所に固定
             positions[index] = new float3(0, -500, 0);
