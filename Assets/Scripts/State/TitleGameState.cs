@@ -8,6 +8,7 @@ public class TitleGameState : GameStateBase
 {
     public override void OnEnter(GameManager context)
     {
+        Time.timeScale = 0f;
         context.UIManager?.ShowTitle();
 
         context.UIManager?.StartButton.onClick.AddListener(() => context.ChangeGameMode(GameMode.Normal));
@@ -20,6 +21,11 @@ public class TitleGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
+        // 次のステートがプレイ中（Normal/Boss）のときだけ時間を再開する
+        if (context.NextGameMode is GameMode.Normal or GameMode.Boss)
+        {
+            Time.timeScale = 1f;
+        }
         context.UIManager?.HideTitle();
     }
 }
