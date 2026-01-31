@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 /// <summary>
 /// Bossモードのステート
@@ -10,18 +11,18 @@ public class BossGameState : GameStateBase
 
     public override void OnEnter(GameManager context)
     {
-        UnityEngine.Time.timeScale = 1f;
+        // カメラブレンド中は時間を止める（ブレンド完了後に再開）
+        UnityEngine.Time.timeScale = 0f;
         context.UIManager?.ShowStatus();
-        
+
         // ボスを生成（プレイヤーの位置と方向を渡す）
         if (context.EnemyManager != null && context.PlayerTransform != null)
         {
             Vector3 playerPosition = context.PlayerTransform.position;
             Vector3 playerForward = context.PlayerTransform.forward;
-            
             context.EnemyManager.SpawnBoss(playerPosition, playerForward);
         }
-        
+
         // カメラをインデックス0から1に切り替え（ボスのTransformをLookAtConstraintのターゲットに設定）
         GameObject boss = context.EnemyManager?.GetCurrentBoss();
         if (boss != null)
@@ -29,6 +30,17 @@ public class BossGameState : GameStateBase
             context.CameraManager?.SwitchCamera(1);
             context.CameraManager?.SetBossLookAtTarget(boss.transform);
         }
+
+        RunAfterBossCameraBlendAsync(context).Forget();
+    }
+
+    private async UniTaskVoid RunAfterBossCameraBlendAsync(GameManager context)
+    {
+        if (context?.CameraManager != null)
+        {
+            await context.CameraManager.WaitForBlendCompleteAsync();
+        }
+        UnityEngine.Time.timeScale = 1f;
     }
     
     public override void OnUpdate(GameManager context)

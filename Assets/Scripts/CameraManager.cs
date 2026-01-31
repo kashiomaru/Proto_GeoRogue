@@ -1,5 +1,7 @@
 using UnityEngine;
 using Unity.Cinemachine;
+using Cysharp.Threading.Tasks;
+using System.Threading;
 
 public class CameraManager : InitializeMonobehaviour
 {
@@ -15,11 +17,23 @@ public class CameraManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
+        // 時間停止時でもカメラブレンドが動くようにする
+        var brain = GetBrain();
+        if (brain != null)
+        {
+            brain.IgnoreTimeScale = true;
+        }
+
         // デフォルトカメラを設定
         if (virtualCameras != null && virtualCameras.Length > 0)
         {
             SwitchCamera(defaultCameraIndex);
         }
+    }
+
+    private CinemachineBrain GetBrain()
+    {
+        return cinemachineBrain != null ? cinemachineBrain : FindFirstObjectByType<CinemachineBrain>();
     }
     
     protected override void FinalizeInternal()
@@ -61,9 +75,24 @@ public class CameraManager : InitializeMonobehaviour
         // 即時切り替えのときはブレンドをキャンセルして即座に反映
         if (immediate)
         {
-            var brain = cinemachineBrain != null ? cinemachineBrain : FindFirstObjectByType<CinemachineBrain>();
-            brain?.ResetState();
+            GetBrain()?.ResetState();
         }
+    }
+
+    /// <summary>
+    /// 現在のカメラブレンドが完了するまで待つ。タイムスケール0のときもブレンドは進む（IgnoreTimeScale）。
+    /// </summary>
+    public async UniTask WaitForBlendCompleteAsync(CancellationToken cancellationToken = default)
+    {
+        var brain = GetBrain();
+        if (brain == null)
+        {
+            return;
+        }
+        var token = cancellationToken != default ? cancellationToken : this.GetCancellationTokenOnDestroy();
+        // 1フレーム待ってブレンド開始を確実にしてから完了を待つ
+        await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, token);
+        await UniTask.WaitUntil(() => brain.IsBlending == false, PlayerLoopTiming.LastPostLateUpdate, token);
     }
     
     // カメラを名前で切り替える
