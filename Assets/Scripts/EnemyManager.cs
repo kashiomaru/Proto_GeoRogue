@@ -232,6 +232,8 @@ public class EnemyManager : InitializeMonobehaviour
                 _enemyPositions[i] = newPos;
                 _enemyActive[i] = true; // 復活
                 _enemyHp[i] = enemyMaxHp; // HPをリセット
+                // ヒットフラッシュをクリア（直前でやられた敵のフラッシュが残らないように）
+                _enemyFlashTimers[i] = 0f;
             }
         }
     }
