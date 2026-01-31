@@ -1699,8 +1699,8 @@ MonoBehaviour:
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
   countdownDuration: 60
-  initialGameMode: 3
-  enableDebugCountdown: 0
+  initialGameMode: 1
+  enableDebugCountdown: 1
   debugCountdownTime: 10
   enableDebugBossHp: 1
   debugBossHp: 10

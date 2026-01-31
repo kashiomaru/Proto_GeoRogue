@@ -13,6 +13,7 @@ public class BossGameState : GameStateBase
     {
         // カメラブレンド中は時間を止める（ブレンド完了後に再開）
         UnityEngine.Time.timeScale = 0f;
+        context.ResetBullets();
         context.UIManager?.ShowStatus();
 
         // ボスを生成（プレイヤーの位置と方向を渡す）

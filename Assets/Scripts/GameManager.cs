@@ -394,4 +394,12 @@ public class GameManager : MonoBehaviour
     {
         damageTextManager?.Reset();
     }
+
+    /// <summary>
+    /// 弾をリセットする。ボスステート進入時などに呼ぶ。
+    /// </summary>
+    public void ResetBullets()
+    {
+        bulletManager?.ResetBullets();
+    }
 }
