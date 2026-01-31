@@ -560,7 +560,12 @@ public class GameManager : MonoBehaviour
             {
                 // ヒット！
                 float actualDamage = boss.TakeDamage(bulletDamage);
-                
+
+                if (actualDamage > 0 && damageTextManager != null)
+                {
+                    damageTextManager.ShowDamage(boss.Position, (int)actualDamage);
+                }
+
                 // 弾を無効化
                 _bulletActive[i] = false;
                 if (_bulletTransforms.isCreated && i < _bulletTransforms.length)
