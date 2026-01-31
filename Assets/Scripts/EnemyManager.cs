@@ -112,7 +112,7 @@ public class EnemyManager : InitializeMonobehaviour
         {
             var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
             pos.y = 0;
-            var obj = Instantiate(cubePrefab, pos, Quaternion.identity);
+            var obj = Instantiate(cubePrefab, pos, Quaternion.identity, transform);
             if (obj.TryGetComponent<Collider>(out var col))
             {
                 col.enabled = false; // コライダー必須OFF
@@ -338,8 +338,8 @@ public class EnemyManager : InitializeMonobehaviour
         
         if (bossPrefab != null)
         {
-            _currentBoss = Instantiate(bossPrefab, bossPosition, Quaternion.identity);
-            
+            _currentBoss = Instantiate(bossPrefab, bossPosition, Quaternion.identity, transform);
+
             // Bossコンポーネントを取得して初期化
             Boss bossComponent = _currentBoss.GetComponent<Boss>();
             if (bossComponent != null && gameManager != null)
