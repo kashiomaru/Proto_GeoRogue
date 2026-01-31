@@ -34,10 +34,6 @@ public enum GameMode
 
 public class GameManager : MonoBehaviour
 {
-    [Header("Settings")]
-    [SerializeField] private GameObject bulletPrefab; // 弾のプレハブ（GPU Instancing ONのマテリアル推奨）
-    [SerializeField] private int maxBullets = 1000; // 画面内に出せる弾の上限
-    
     [Header("Params")]
     [SerializeField] private Transform playerTransform;
 
@@ -45,20 +41,15 @@ public class GameManager : MonoBehaviour
     [Tooltip("タイトル画面に入ったときにプレイヤーを移動させる位置")]
     [SerializeField] private Vector3 titlePlayerPosition = Vector3.zero;
 
-    [Header("MultiShot Settings")]
-    [SerializeField] private float multiShotSpreadAngle = 10f; // 弾の拡散角度（発射数は Player で保持）
-    
     [Header("References")]
-    [SerializeField] private EnemyManager enemyManager; // EnemyManagerへの参照
-    [SerializeField] private GemManager gemManager; // GemManagerへの参照
-    [SerializeField] private LevelUpManager levelUpManager; // LevelUpManagerへの参照
-    [SerializeField] private Player player; // Playerへの参照
-    [SerializeField] private UIManager uiManager; // UIManagerへの参照
-    [SerializeField] private DamageTextManager damageTextManager; // ダメージテキスト表示用
-    [SerializeField] private CameraManager cameraManager; // CameraManagerへの参照
-    
-    [Header("Combat")]
-    [SerializeField] private float bulletDamage = 1.0f; // 弾のダメージ
+    [SerializeField] private BulletManager bulletManager;
+    [SerializeField] private EnemyManager enemyManager;
+    [SerializeField] private GemManager gemManager;
+    [SerializeField] private LevelUpManager levelUpManager;
+    [SerializeField] private Player player;
+    [SerializeField] private UIManager uiManager;
+    [SerializeField] private DamageTextManager damageTextManager;
+    [SerializeField] private CameraManager cameraManager;
     
     [Header("Countdown Timer")]
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
@@ -85,21 +76,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("有効時、プレイヤーの最大HPと現在HPに設定する値。enableDebugPlayerHp が true のときのみ使用されます。")]
     [SerializeField] private int debugPlayerHp = 1;
 
-    // --- Bullet Data ---
-    private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
-    private NativeArray<float3> _bulletPositions;
-    private NativeArray<float3> _bulletDirections; // 弾の方向ベクトル（後方互換性のため残す）
-    private NativeArray<float3> _bulletVelocities; // 弾ごとの速度ベクトルを保存する配列
-    private NativeArray<bool> _bulletActive;
-    private NativeArray<float> _bulletLifeTime;
-    
-    // --- Damage Queue ---
-    // プレイヤーへのダメージを記録するキュー（Job内からメインスレッドへ通知）
+    // プレイヤーへのダメージを記録するキュー（敵移動 Job 内からメインスレッドへ通知）
     private NativeQueue<int> _playerDamageQueue;
 
-    private float _timer;
-    private int _bulletIndexHead = 0; // リングバッファ用
-    private float _countdownTimer; // カウントダウンタイマー
+    private float _countdownTimer;
 
     // ステートマシン
     private StateMachine<GameMode, GameManager> _stateMachine;
@@ -124,9 +104,6 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        InitializeBullets();
-
-        // プレイヤーへのダメージを記録するキューを初期化
         _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
 
         // カウントダウンタイマーを初期化
@@ -153,6 +130,7 @@ public class GameManager : MonoBehaviour
     void InitializeStateMachine()
     {
         cameraManager?.Initialize();
+        bulletManager?.Initialize();
         enemyManager?.Initialize();
 
 #if UNITY_EDITOR
@@ -187,43 +165,15 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // 1. 弾の発射（プレイヤー位置から）
-        HandleShooting();
+        bulletManager?.HandleShooting();
 
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 
-        // 2. 敵の移動Jobをスケジュール
-        if (enemyManager != null)
+        if (enemyManager != null && bulletManager != null)
         {
             JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
-
-            // --- JOB 2: 弾の移動 & 衝突判定 ---
-            // 敵の移動が終わってから実行する必要があるため、enemyHandleに依存させる
-            float bulletSpeed = player != null ? player.GetBulletSpeed() : 20f;
-            var bulletJob = new BulletMoveAndCollideJob
-            {
-                deltaTime = deltaTime,
-                speed = bulletSpeed,
-                cellSize = enemyManager.CellSize,
-                spatialMap = enemyManager.SpatialMap, // 読み込みのみ
-                enemyPositions = enemyManager.EnemyPositions, // 敵の位置参照
-                bulletPositions = _bulletPositions,
-                bulletDirections = _bulletDirections, // 弾の方向（後方互換性のため）
-                bulletVelocities = _bulletVelocities, // 弾の速度ベクトル
-                bulletActive = _bulletActive,
-                bulletLifeTime = _bulletLifeTime,
-                enemyActive = enemyManager.EnemyActive, // ヒットしたらfalseにする
-                enemyHp = enemyManager.EnemyHp, // 敵のHP配列
-                bulletDamage = bulletDamage, // 弾のダメージ
-                deadEnemyPositions = enemyManager.GetDeadEnemyPositionsWriter(), // 死んだ敵の位置を記録
-                enemyDamageQueue = enemyManager.GetEnemyDamageQueueWriter(), // 敵へのダメージ情報を記録
-                enemyFlashQueue = enemyManager.GetEnemyFlashQueueWriter() // フラッシュタイマー設定用
-            };
-        
-            JobHandle bulletHandle = bulletJob.Schedule(_bulletTransforms, enemyHandle);
-
-            // 完了待ち
+            JobHandle bulletHandle = bulletManager.ScheduleMoveAndCollideJob(deltaTime, enemyHandle, enemyManager);
             bulletHandle.Complete();
         }
         
@@ -240,85 +190,6 @@ public class GameManager : MonoBehaviour
     }
     
     // --- 初期化 & ユーティリティ ---
-
-    void InitializeBullets()
-    {
-        _bulletTransforms = new TransformAccessArray(maxBullets);
-        _bulletPositions = new NativeArray<float3>(maxBullets, Allocator.Persistent);
-        _bulletDirections = new NativeArray<float3>(maxBullets, Allocator.Persistent);
-        _bulletVelocities = new NativeArray<float3>(maxBullets, Allocator.Persistent);
-        _bulletActive = new NativeArray<bool>(maxBullets, Allocator.Persistent);
-        _bulletLifeTime = new NativeArray<float>(maxBullets, Allocator.Persistent);
-
-        // プール生成（最初は見えない場所に置く）
-        for (int i = 0; i < maxBullets; i++)
-        {
-            var obj = Instantiate(bulletPrefab, new Vector3(0, -100, 0), Quaternion.identity);
-            if (obj.TryGetComponent<Collider>(out var col))
-            {
-                col.enabled = false;
-            }
-            _bulletTransforms.Add(obj.transform);
-            _bulletActive[i] = false;
-        }
-    }
-
-    void HandleShooting()
-    {
-        if (player == null)
-        {
-            return;
-        }
-        float fireRate = player.GetFireRate();
-        int bulletCountPerShot = player.GetBulletCountPerShot();
-        float bulletSpeed = player.GetBulletSpeed();
-
-        _timer += Time.deltaTime;
-        if (_timer >= fireRate)
-        {
-            _timer = 0;
-
-            // プレイヤーの正面方向
-            Vector3 baseDir = playerTransform.forward;
-
-            // 発射数ぶんループ
-            for (int i = 0; i < bulletCountPerShot; i++)
-            {
-                // リングバッファからID取得
-                int id = _bulletIndexHead;
-                _bulletIndexHead = (_bulletIndexHead + 1) % maxBullets;
-
-                // --- 角度計算（重要） ---
-                // i=0, count=1 -> 0
-                // i=0,1 count=2 -> -5, +5
-                // i=0,1,2 count=3 -> -10, 0, +10
-                
-                float angle = 0f;
-                if (bulletCountPerShot > 1)
-                {
-                    // 全体の開き幅の中心を0としてオフセット計算
-                    angle = -multiShotSpreadAngle * (bulletCountPerShot - 1) * 0.5f + (multiShotSpreadAngle * i);
-                }
-
-                // クォータニオンで回転させる
-                Quaternion rot = Quaternion.AngleAxis(angle, Vector3.up);
-                Vector3 finalDir = rot * baseDir;
-
-                // データのセット
-                _bulletActive[id] = true;
-                _bulletLifeTime[id] = 2.0f;
-                
-                // 位置：プレイヤー位置
-                _bulletPositions[id] = (float3)playerTransform.position;
-                
-                // 方向ベクトル（後方互換性のため）
-                _bulletDirections[id] = (float3)finalDir;
-
-                // ★ここで計算したベクトルをNativeArrayに入れる
-                _bulletVelocities[id] = (float3)(finalDir.normalized * bulletSpeed);
-            }
-        }
-    }
 
     void HandlePlayerDamage()
     {
@@ -367,31 +238,6 @@ public class GameManager : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_bulletTransforms.isCreated)
-        {
-            _bulletTransforms.Dispose();
-        }
-        if (_bulletPositions.IsCreated)
-        {
-            _bulletPositions.Dispose();
-        }
-        if (_bulletDirections.IsCreated)
-        {
-            _bulletDirections.Dispose();
-        }
-        if (_bulletVelocities.IsCreated)
-        {
-            _bulletVelocities.Dispose();
-        }
-        if (_bulletActive.IsCreated)
-        {
-            _bulletActive.Dispose();
-        }
-        if (_bulletLifeTime.IsCreated)
-        {
-            _bulletLifeTime.Dispose();
-        }
-
         if (_playerDamageQueue.IsCreated)
         {
             _playerDamageQueue.Dispose();
@@ -408,29 +254,12 @@ public class GameManager : MonoBehaviour
 
         gemManager?.ResetGems();
 
-        // 敵をリセット
         enemyManager?.ResetEnemies();
-        
-        // 弾をリセット（配列とTransformの両方を画面外に）
-        for (int i = 0; i < maxBullets; i++)
-        {
-            _bulletActive[i] = false;
-            _bulletPositions[i] = new float3(0, -100, 0);
-            if (_bulletTransforms.isCreated && i < _bulletTransforms.length)
-            {
-                _bulletTransforms[i].position = new Vector3(0, -100, 0);
-            }
-        }
+        bulletManager?.ResetBullets();
 
-        // キューをクリア
         while (_playerDamageQueue.TryDequeue(out _)) { }
-
         damageTextManager?.Reset();
 
-        // タイマーをリセット
-        _timer = 0f;
-        _bulletIndexHead = 0;
-        
         // カウントダウンタイマーをリセット
         _countdownTimer = GetEffectiveCountdownDuration();
     }
@@ -514,66 +343,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void CheckBossBulletCollision()
     {
-        if (enemyManager == null)
-        {
-            return;
-        }
-
-        GameObject bossObject = enemyManager.GetCurrentBoss();
-        if (bossObject == null)
-        {
-            return;
-        }
-
-        Boss boss = bossObject.GetComponent<Boss>();
-        if (boss == null || boss.IsDead)
-        {
-            return;
-        }
-        
-        float3 bossPos = (float3)boss.Position;
-        float bossRadius = boss.CollisionRadius;
-        float bossRadiusSq = bossRadius * bossRadius;
-        
-        // 全てのアクティブな弾をチェック
-        for (int i = 0; i < maxBullets; i++)
-        {
-            if (_bulletActive[i] == false)
-            {
-                continue;
-            }
-
-            float3 bulletPos = _bulletPositions[i];
-            float distSq = math.distancesq(bulletPos, bossPos);
-            
-            // 当たり判定
-            if (distSq < bossRadiusSq)
-            {
-                // ヒット！
-                float actualDamage = boss.TakeDamage(bulletDamage);
-
-                if (actualDamage > 0)
-                {
-                    damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage);
-                }
-
-                // 弾を無効化
-                _bulletActive[i] = false;
-                if (_bulletTransforms.isCreated && i < _bulletTransforms.length)
-                {
-                    _bulletTransforms[i].position = new Vector3(0, -100, 0);
-                }
-                _bulletPositions[i] = new float3(0, -100, 0);
-                
-                // ボスが死亡した場合、それ以降の弾のチェックをスキップ
-                if (boss.IsDead)
-                {
-                    // ボスを削除（EnemyManagerで処理される可能性もあるが、念のため）
-                    // ここではGameManagerからは削除しない（EnemyManagerに任せる）
-                    break; // ボスが死んだら、それ以降の弾のチェックをスキップ
-                }
-            }
-        }
+        bulletManager?.CheckBossBulletCollision(enemyManager);
     }
     
     // カメラ切り替え処理

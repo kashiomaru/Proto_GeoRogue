@@ -1710,11 +1710,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d25cdc25a68345369d8f9b5dd12bcb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  bulletPrefab: {fileID: 418365409580796662, guid: ab54663d7eb3d4ceaa4875f81afccdef, type: 3}
-  maxBullets: 100
   playerTransform: {fileID: 322285197}
   titlePlayerPosition: {x: 0, y: 0, z: 0}
-  multiShotSpreadAngle: 10
+  bulletManager: {fileID: 420466358}
   enemyManager: {fileID: 1856169496}
   gemManager: {fileID: 420920856}
   levelUpManager: {fileID: 1420325300}
@@ -1722,7 +1720,6 @@ MonoBehaviour:
   uiManager: {fileID: 614781147}
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
-  bulletDamage: 1
   countdownDuration: 60
   initialGameMode: 1
   enableDebugCountdown: 1
@@ -1873,6 +1870,57 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &420466357
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 420466359}
+  - component: {fileID: 420466358}
+  m_Layer: 0
+  m_Name: BulletManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &420466358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420466357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c24c7e145761b4774924117327a792ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BulletManager
+  bulletPrefab: {fileID: 418365409580796662, guid: ab54663d7eb3d4ceaa4875f81afccdef, type: 3}
+  maxBullets: 1000
+  playerTransform: {fileID: 322285197}
+  multiShotSpreadAngle: 10
+  bulletDamage: 1
+  player: {fileID: 322285198}
+  damageTextManager: {fileID: 614781148}
+--- !u!4 &420466359
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420466357}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &420920854
 GameObject:
   m_ObjectHideFlags: 0
@@ -4911,3 +4959,4 @@ SceneRoots:
   - {fileID: 614781146}
   - {fileID: 1086288188}
   - {fileID: 454398055}
+  - {fileID: 420466359}
