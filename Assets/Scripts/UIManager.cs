@@ -26,9 +26,6 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject gameClearPanel; // ゲームクリアのベースパネル
     [SerializeField] private Button gameClearOkButton; // タイトルに戻るOKボタン
     
-    /// <summary>ゲームクリアOKボタン（他スクリプトからクリック登録用）</summary>
-    public Button GameClearOkButton => gameClearOkButton;
-    
     [Header("Status (HP / EXP Bar)")]
     [SerializeField] private GameObject statusParent; // HPバーとEXPバーの親
     [SerializeField] private Slider hpBar;
@@ -46,6 +43,8 @@ public class UIManager : MonoBehaviour
     private Action<UpgradeType> _onUpgradeSelected;
     // リトライ時のコールバック
     private Action _onRetryClicked;
+    // ゲームクリアOKクリック時のコールバック
+    private Action _onGameClearOkClicked;
     
     private bool _isLevelUpUIOpen = false; // レベルアップUIが開いているか
 
@@ -68,7 +67,14 @@ public class UIManager : MonoBehaviour
             retryButton.onClick.RemoveAllListeners();
             retryButton.onClick.AddListener(OnRetryButtonClicked);
         }
-        
+
+        // ゲームクリアOKボタンのイベントを設定
+        if (gameClearOkButton != null)
+        {
+            gameClearOkButton.onClick.RemoveAllListeners();
+            gameClearOkButton.onClick.AddListener(OnGameClearOkButtonClicked);
+        }
+
         // HPバーの初期化
         UpdateHpBar();
         
@@ -195,14 +201,20 @@ public class UIManager : MonoBehaviour
     }
     
     /// <summary>
-    /// ゲームクリアを表示する
+    /// ゲームクリアを表示する。OKボタン押下時に onOkClicked が呼ばれる。
     /// </summary>
-    public void ShowGameClear()
+    public void ShowGameClear(Action onOkClicked)
     {
+        _onGameClearOkClicked = onOkClicked;
         if (gameClearPanel != null)
         {
             gameClearPanel.SetActive(true);
         }
+    }
+
+    private void OnGameClearOkButtonClicked()
+    {
+        _onGameClearOkClicked?.Invoke();
     }
     
     /// <summary>
@@ -351,17 +363,25 @@ public class UIManager : MonoBehaviour
         }
     }
     
+    public void HideGameOver()
+    {
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(false);
+        }
+    }
+
     private void OnRetryButtonClicked()
     {
         // ゲームを再開
         Time.timeScale = 1f;
-        
+
         // パネルを隠す
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(false);
         }
-        
+
         // コールバックを呼び出し
         _onRetryClicked?.Invoke();
     }

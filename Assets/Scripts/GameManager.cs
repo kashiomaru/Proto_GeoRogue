@@ -28,7 +28,8 @@ public enum GameMode
     Title,      // タイトル
     Normal,     // 通常モード
     Boss,       // ボスモード
-    GameClear   // ゲームクリア
+    GameClear,  // ゲームクリア
+    GameOver    // ゲームオーバー
 }
 
 public class GameManager : MonoBehaviour
@@ -124,6 +125,7 @@ public class GameManager : MonoBehaviour
         _stateMachine.RegisterState(GameMode.Normal, new NormalGameState());
         _stateMachine.RegisterState(GameMode.Boss, new BossGameState());
         _stateMachine.RegisterState(GameMode.GameClear, new GameClearGameState());
+        _stateMachine.RegisterState(GameMode.GameOver, new GameOverGameState());
         
         // 初期ステートを設定
         _stateMachine.Initialize(initialGameMode);
@@ -138,7 +140,7 @@ public class GameManager : MonoBehaviour
         }
         
         // プレイ中でないモードの場合は処理をスキップ
-        if (CurrentMode == GameMode.None || CurrentMode == GameMode.Title || CurrentMode == GameMode.GameClear)
+        if (CurrentMode == GameMode.None || CurrentMode == GameMode.Title || CurrentMode == GameMode.GameClear || CurrentMode == GameMode.GameOver)
         {
             return;
         }
@@ -286,10 +288,10 @@ public class GameManager : MonoBehaviour
                     damageTextManager.ShowDamage(playerTransform.position, actualDamage);
                 }
                 
-                // HPが0になったらゲームオーバー
-                if (player.IsDead && uiManager != null)
+                // HPが0になったらゲームオーバーステートへ
+                if (player.IsDead)
                 {
-                    uiManager.ShowGameOver(OnRetryClicked);
+                    ChangeGameMode(GameMode.GameOver);
                 }
             }
         }

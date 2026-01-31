@@ -1,24 +1,20 @@
 /// <summary>
-/// ゲームクリアモードのステート
-/// ゲームクリア画面の状態
+/// ゲームオーバーモードのステート
+/// ゲームオーバー画面の状態
 /// </summary>
-public class GameClearGameState : GameStateBase
+public class GameOverGameState : GameStateBase
 {
     public override void OnEnter(GameManager context)
     {
         UnityEngine.Time.timeScale = 0f;
-        context.UIManager?.ShowGameClear(() =>
-        {
-            context.ResetGameState();
-            context.ChangeGameMode(GameMode.Title);
-        });
+        context.UIManager?.ShowGameOver(() => context.ResetGame());
     }
 
     public override void OnUpdate(GameManager context)
     {
         // 何もしない
     }
-    
+
     public override void OnExit(GameManager context)
     {
         // 次のステートがプレイ中（Normal/Boss）のときだけ時間を再開する
@@ -26,6 +22,6 @@ public class GameClearGameState : GameStateBase
         {
             UnityEngine.Time.timeScale = 1f;
         }
-        context.UIManager?.HideGameClear();
+        context.UIManager?.HideGameOver();
     }
 }
