@@ -28,6 +28,8 @@ Unityで開発中のGeoRogueプロトタイププロジェクトです。
 - [ ] 敵Prefab削除対応（最適化）
 - [ ] Player の Sphere Colider を削除
 - [ ] gem の描画最適化
+- [ ] ジェムの表示最適化
+- [ ] ジェムのインスタンス最適化
 - [ ] **DrawMeshInstancedによる描画最適化**
   - 現在の実装（GameObject + TransformAccessArray）から、`Graphics.DrawMeshInstanced`または`Graphics.DrawMeshInstancedIndirect`への移行
   - 大量のオブジェクトを個別のGameObjectとして管理するのではなく、GPUインスタンシングを使用して描画コストを削減
@@ -63,6 +65,7 @@ Unityで開発中のGeoRogueプロトタイププロジェクトです。
 - [ ] プレイヤーHP回復（アイテム or アップグレード）
 - [ ] クリティカルヒット処理
 - [ ] ジェム全吸引（ボス遷移前？）
+- [ ] ボス生成時にボスをプレイヤー方向に向ける
 
 ### パフォーマンス改善
 
