@@ -386,4 +386,12 @@ public class GameManager : MonoBehaviour
         }
         SwitchCamera(0, immediate: true);
     }
+
+    /// <summary>
+    /// ダメージテキストをリセットする。ゲームクリア進入時などに呼ぶ。
+    /// </summary>
+    public void ResetDamageText()
+    {
+        damageTextManager?.Reset();
+    }
 }

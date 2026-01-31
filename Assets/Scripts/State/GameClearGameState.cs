@@ -9,6 +9,7 @@ public class GameClearGameState : GameStateBase
     public override void OnEnter(GameManager context)
     {
         UnityEngine.Time.timeScale = 0f;
+        context.ResetDamageText();
         context.UIManager?.ShowGameClear(() =>
         {
             context.ResetGameState();
