@@ -41,6 +41,10 @@ public class GameManager : MonoBehaviour
     [Header("Params")]
     [SerializeField] private Transform playerTransform;
 
+    [Header("Title")]
+    [Tooltip("タイトル画面に入ったときにプレイヤーを移動させる位置")]
+    [SerializeField] private Vector3 titlePlayerPosition = Vector3.zero;
+
     [Header("MultiShot Settings")]
     [SerializeField] private float multiShotSpreadAngle = 10f; // 弾の拡散角度（発射数は Player で保持）
     
@@ -592,5 +596,16 @@ public class GameManager : MonoBehaviour
         }
         return Vector3.zero;
     }
-    
+
+    /// <summary>
+    /// タイトル画面用にプレイヤー位置とカメラをリセットする。タイトル進入時に呼ぶ。
+    /// </summary>
+    public void ResetPlayerAndCameraForTitle()
+    {
+        if (playerTransform != null)
+        {
+            playerTransform.position = titlePlayerPosition;
+        }
+        SwitchCamera(0, immediate: true);
+    }
 }

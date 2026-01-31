@@ -1359,6 +1359,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Player
   moveSpeed: 5
   rotationSpeed: 10
+  fireRate: 0.1
+  bulletSpeed: 20
+  bulletCountPerShot: 1
+  magnetDist: 5
+  initialMoveSpeed: 5
+  initialFireRate: 0.1
+  initialBulletSpeed: 20
+  initialBulletCountPerShot: 1
+  initialMagnetDist: 5
   playerCamera: {fileID: 330585545}
   maxHp: 10
   invincibleDuration: 1
@@ -1517,7 +1526,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
   ShowDebugText: 0
   ShowCameraFrustum: 1
-  IgnoreTimeScale: 0
+  IgnoreTimeScale: 1
   WorldUpOverride: {fileID: 0}
   ChannelMask: -1
   UpdateMethod: 2
@@ -1704,9 +1713,6 @@ MonoBehaviour:
   bulletPrefab: {fileID: 418365409580796662, guid: ab54663d7eb3d4ceaa4875f81afccdef, type: 3}
   maxBullets: 100
   playerTransform: {fileID: 322285197}
-  bulletSpeed: 20
-  fireRate: 0.1
-  bulletCountPerShot: 1
   multiShotSpreadAngle: 10
   enemyManager: {fileID: 1856169496}
   gemManager: {fileID: 420920856}
@@ -1911,7 +1917,6 @@ MonoBehaviour:
   gemPrefab: {fileID: 2652571414585160641, guid: d7ff9ab8ed26b40ceabdc8b75db64d3e, type: 3}
   maxGems: 100
   playerTransform: {fileID: 322285197}
-  magnetDist: 3
   gemSpeed: 15
   player: {fileID: 322285198}
 --- !u!1 &454398053
@@ -3980,9 +3985,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelUpManager
   uiManager: {fileID: 614781147}
-  gameManager: {fileID: 379471278}
   player: {fileID: 322285198}
-  gemManager: {fileID: 420920856}
 --- !u!4 &1420325301
 Transform:
   m_ObjectHideFlags: 0
