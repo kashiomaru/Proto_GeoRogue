@@ -58,15 +58,18 @@ public class RenderManager : MonoBehaviour
 
             batchIndex++;
 
-            // バッチが満タン、または最後の要素なら描画実行
-            if (batchIndex >= BATCH_SIZE || i == count - 1)
+            // バッチが満タンなら描画実行
+            if (batchIndex >= BATCH_SIZE)
             {
-                if (batchIndex > 0)
-                {
-                    ExecuteDraw(batchIndex);
-                }
+                ExecuteDraw(batchIndex);
+
                 batchIndex = 0;
             }
+        }
+
+        if (batchIndex > 0)
+        {
+            ExecuteDraw(batchIndex);
         }
     }
 

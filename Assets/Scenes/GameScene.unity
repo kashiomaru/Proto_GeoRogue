@@ -4712,7 +4712,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2a2439e7363f457bbc4abd6ce3f8e73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyManager
-  cubePrefab: {fileID: 5245499245727803100, guid: 24586601eb5764e69a4e27cc54b00816, type: 3}
   enemyCount: 10
   enemySpeed: 4
   enemyMaxHp: 1
