@@ -160,7 +160,7 @@ public class GameManager : MonoBehaviour
 #else
         GameMode startMode = GameMode.Title;
 #endif
-        enemyManager?.SetGameMode(startMode);
+        ApplyEnemyManagerFlags(startMode);
 
         _stateMachine = new StateMachine<GameMode, GameManager>(this);
 
@@ -499,8 +499,14 @@ public class GameManager : MonoBehaviour
             NextGameMode = newMode;
             _stateMachine.ChangeState(newMode);
             NextGameMode = null;
-            enemyManager?.SetGameMode(newMode);
+            ApplyEnemyManagerFlags(newMode);
         }
+    }
+
+    private void ApplyEnemyManagerFlags(GameMode mode)
+    {
+        enemyManager?.SetNormalEnemiesEnabled(mode == GameMode.Normal);
+        enemyManager?.SetBossActive(mode == GameMode.Boss);
     }
     
     /// <summary>

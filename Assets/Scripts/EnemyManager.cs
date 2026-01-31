@@ -35,9 +35,10 @@ public class EnemyManager : InitializeMonobehaviour
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
-    
-    // ゲームモード
-    private GameMode _currentMode = GameMode.None; // 現在のゲームモード
+
+    // 通常敵・ボスの有効フラグ（GameManager が SetNormalEnemiesEnabled / SetBossActive で設定）
+    private bool _normalEnemiesEnabled;
+    private bool _bossActive;
     
     // --- Enemy Data ---
     private TransformAccessArray _enemyTransforms;
@@ -75,32 +76,19 @@ public class EnemyManager : InitializeMonobehaviour
             return;
         }
         
-        // ボスモード時：ボスの死亡チェック
-        if (_currentMode == GameMode.Boss)
+        // ボスが有効なときはボス死亡チェック（通常敵と共存可能）
+        if (_bossActive)
         {
             CheckBossDeath();
-
-            return;
         }
-        
-        // 通常モードでない場合は処理をスキップ
-        if (_currentMode == GameMode.Normal)
+
+        // 通常敵が有効なときは移動・ジェム・ダメージ表示・リスポーン・描画
+        if (_normalEnemiesEnabled)
         {
-            // 1. 敵の移動Jobをスケジュール（JobHandleは返すが、ここでは完了待ちしない）
-            // GameManagerでbulletHandleの依存関係として使用されるため、publicメソッドとして残す
-            // 実際の処理はGameManagerのUpdateで行う
-            
-            // 2. 死んだ敵の位置からジェムを生成
             ProcessDeadEnemies(gemManager);
-            
-            // 3. 敵へのダメージ表示処理
             ProcessEnemyDamage();
-            
-            // 4. 敵のリスポーン処理（通常モードの場合のみ実行）
             HandleRespawn();
-            
-            // 5. フラッシュタイマーの更新とRenderManagerによる描画
-            UpdateFlashTimers();            
+            UpdateFlashTimers();
             RenderEnemies();
         }
     }
@@ -155,7 +143,7 @@ public class EnemyManager : InitializeMonobehaviour
     // 敵の移動Jobをスケジュール
     public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
     {
-        if (_currentMode != GameMode.Normal)
+        if (_normalEnemiesEnabled == false)
         {
             return default;
         }
@@ -413,28 +401,29 @@ public class EnemyManager : InitializeMonobehaviour
         return _enemyFlashQueue.AsParallelWriter();
     }
     
-    // ゲームモードを設定
-    public void SetGameMode(GameMode mode)
+    /// <summary>
+    /// 通常敵の処理を有効／無効にする。無効にしたときは全敵をクリアする。
+    /// </summary>
+    public void SetNormalEnemiesEnabled(bool enabled)
     {
-        _currentMode = mode;
-
-        if (_currentMode != GameMode.Normal)
+        _normalEnemiesEnabled = enabled;
+        if (enabled == false)
         {
             ClearAllEnemies();
         }
-        
-        // ボスモード以外へ切り替えた場合はボスを破棄
-        if (_currentMode != GameMode.Boss && _currentBoss != null)
+    }
+
+    /// <summary>
+    /// ボスを有効／無効にする。無効にしたときはボスが存在すれば破棄する。
+    /// </summary>
+    public void SetBossActive(bool active)
+    {
+        _bossActive = active;
+        if (active == false && _currentBoss != null)
         {
             Destroy(_currentBoss);
             _currentBoss = null;
         }
-    }
-    
-    // 現在のゲームモードを取得
-    public GameMode GetCurrentMode()
-    {
-        return _currentMode;
     }
     
     protected override void FinalizeInternal()
