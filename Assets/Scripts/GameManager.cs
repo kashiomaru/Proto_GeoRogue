@@ -132,6 +132,7 @@ public class GameManager : MonoBehaviour
         cameraManager?.Initialize();
         bulletManager?.Initialize();
         enemyManager?.Initialize();
+        gemManager?.Initialize();
 
 #if UNITY_EDITOR
         GameMode startMode = initialGameMode;

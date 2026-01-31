@@ -1,79 +1,72 @@
 using UnityEngine;
-using UnityEngine.Jobs;
 using Unity.Collections;
 using Unity.Burst;
+using Unity.Jobs;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
-public class GemManager : MonoBehaviour
+public class GemManager : InitializeMonobehaviour
 {
-    [SerializeField] private GameObject gemPrefab; // 小さな光るCube/Sphere
-    [SerializeField] private int maxGems = 2000;
+    [SerializeField] private int maxGems = 1000;
     [SerializeField] private Transform playerTransform;
     [SerializeField] private float gemSpeed = 15.0f;  // 吸い寄せ速度
 
     [Header("References")]
     [SerializeField] private Player player; // 吸い寄せ距離は Player.GetMagnetDist() から取得
+    [SerializeField] private RenderManager renderManager;
 
-    private TransformAccessArray _gemTransforms;
-    private NativeArray<float3> _gemPositions; // ジェムの位置配列
-    private NativeArray<bool> _gemActive;      // 画面に出ているか
-    private NativeArray<bool> _gemIsFlying;    // プレイヤーに向かって飛んでいるか
-    
-    // 描画最適化用（Transformから座標を取るのは重いので、座標だけの配列も持つ）
-    // 今回は簡易的にTransformAccessArrayで動かしますが、本来はこれもNativeArray<float3>で管理推奨
-    
+    // --- Gem Data（座標のみ保持、Prefab インスタンスは生成しない・敵と同様）---
+    private NativeArray<float3> _gemPositions;
+    private NativeArray<bool> _gemActive;
+    private NativeArray<bool> _gemIsFlying;
+    private List<Vector3> _gemPositionList;
+    private List<bool> _gemActiveList;
+
     // 経験値加算用（Job内からメインスレッドへ通知）
-    // 回収されたジェムの数を記録するキュー（各ジェムごとに1を追加）
     private NativeQueue<int> _collectedGemQueue;
-    
-    private int _gemHeadIndex = 0; // リングバッファ用
+    private int _gemHeadIndex = 0;
 
-    // 外部（GameManager）から呼ぶ
+    // 外部（EnemyManager 等）から呼ぶ
     public void SpawnGem(Vector3 position)
     {
+        if (IsInitialized == false)
+        {
+            return;
+        }
+
         int id = _gemHeadIndex;
         _gemHeadIndex = (_gemHeadIndex + 1) % maxGems;
 
-        // すでに使われていても強制上書き（古いGemは消える仕様でOK）
         _gemActive[id] = true;
         _gemIsFlying[id] = false;
         _gemPositions[id] = (float3)position;
-        
-        // Transformの位置を更新するJobを実行
-        var updatePosJob = new UpdateGemPositionJob
-        {
-            positions = _gemPositions,
-            activeFlags = _gemActive
-        };
-        updatePosJob.Schedule(_gemTransforms).Complete();
     }
 
-    void Start()
+    protected override void InitializeInternal()
     {
-        _gemTransforms = new TransformAccessArray(maxGems);
         _gemPositions = new NativeArray<float3>(maxGems, Allocator.Persistent);
         _gemActive = new NativeArray<bool>(maxGems, Allocator.Persistent);
         _gemIsFlying = new NativeArray<bool>(maxGems, Allocator.Persistent);
-        
-        // 回収されたジェムを記録するキューを初期化
+        _gemPositionList = new List<Vector3>(maxGems);
+        _gemActiveList = new List<bool>(maxGems);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
-        // プール生成（画面外へ。GemManagerの子として生成）
         for (int i = 0; i < maxGems; i++)
         {
-            var obj = Instantiate(gemPrefab, new Vector3(0, -500, 0), Quaternion.identity, transform);
-            _gemTransforms.Add(obj.transform);
-            _gemPositions[i] = new float3(0, -500, 0);
             _gemActive[i] = false;
             _gemIsFlying[i] = false;
+            _gemPositionList.Add(Vector3.zero);
+            _gemActiveList.Add(false);
         }
     }
 
     void Update()
     {
-        // プレイヤーのレベルアップ管理などはここで行う
+        if (IsInitialized == false)
+        {
+            return;
+        }
 
-        // --- JOB: Gemの吸い寄せと回収 ---
         float magnetDist = player != null ? player.GetMagnetDist() : 5f;
         var gemJob = new GemMagnetJob
         {
@@ -84,30 +77,21 @@ public class GemManager : MonoBehaviour
             positions = _gemPositions,
             activeFlags = _gemActive,
             flyingFlags = _gemIsFlying,
-            collectedGemQueue = _collectedGemQueue.AsParallelWriter() // 回収されたジェムを記録
+            collectedGemQueue = _collectedGemQueue.AsParallelWriter()
         };
+        gemJob.Schedule(maxGems, 64).Complete();
 
-        var handle = gemJob.Schedule(_gemTransforms);
-        handle.Complete();
-        
-        // 位置をTransformに反映
-        var updatePosJob = new UpdateGemPositionJob
+        // NativeArray → List にコピーして描画（敵と同様）
+        for (int i = 0; i < maxGems; i++)
         {
-            positions = _gemPositions,
-            activeFlags = _gemActive
-        };
-        updatePosJob.Schedule(_gemTransforms).Complete();
-        
-        // 回収されたジェムの数はGameManagerで取得するため、ここでは処理しない
-        // （GameManager.GetCollectedGemCount()で取得可能）
+            _gemPositionList[i] = _gemPositions[i];
+            _gemActiveList[i] = _gemActive[i];
+        }
+        renderManager?.RenderGems(_gemPositionList, _gemActiveList);
     }
 
-    void OnDestroy()
+    protected override void FinalizeInternal()
     {
-        if (_gemTransforms.isCreated)
-        {
-            _gemTransforms.Dispose();
-        }
         if (_gemPositions.IsCreated)
         {
             _gemPositions.Dispose();
@@ -131,6 +115,11 @@ public class GemManager : MonoBehaviour
     /// </summary>
     public void ResetGems()
     {
+        if (IsInitialized == false)
+        {
+            return;
+        }
+
         for (int i = 0; i < maxGems; i++)
         {
             _gemActive[i] = false;
@@ -138,18 +127,16 @@ public class GemManager : MonoBehaviour
             _gemPositions[i] = new float3(0, -500, 0);
         }
         while (_collectedGemQueue.TryDequeue(out _)) { }
-        // Transformの位置を反映
-        var updatePosJob = new UpdateGemPositionJob
-        {
-            positions = _gemPositions,
-            activeFlags = _gemActive
-        };
-        updatePosJob.Schedule(_gemTransforms).Complete();
     }
 
     // GameManager用：回収されたジェムの数を取得（キューから取得して返す）
     public int GetCollectedGemCount()
     {
+        if (IsInitialized == false)
+        {
+            return 0;
+        }
+
         int count = 0;
         while (_collectedGemQueue.TryDequeue(out int _))
         {

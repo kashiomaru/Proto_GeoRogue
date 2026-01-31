@@ -3,10 +3,15 @@ using System.Collections.Generic;
 
 public class RenderManager : MonoBehaviour
 {
-    [Header("Settings")]
+    [Header("Enemy Settings")]
     [SerializeField] private Mesh enemyMesh;
     [SerializeField] private Material enemyMaterial;
     [SerializeField] private float flashIntensity = 0.8f;
+
+    [Header("Gem Settings")]
+    [SerializeField] private Mesh gemMesh;
+    [SerializeField] private Material gemMaterial;
+    [SerializeField] private float gemScale = 0.4f;
 
     private const int BATCH_SIZE = 1023;
 
@@ -70,6 +75,64 @@ public class RenderManager : MonoBehaviour
         if (batchIndex > 0)
         {
             ExecuteDraw(batchIndex);
+        }
+    }
+
+    /// <summary>
+    /// ジェムを座標・アクティブリストで描画（敵と同様に DrawMeshInstanced、Instantiate なし）。
+    /// </summary>
+    public void RenderGems(IList<Vector3> positions, IList<bool> activeFlags)
+    {
+        if (gemMesh == null || gemMaterial == null)
+        {
+            return;
+        }
+
+        int count = positions.Count;
+        int batchIndex = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (activeFlags[i] == false)
+            {
+                continue;
+            }
+
+            _matrices[batchIndex] = Matrix4x4.TRS(
+                positions[i],
+                Quaternion.identity,
+                Vector3.one * gemScale
+            );
+            batchIndex++;
+
+            if (batchIndex >= BATCH_SIZE)
+            {
+                Graphics.DrawMeshInstanced(
+                    gemMesh,
+                    0,
+                    gemMaterial,
+                    _matrices,
+                    batchIndex,
+                    null,
+                    UnityEngine.Rendering.ShadowCastingMode.On,
+                    true
+                );
+                batchIndex = 0;
+            }
+        }
+
+        if (batchIndex > 0)
+        {
+            Graphics.DrawMeshInstanced(
+                gemMesh,
+                0,
+                gemMaterial,
+                _matrices,
+                batchIndex,
+                null,
+                UnityEngine.Rendering.ShadowCastingMode.On,
+                true
+            );
         }
     }
 

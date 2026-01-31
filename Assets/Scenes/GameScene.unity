@@ -1965,11 +1965,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d81bb7762a6ca4f85ae5facaf3127239, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GemManager
-  gemPrefab: {fileID: 2652571414585160641, guid: d7ff9ab8ed26b40ceabdc8b75db64d3e, type: 3}
   maxGems: 100
   playerTransform: {fileID: 322285197}
   gemSpeed: 15
   player: {fileID: 322285198}
+  renderManager: {fileID: 454398054}
 --- !u!1 &454398053
 GameObject:
   m_ObjectHideFlags: 0
@@ -2002,6 +2002,9 @@ MonoBehaviour:
   enemyMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   enemyMaterial: {fileID: 2100000, guid: 5e60ad6f09f7d4fdaa8594399ff2bcd8, type: 2}
   flashIntensity: 0.8
+  gemMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  gemMaterial: {fileID: 2100000, guid: f9af9187d6a0e49b6adf174222c2d463, type: 2}
+  gemScale: 0.4
 --- !u!4 &454398055
 Transform:
   m_ObjectHideFlags: 0

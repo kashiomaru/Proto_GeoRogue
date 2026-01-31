@@ -1,10 +1,10 @@
-using UnityEngine.Jobs;
 using Unity.Collections;
 using Unity.Burst;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 [BurstCompile]
-public struct GemMagnetJob : IJobParallelForTransform
+public struct GemMagnetJob : IJobParallelFor
 {
     public float deltaTime;
     public float3 playerPos;
@@ -19,12 +19,10 @@ public struct GemMagnetJob : IJobParallelForTransform
     // 各ジェムごとに1を追加して、メインスレッドでカウントする
     public NativeQueue<int>.ParallelWriter collectedGemQueue;
 
-    public void Execute(int index, TransformAccess transform)
+    public void Execute(int index)
     {
         if (activeFlags[index] == false)
         {
-            // 見えない場所に固定
-            positions[index] = new float3(0, -500, 0);
             return;
         }
 
@@ -53,7 +51,6 @@ public struct GemMagnetJob : IJobParallelForTransform
                 {
                     activeFlags[index] = false; // 消滅
                     flyingFlags[index] = false;
-                    positions[index] = new float3(0, -500, 0); // 画面外へ
                     
                     // 回収されたジェムをキューに追加（メインスレッドでカウントするため）
                     collectedGemQueue.Enqueue(1);
