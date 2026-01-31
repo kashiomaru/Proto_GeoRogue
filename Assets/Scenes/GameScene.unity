@@ -1729,6 +1729,8 @@ MonoBehaviour:
   debugCountdownTime: 10
   enableDebugBossHp: 1
   debugBossHp: 10
+  enableDebugPlayerHp: 1
+  debugPlayerHp: 1
 --- !u!4 &379471279
 Transform:
   m_ObjectHideFlags: 0

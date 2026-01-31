@@ -79,6 +79,12 @@ public class GameManager : MonoBehaviour
     [Tooltip("有効時、ボス生成時に使用する最大HP。enableDebugBossHp が true のときのみ使用されます。")]
     [SerializeField] private float debugBossHp = 10f;
 
+    [Tooltip("プレイヤーのHPをデバッグ用に上書きするか。ビルドでは無視されます。")]
+    [SerializeField] private bool enableDebugPlayerHp = false;
+
+    [Tooltip("有効時、プレイヤーの最大HPと現在HPに設定する値。enableDebugPlayerHp が true のときのみ使用されます。")]
+    [SerializeField] private int debugPlayerHp = 1;
+
     // --- Bullet Data ---
     private TransformAccessArray _bulletTransforms; // 今回は簡易的にTransformを使いますが、本来はMatrix配列で描画すべき
     private NativeArray<float3> _bulletPositions;
@@ -128,7 +134,21 @@ public class GameManager : MonoBehaviour
 
         // ステートマシンを初期化
         InitializeStateMachine();
+
+#if UNITY_EDITOR
+        ApplyDebugPlayerHp();
+#endif
     }
+
+#if UNITY_EDITOR
+    private void ApplyDebugPlayerHp()
+    {
+        if (enableDebugPlayerHp && player != null)
+        {
+            player.SetHpForDebug(debugPlayerHp);
+        }
+    }
+#endif
     
     void InitializeStateMachine()
     {
