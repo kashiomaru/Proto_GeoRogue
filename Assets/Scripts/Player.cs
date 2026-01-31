@@ -7,12 +7,19 @@ public class Player : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float rotationSpeed = 10f; // 回転速度
 
-    [Header("Upgrade Params (LevelUp で変化、Reset で初期値に戻る)")]
+    [Header("Upgrade Params (LevelUp で変化)")]
     [SerializeField] private float fireRate = 0.1f;
     [SerializeField] private float bulletSpeed = 20f;
     [SerializeField] private int bulletCountPerShot = 1;
     [SerializeField] private float magnetDist = 5f;
-    
+
+    [Header("Reset 時の復元値（上記の初期値。インスペクターで編集可）")]
+    [SerializeField] private float initialMoveSpeed = 5f;
+    [SerializeField] private float initialFireRate = 0.1f;
+    [SerializeField] private float initialBulletSpeed = 20f;
+    [SerializeField] private int initialBulletCountPerShot = 1;
+    [SerializeField] private float initialMagnetDist = 5f;
+
     [Header("Camera Reference")]
     [SerializeField] private Camera playerCamera; // カメラ参照（未設定の場合はMainCameraを自動取得）
     
@@ -43,13 +50,6 @@ public class Player : MonoBehaviour
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
 
-    // リセット用の初期値（Start で保存）
-    private float _initialMoveSpeed;
-    private float _initialFireRate;
-    private float _initialBulletSpeed;
-    private int _initialBulletCountPerShot;
-    private float _initialMagnetDist;
-
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
     public bool IsInvincible => _isInvincible;
@@ -71,13 +71,6 @@ public class Player : MonoBehaviour
         
         // HP初期化
         _currentHp = maxHp;
-
-        // リセット用にアップグレードパラメータの初期値を保存
-        _initialMoveSpeed = moveSpeed;
-        _initialFireRate = fireRate;
-        _initialBulletSpeed = bulletSpeed;
-        _initialBulletCountPerShot = bulletCountPerShot;
-        _initialMagnetDist = magnetDist;
 
         // レンダラーとMaterialPropertyBlockを初期化
         _renderer = GetComponent<Renderer>();
@@ -196,11 +189,11 @@ public class Player : MonoBehaviour
         _currentLevel = 1;
         _canLevelUp = false;
 
-        moveSpeed = _initialMoveSpeed;
-        fireRate = _initialFireRate;
-        bulletSpeed = _initialBulletSpeed;
-        bulletCountPerShot = _initialBulletCountPerShot;
-        magnetDist = _initialMagnetDist;
+        moveSpeed = initialMoveSpeed;
+        fireRate = initialFireRate;
+        bulletSpeed = initialBulletSpeed;
+        bulletCountPerShot = initialBulletCountPerShot;
+        magnetDist = initialMagnetDist;
 
         UpdateFlashColor();
     }
