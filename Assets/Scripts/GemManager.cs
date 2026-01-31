@@ -58,10 +58,10 @@ public class GemManager : MonoBehaviour
         // 回収されたジェムを記録するキューを初期化
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
-        // プール生成（画面外へ）
+        // プール生成（画面外へ。GemManagerの子として生成）
         for (int i = 0; i < maxGems; i++)
         {
-            var obj = Instantiate(gemPrefab, new Vector3(0, -500, 0), Quaternion.identity);
+            var obj = Instantiate(gemPrefab, new Vector3(0, -500, 0), Quaternion.identity, transform);
             _gemTransforms.Add(obj.transform);
             _gemPositions[i] = new float3(0, -500, 0);
             _gemActive[i] = false;
