@@ -23,9 +23,9 @@ public class RenderManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 敵を座標リストで描画（Transform なし）。位置・回転(identity)・スケール(1)で行列を生成。
+    /// 敵を座標・回転リストで描画。回転は Job で計算済み（プレイヤー方向）。
     /// </summary>
-    public void RenderEnemies(IList<Vector3> positions, IList<float> flashTimers, IList<bool> activeFlags)
+    public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags)
     {
         int count = positions.Count;
         int batchIndex = 0;
@@ -39,7 +39,7 @@ public class RenderManager : MonoBehaviour
 
             _matrices[batchIndex] = Matrix4x4.TRS(
                 positions[i],
-                Quaternion.identity,
+                rotations[i],
                 Vector3.one
             );
 

@@ -38,12 +38,14 @@ public class EnemyManager : InitializeMonobehaviour
     private bool _normalEnemiesEnabled;
     private bool _bossActive;
     
-    // --- Enemy Data（座標のみ保持、Prefab インスタンスは生成しない）---
+    // --- Enemy Data（座標・回転のみ保持、Prefab インスタンスは生成しない）---
     private NativeArray<float3> _enemyPositions;
+    private NativeArray<quaternion> _enemyRotations; // Job で計算（プレイヤー方向）
     private NativeArray<bool> _enemyActive;
     private NativeArray<float> _enemyHp;
     private List<float> _enemyFlashTimers;
-    private List<Vector3> _enemyPositionList; // 描画用（_enemyPositions をコピー）
+    private List<Vector3> _enemyPositionList;
+    private List<Quaternion> _enemyRotationList; // 描画用（_enemyRotations をコピー）
     private List<bool> _enemyActiveList;
     
     // --- Spatial Partitioning ---
@@ -93,10 +95,12 @@ public class EnemyManager : InitializeMonobehaviour
     protected override void InitializeInternal()
     {
         _enemyPositions = new NativeArray<float3>(enemyCount, Allocator.Persistent);
+        _enemyRotations = new NativeArray<quaternion>(enemyCount, Allocator.Persistent);
         _enemyActive = new NativeArray<bool>(enemyCount, Allocator.Persistent);
         _enemyHp = new NativeArray<float>(enemyCount, Allocator.Persistent);
         _enemyFlashTimers = new List<float>(new float[enemyCount]);
         _enemyPositionList = new List<Vector3>(enemyCount);
+        _enemyRotationList = new List<Quaternion>(enemyCount);
         _enemyActiveList = new List<bool>(enemyCount);
 
         for (int i = 0; i < enemyCount; i++)
@@ -104,9 +108,11 @@ public class EnemyManager : InitializeMonobehaviour
             var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
             pos.y = 0;
             _enemyPositions[i] = pos;
+            _enemyRotations[i] = quaternion.identity;
             _enemyActive[i] = true;
             _enemyHp[i] = enemyMaxHp;
             _enemyPositionList.Add(Vector3.zero);
+            _enemyRotationList.Add(Quaternion.identity);
             _enemyActiveList.Add(false);
         }
 
@@ -149,6 +155,7 @@ public class EnemyManager : InitializeMonobehaviour
             damageRadius = enemyDamageRadius,
             spatialMap = _spatialMap.AsParallelWriter(), // 並列書き込み用
             positions = _enemyPositions,
+            rotations = _enemyRotations,
             activeFlags = _enemyActive,
             damageQueue = playerDamageQueue // プレイヤーへのダメージを記録
         };
@@ -231,6 +238,8 @@ public class EnemyManager : InitializeMonobehaviour
         {
             _enemyActiveList[i] = _enemyActive[i];
             _enemyPositionList[i] = _enemyPositions[i];
+            var q = _enemyRotations[i];
+            _enemyRotationList[i] = new Quaternion(q.value.x, q.value.y, q.value.z, q.value.w);
         }
     }
 
@@ -240,7 +249,7 @@ public class EnemyManager : InitializeMonobehaviour
         {
             return;
         }
-        renderManager.RenderEnemies(_enemyPositionList, _enemyFlashTimers, _enemyActiveList);
+        renderManager.RenderEnemies(_enemyPositionList, _enemyRotationList, _enemyFlashTimers, _enemyActiveList);
     }
     
     public void ClearAllEnemies()
@@ -392,6 +401,10 @@ public class EnemyManager : InitializeMonobehaviour
         if (_enemyPositions.IsCreated)
         {
             _enemyPositions.Dispose();
+        }
+        if (_enemyRotations.IsCreated)
+        {
+            _enemyRotations.Dispose();
         }
         if (_enemyActive.IsCreated)
         {
