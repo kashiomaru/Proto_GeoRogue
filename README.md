@@ -25,19 +25,6 @@ Unityで開発中のGeoRogueプロトタイププロジェクトです。
 
 ### 最適化関連
 
-- [ ] **DrawMeshInstancedによる描画最適化**
-  - 現在の実装（GameObject + TransformAccessArray）から、`Graphics.DrawMeshInstanced`または`Graphics.DrawMeshInstancedIndirect`への移行
-  - 大量のオブジェクトを個別のGameObjectとして管理するのではなく、GPUインスタンシングを使用して描画コストを削減
-  - 期待される効果：
-    - 描画コール数の大幅な削減（数千個のオブジェクトを1回の描画コールで処理）
-    - CPU負荷の軽減（Transformの更新処理の削減）
-    - メモリ使用量の削減（GameObjectのオーバーヘッドを排除）
-  - 実装方針：
-    - 位置・回転・スケールなどの情報を`Matrix4x4`配列または`NativeArray<float4x4>`で管理
-    - `Graphics.DrawMeshInstanced`を使用して一括描画
-    - 必要に応じて`MaterialPropertyBlock`を使用して個別のプロパティを設定
-    - 衝突判定が必要な場合は、別途物理演算用のデータ構造を維持
-
 - [ ] **ダメージテキストの描画最適化**（保留）
   - 現状：UI（TMP）のプールで Instantiate 済みオブジェクトを再利用
   - 検討案：敵・ジェム・弾と同様に、データ駆動＋ワールド空間ビルボード＋数字テクスチャアトラス＋`DrawMeshInstanced` で一括描画
