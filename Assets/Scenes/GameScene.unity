@@ -1699,8 +1699,8 @@ MonoBehaviour:
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
   stages:
-  - {fileID: 11400000, guid: 12881cfb280dd4b93802f2fafb31c527, type: 2}
   - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
+  - {fileID: 11400000, guid: 82e23f7fd44e045fea0179e46e34b497, type: 2}
   debugSettings: {fileID: 985743518}
 --- !u!4 &379471279
 Transform:
@@ -4899,6 +4899,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyManager
   maxEnemyCount: 1000
+  respawnDistance: 50
+  respawnMinRadius: 20
+  respawnMaxRadius: 30
   renderManager: {fileID: 454398054}
   damageTextManager: {fileID: 614781148}
   gemManager: {fileID: 420920856}

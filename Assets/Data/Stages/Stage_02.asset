@@ -12,19 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfb6f46c292324f4bbdbb145e3c9f405, type: 3}
   m_Name: Stage_02
   m_EditorClassIdentifier: Assembly-CSharp::StageData
-  stageDisplayName: Stage 2
+  stageDisplayName: 
   countdownDuration: 60
-  enemyMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
-  enemyMaterial: {fileID: 2100000, guid: 5e60ad6f09f7d4fdaa8594399ff2bcd8, type: 2}
-  enemyScale: {x: 1, y: 1, z: 1}
-  enemySpeed: 4
-  enemyMaxHp: 2
-  enemyFlashDuration: 0.1
-  enemyDamageRadius: 1
-  cellSize: 2
-  spawnCount: 15
-  respawnDistance: 50
-  respawnMinRadius: 20
-  respawnMaxRadius: 30
+  enemyDatas:
+  - {fileID: 11400000, guid: 3ef501967bea6453c85810198bf7b719, type: 2}
   bossPrefab: {fileID: 1309990021478730655, guid: 018603bcd87454decbaa9aebd9f7a1fc, type: 3}
   bossSpawnDistance: 20

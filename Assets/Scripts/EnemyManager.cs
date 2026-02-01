@@ -19,9 +19,14 @@ public class EnemyManager : InitializeMonobehaviour
     private float enemyFlashDuration = 0.1f;
     private float enemyDamageRadius = 1f;
     private float cellSize = 2f;
-    private float respawnDistance = 50f;
-    private float respawnMinRadius = 20f;
-    private float respawnMaxRadius = 30f;
+
+    [Header("Respawn (一律)")]
+    [Tooltip("プレイヤーからこの距離以上離れた敵を削除し、リスポーン候補にする")]
+    [SerializeField] private float respawnDistance = 50f;
+    [Tooltip("リスポーン位置のプレイヤーからの最小半径")]
+    [SerializeField] private float respawnMinRadius = 20f;
+    [Tooltip("リスポーン位置のプレイヤーからの最大半径")]
+    [SerializeField] private float respawnMaxRadius = 30f;
     private GameObject bossPrefab;
     private float bossSpawnDistance = 20f;
 
@@ -432,15 +437,15 @@ public class EnemyManager : InitializeMonobehaviour
     /// </summary>
     public void ApplyNormalEnemyConfig(StageData stage)
     {
-        if (stage == null) return;
+        if (stage is null || stage.FirstEnemyData is null)
+        {
+            return;
+        }
         enemySpeed = stage.EnemySpeed;
         enemyMaxHp = stage.EnemyMaxHp;
         enemyFlashDuration = stage.EnemyFlashDuration;
         enemyDamageRadius = stage.EnemyDamageRadius;
         cellSize = stage.CellSize;
-        respawnDistance = stage.RespawnDistance;
-        respawnMinRadius = stage.RespawnMinRadius;
-        respawnMaxRadius = stage.RespawnMaxRadius;
         if (stage.SpawnCount > 0)
         {
             SpawnCount = Mathf.Clamp(stage.SpawnCount, 1, maxEnemyCount);
