@@ -1,211 +1,28 @@
 using UnityEngine;
 using Unity.Mathematics;
-using System;
 
-public class Boss : MonoBehaviour
+/// <summary>
+/// プレイヤーに近づき、接触範囲内でダメージを与えるボス。挙動の基本形。
+/// </summary>
+public class Boss : BossBase
 {
-    [Header("Boss Settings")]
-    [SerializeField] private float speed = 4f; // 移動速度
-    [SerializeField] private float rotationSpeed = 3f; // 回転速度（Playerと同じ単位）
-    [SerializeField] private float damageRadius = 1.0f; // プレイヤーとの当たり判定半径
-    [SerializeField] private int damageAmount = 1; // プレイヤーへのダメージ量
-    [SerializeField] private float maxHp = 100f; // ボスの最大HP
-    [SerializeField] private float collisionRadius = 2.0f; // 弾との当たり判定半径
-    
-    [Header("Flash Settings")]
-    [SerializeField] private float flashDuration = 0.1f; // ヒットフラッシュの持続時間
-    [SerializeField] private float flashInterval = 0.1f; // 点滅の間隔（秒）
-    [SerializeField] private float flashIntensity = 0.4f; // フラッシュの強度
-    
-    [Header("References")]
-    [SerializeField] private Renderer bossRenderer; // レンダラー参照
-    [Tooltip("ダメージテキスト表示位置。未設定の場合はボス中心（Position）を使用")]
-    [SerializeField] private Transform damageTextPositionAnchor;
-    
-    // HP
-    private float _currentHp;
-    private float _effectiveMaxHp; // 実際に使用する最大HP（デバッグ上書き時用）
-    
-    // デリゲート（生成時に設定）
-    private Func<Vector3> getPlayerPosition; // プレイヤー位置を取得する関数
-    private Action<int> addPlayerDamage; // プレイヤーにダメージを与える関数
-    
-    private float _currentRotationVelocity; // 回転の滑らかさ用（Playerと同じ方式）
-    
-    // フラッシュ関連
-    private float _flashTimer = 0f; // フラッシュタイマー
-    private float _flashTotalTime = 0f; // フラッシュの総時間
-    private MaterialPropertyBlock _mpb; // MaterialPropertyBlock
-    private int _propertyID_EmissionColor; // エミッション色のプロパティID
-    
-    /// <summary>
-    /// ボスの初期化（生成時に呼び出す）
-    /// </summary>
-    /// <param name="getPlayerPosition">プレイヤー位置を取得する関数</param>
-    /// <param name="addPlayerDamage">プレイヤーにダメージを与える関数</param>
-    /// <param name="maxHpOverride">デバッグ用の最大HP上書き。null のときは maxHp を使用</param>
-    public void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage, float? maxHpOverride = null)
+    protected override void UpdateBehavior(float deltaTime)
     {
-        this.getPlayerPosition = getPlayerPosition;
-        this.addPlayerDamage = addPlayerDamage;
-        _effectiveMaxHp = maxHpOverride ?? maxHp;
-        _currentHp = _effectiveMaxHp;
-        
-        // MaterialPropertyBlockを初期化
-        if (bossRenderer != null)
-        {
-            _mpb = new MaterialPropertyBlock();
-            _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
-        }
-    }
-    
-    /// <summary>
-    /// ボスにダメージを与える
-    /// </summary>
-    /// <param name="damage">ダメージ量</param>
-    /// <returns>実際に与えたダメージ</returns>
-    public float TakeDamage(float damage)
-    {
-        float actualDamage = math.min(damage, _currentHp);
-        _currentHp -= actualDamage;
-        
-        // ヒットフラッシュを開始
-        _flashTimer = flashDuration;
-        
-        if (_currentHp <= 0f)
-        {
-            _currentHp = 0f;
-            // ボス死亡時の処理は呼び出し側で行う
-        }
-        
-        return actualDamage;
-    }
-    
-    /// <summary>
-    /// ボスの現在のHPを取得
-    /// </summary>
-    public float CurrentHp => _currentHp;
-    
-    /// <summary>
-    /// ボスの最大HPを取得
-    /// </summary>
-    public float MaxHp => _effectiveMaxHp;
-    
-    /// <summary>
-    /// ボスが死亡しているかどうか
-    /// </summary>
-    public bool IsDead => _currentHp <= 0f;
-    
-    /// <summary>
-    /// ボスの位置を取得
-    /// </summary>
-    public Vector3 Position => transform.position;
-
-    /// <summary>
-    /// ダメージテキストの表示位置を取得。Anchor が設定されていればその位置、なければ Position。
-    /// </summary>
-    public Vector3 GetDamageTextPosition()
-    {
-        return damageTextPositionAnchor?.position ?? transform.position;
-    }
-    
-    /// <summary>
-    /// ボスの当たり判定半径を取得
-    /// </summary>
-    public float CollisionRadius => collisionRadius;
-    
-    private void Update()
-    {
-        if (getPlayerPosition == null || addPlayerDamage == null)
-        {
-            return;
-        }
-
-        // フラッシュ色の更新
-        UpdateFlashColor();
-        
         float3 pos = transform.position;
         float3 target = (float3)getPlayerPosition();
         float distSq = math.distancesq(pos, target);
         float damageRadiusSq = damageRadius * damageRadius;
-        
-        // プレイヤーの方向を向く（Y軸のみ回転、補間しながら、Playerと同じ方式）
-        float3 direction = target - pos;
-        direction.y = 0f; // Y軸の回転を無視（水平方向のみ）
-        if (math.lengthsq(direction) > 0.0001f) // ゼロ除算を防ぐ
-        {
-            // 目標角度を計算
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
-            
-            // Playerと同じ方式で滑らかに補間（SmoothDampAngleを使用）
-            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
-        }
-        
-        // ダメージ範囲内かどうかで処理を分岐（二乗で比較してsqrtを回避）
+
+        LookAtPlayer();
+
         if (distSq <= damageRadiusSq)
         {
-            // ダメージ範囲内：ダメージを与える（移動しない）
             addPlayerDamage(damageAmount);
         }
         else
         {
-            // ダメージ範囲外：プレイヤーに近づく
             float3 dir = math.normalize(target - pos);
-            pos += dir * speed * Time.deltaTime;
-            transform.position = pos;
+            transform.position = pos + dir * speed * deltaTime;
         }
-    }
-    
-    /// <summary>
-    /// ヒットフラッシュの色を更新（点滅する）
-    /// </summary>
-    private void UpdateFlashColor()
-    {
-        if (bossRenderer == null || _mpb == null)
-        {
-            return;
-        }
-
-        // フラッシュタイマーの更新
-        if (_flashTimer > 0f)
-        {
-            _flashTimer -= Time.deltaTime;
-            _flashTotalTime += Time.deltaTime;
-
-            if (_flashTimer < 0f)
-            {
-                _flashTimer = 0f;
-                _flashTotalTime = 0f;
-            }
-        }
-        
-        if (_flashTimer > 0f)
-        {
-            // フラッシュ中：点滅する
-            // 残り時間から点滅サイクルを計算
-            if (_flashTotalTime > flashDuration + flashInterval)
-            {
-                _flashTotalTime -= flashDuration + flashInterval;
-            }
-            
-            if (_flashTotalTime < flashDuration)
-            {
-                // 白く光る
-                _mpb.SetColor(_propertyID_EmissionColor, new Color(flashIntensity, flashIntensity, flashIntensity, 1f));
-            }
-            else
-            {
-                // 通常色（黒）
-                _mpb.SetColor(_propertyID_EmissionColor, Color.black);
-            }
-        }
-        else
-        {
-            // 通常時：黒（エミッションなし）
-            _mpb.SetColor(_propertyID_EmissionColor, Color.black);
-        }
-        
-        bossRenderer.SetPropertyBlock(_mpb);
     }
 }

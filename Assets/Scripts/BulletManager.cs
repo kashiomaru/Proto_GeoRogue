@@ -198,12 +198,7 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        GameObject bossObject = enemyManager.GetCurrentBoss();
-        if (bossObject == null)
-        {
-            return;
-        }
-        Boss boss = bossObject.GetComponent<Boss>();
+        BossBase boss = enemyManager.GetCurrentBossComponent();
         if (boss == null || boss.IsDead)
         {
             return;

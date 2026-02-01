@@ -33,6 +33,7 @@ public class EnemyManager : InitializeMonobehaviour
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
+    private BossBase _currentBossComponent; // 毎フレーム GetComponent しないようキャッシュ
     private GameObject _bossPrefabOverride; // ステージ適用時のボス Prefab（null なら上記 bossPrefab を使用）
     private float _bossSpawnDistanceOverride = -1f; // ステージ適用時の距離（< 0 なら上記 bossSpawnDistance を使用）
 
@@ -310,6 +311,8 @@ public class EnemyManager : InitializeMonobehaviour
         if (_currentBoss != null)
         {
             Destroy(_currentBoss);
+            _currentBoss = null;
+            _currentBossComponent = null;
         }
         
         // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
@@ -331,12 +334,12 @@ public class EnemyManager : InitializeMonobehaviour
                 _currentBoss.transform.rotation = Quaternion.LookRotation(dirToPlayer.normalized);
             }
 
-            // Bossコンポーネントを取得して初期化
-            Boss bossComponent = _currentBoss.GetComponent<Boss>();
-            if (bossComponent != null && gameManager != null)
+            // BossBase コンポーネントを取得して初期化（Boss / 将来のサブクラスに対応）
+            _currentBossComponent = _currentBoss.GetComponent<BossBase>();
+            if (_currentBossComponent != null && gameManager != null)
             {
                 float? bossHpOverride = gameManager.GetDebugBossHpOverride();
-                bossComponent.Initialize(
+                _currentBossComponent.Initialize(
                     () => gameManager.GetPlayerPosition(),
                     (damage) => gameManager.AddPlayerDamage(damage),
                     bossHpOverride
@@ -344,7 +347,8 @@ public class EnemyManager : InitializeMonobehaviour
             }
             else
             {
-                Debug.LogWarning("EnemyManager: Failed to initialize Boss component!");
+                Debug.LogWarning("EnemyManager: Failed to initialize BossBase component!");
+                _currentBossComponent = null;
             }
         }
         else
@@ -353,26 +357,31 @@ public class EnemyManager : InitializeMonobehaviour
         }
     }
 
-    // 現在のボスを取得
+    /// <summary>現在のボス GameObject を取得（カメラの LookAt など Transform が必要なとき用）。</summary>
     public GameObject GetCurrentBoss()
     {
         return _currentBoss;
     }
-    
+
+    /// <summary>現在のボス BossBase を取得（毎フレーム GetComponent しないようキャッシュを返す）。</summary>
+    public BossBase GetCurrentBossComponent()
+    {
+        return _currentBossComponent;
+    }
+
     // ボスの死亡チェックと削除処理
     private void CheckBossDeath()
     {
-        if (_currentBoss == null)
+        if (_currentBossComponent == null)
         {
             return;
         }
 
-        Boss boss = _currentBoss.GetComponent<Boss>();
-        if (boss != null && boss.IsDead)
+        if (_currentBossComponent.IsDead)
         {
-            // ボスが死亡したら削除
             Destroy(_currentBoss);
             _currentBoss = null;
+            _currentBossComponent = null;
         }
     }
     
@@ -414,6 +423,7 @@ public class EnemyManager : InitializeMonobehaviour
         {
             Destroy(_currentBoss);
             _currentBoss = null;
+            _currentBossComponent = null;
         }
     }
 
@@ -489,6 +499,8 @@ public class EnemyManager : InitializeMonobehaviour
         if (_currentBoss != null)
         {
             Destroy(_currentBoss);
+            _currentBoss = null;
+            _currentBossComponent = null;
         }
         
         // _enemyFlashTimersはList<float>なので、Dispose()は不要（ガベージコレクタが自動管理）
