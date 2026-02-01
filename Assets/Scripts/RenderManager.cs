@@ -56,6 +56,11 @@ public class RenderManager : MonoBehaviour
     /// <param name="count">描画する敵の数。省略時は positions.Count を使用。</param>
     public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags, int? count = null)
     {
+        Mesh mesh = _runtimeEnemyDisplaySet && _runtimeEnemyMesh != null ? _runtimeEnemyMesh : enemyMesh;
+        Material mat = _runtimeEnemyDisplaySet && _runtimeEnemyMaterial != null ? _runtimeEnemyMaterial : enemyMaterial;
+        if (mesh == null || mat == null) return;
+
+        Vector3 scale = _runtimeEnemyDisplaySet ? _runtimeEnemyScale : Vector3.one;
         int drawCount = count ?? positions.Count;
         int batchIndex = 0;
 
@@ -66,7 +71,6 @@ public class RenderManager : MonoBehaviour
                 continue;
             }
 
-            Vector3 scale = _runtimeEnemyDisplaySet ? _runtimeEnemyScale : Vector3.one;
             _matrices[batchIndex] = Matrix4x4.TRS(
                 positions[i],
                 rotations[i],
@@ -91,24 +95,19 @@ public class RenderManager : MonoBehaviour
             // バッチが満タンなら描画実行
             if (batchIndex >= BATCH_SIZE)
             {
-                ExecuteDrawEnemies(batchIndex);
-
+                ExecuteDrawEnemies(mesh, mat, batchIndex);
                 batchIndex = 0;
             }
         }
 
         if (batchIndex > 0)
         {
-            ExecuteDrawEnemies(batchIndex);
+            ExecuteDrawEnemies(mesh, mat, batchIndex);
         }
     }
 
-    private void ExecuteDrawEnemies(int count)
+    private void ExecuteDrawEnemies(Mesh mesh, Material mat, int count)
     {
-        Mesh mesh = _runtimeEnemyDisplaySet && _runtimeEnemyMesh != null ? _runtimeEnemyMesh : enemyMesh;
-        Material mat = _runtimeEnemyDisplaySet && _runtimeEnemyMaterial != null ? _runtimeEnemyMaterial : enemyMaterial;
-        if (mesh == null || mat == null) return;
-
         // プロパティブロックに配列をセット
         _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
 
