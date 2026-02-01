@@ -2223,6 +2223,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7697f4167b2bb45209a4b0a0b6274b91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageTextManager
+  mainCamera: {fileID: 330585545}
   textPrefab: {fileID: 2490160533803667522, guid: 4698fa6cc5e20403fae914fd5058d726, type: 3}
   damageTextPoolTransform: {fileID: 1884711442}
   poolSize: 100

@@ -3,15 +3,17 @@ using System.Collections.Generic;
 
 public class DamageTextManager : MonoBehaviour
 {
+    [SerializeField] private Camera mainCamera;
     [SerializeField] private GameObject textPrefab; // TMPが入ったプレハブ
     [SerializeField] private Transform damageTextPoolTransform;
     [SerializeField] private int poolSize = 100;
 
     private List<DamageText> _pool = new List<DamageText>();
+    private int _nextIndex;
 
     void Start()
     {
-        for(int i=0; i<poolSize; i++)
+        for (int i = 0; i < poolSize; i++)
         {
             var obj = Instantiate(textPrefab, damageTextPoolTransform);
             obj.SetActive(false);
@@ -21,9 +23,11 @@ public class DamageTextManager : MonoBehaviour
 
     public void ShowDamage(Vector3 worldPos, int damage)
     {
-        // 非アクティブなものを探す（リングバッファでも可）
-        var text = _pool.Find(t => !t.gameObject.activeSelf);
-        text?.Initialize(worldPos, damage);
+        if (_pool.Count == 0 || mainCamera == null) return;
+
+        var text = _pool[_nextIndex];
+        _nextIndex = (_nextIndex + 1) % _pool.Count;
+        text.Initialize(worldPos, damage, mainCamera);
     }
 
     /// <summary>
