@@ -1,0 +1,83 @@
+---
+description: C# / Unity 用のコーディング規約
+globs: "**/*.cs"
+alwaysApply: false
+---
+
+# C# / Unity 規約
+
+## 命名規則
+
+- **クラス・メソッド・プロパティ**: PascalCase
+- **ローカル変数・引数**: camelCase
+- **private / protected のメンバ**: 必ず先頭に `_` をつけ、_camelCase にする。ただし `[SerializeField]` のフィールドは _ をつけない（Inspector 表示名のため）。
+
+## 制御構文（if / for / while など）
+
+- if / for / while などでは `{}` を省略しない。1行でも必ずブロックを書く。
+- `is` で書ける条件は `==` より `is` を使う（null 判定は `is null`、型判定は `is Type`）。
+
+```csharp
+// ❌ BAD
+if (condition) DoSomething();
+if (obj == null) return;
+
+// ✅ GOOD
+if (condition)
+{
+    DoSomething();
+}
+if (obj is null)
+{
+    return;
+}
+if (obj is GameManager manager)  // 型判定も is、パターンマッチで変数に代入可
+{
+    ...
+}
+```
+
+## ドキュメントコメント
+
+- 公開クラスと public / protected メソッドには XML ドキュメント（`/// <summary>`）を付ける。
+- 説明文は日本語で記述する。
+
+```csharp
+// ✅ GOOD
+/// <summary>
+/// ボスの初期化（生成時に呼び出す）
+/// </summary>
+public virtual void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage, float? maxHpOverride = null)
+```
+
+## Unity の慣例
+
+- Inspector に出すフィールドは `[SerializeField]` とし、必要に応じて `[Header("...")]` でグループ化する。
+- MonoBehaviour のメソッド名（Update, Start など）は Unity の既定の名前のままにする。
+- 型が明らかな場合は `var` を使用してよい。
+
+## 非同期処理
+
+- 遅延実行・待機処理にはコルーチン（`IEnumerator` / `yield return`）ではなく **UniTask** を使う。
+- キャンセルが必要な場合は `CancellationToken` を渡す。
+
+```csharp
+// ❌ BAD（コルーチン）
+IEnumerator WaitAndDo()
+{
+    yield return new WaitForSeconds(1f);
+    DoSomething();
+}
+
+// ✅ GOOD（UniTask）
+async UniTaskVoid WaitAndDoAsync()
+{
+    await UniTask.Delay(TimeSpan.FromSeconds(1f));
+    DoSomething();
+}
+```
+
+## using
+
+- 使用する名前空間のみ using する。未使用の using は削除する。
+- System / UnityEngine / Unity.Mathematics など、よく使うものはファイル先頭でまとめる。
