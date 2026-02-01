@@ -49,17 +49,7 @@ public class StageNameDisplay : MonoBehaviour
         {
             await UniTask.Delay((int)(displayDuration * 1000), DelayType.UnscaledDeltaTime, cancellationToken: cancellationToken);
 
-            float elapsed = 0f;
-            while (elapsed < fadeOutDuration)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / fadeOutDuration);
-                tmp.alpha = 1f - t;
-                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, cancellationToken);
-            }
-
-            tmp.alpha = 0f;
+            await Ease.Do(Ease.Linear, fadeOutDuration, (value) => { tmp.alpha = 1f - value; }, cancellationToken);
             gameObject.SetActive(false);
         }
         catch (System.OperationCanceledException)
