@@ -73,6 +73,9 @@ public class GameManager : MonoBehaviour
     // ステートマシン
     private StateMachine<GameMode, GameManager> _stateMachine;
 
+    /// <summary>予約された遷移先。Update の末尾（現在ステートの OnUpdate 後）に実際に遷移する。</summary>
+    private GameMode? _pendingGameMode;
+
     public GameMode CurrentMode => _stateMachine?.CurrentStateKey ?? GameMode.None;
 
     /// <summary>
@@ -177,9 +180,18 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // ステートマシンを更新
+        // ステートマシンを更新（現在ステートの OnUpdate）
         _stateMachine?.Update();
-        
+
+        // 予約された遷移を適用（OnUpdate の後に実行するため、OnEnter 内で ChangeGameMode されても順序が明確）
+        if (_pendingGameMode.HasValue)
+        {
+            GameMode next = _pendingGameMode.Value;
+            _pendingGameMode = null;
+            _stateMachine?.ChangeState(next);
+            ApplyEnemyManagerFlags(next);
+        }
+
         // プレイ中でない場合は処理をスキップ
         if (IsPlaying == false)
         {
@@ -348,15 +360,11 @@ public class GameManager : MonoBehaviour
     }
     
     /// <summary>
-    /// ゲームモードを変更する（ステートから呼ばれる）
+    /// ゲームモードの遷移を予約する。実際の遷移はこのフレームの Update の末尾（現在ステートの OnUpdate の後）に行う。
     /// </summary>
     public void ChangeGameMode(GameMode newMode)
     {
-        if (_stateMachine != null)
-        {
-            _stateMachine.ChangeState(newMode);
-            ApplyEnemyManagerFlags(newMode);
-        }
+        _pendingGameMode = newMode;
     }
 
     private void ApplyEnemyManagerFlags(GameMode mode)
