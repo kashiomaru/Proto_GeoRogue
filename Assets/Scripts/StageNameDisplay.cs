@@ -1,7 +1,8 @@
-using UnityEngine;
-using TMPro;
-using Cysharp.Threading.Tasks;
+using System;
 using System.Threading;
+using Cysharp.Threading.Tasks;
+using TMPro;
+using UnityEngine;
 
 /// <summary>
 /// ステージ名を TextMeshPro で表示する。Show 呼び出し後、一定時間表示してからアルファアウトする。
@@ -26,7 +27,10 @@ public class StageNameDisplay : MonoBehaviour
     /// </summary>
     public void Show(string stageName)
     {
-        if (tmp == null) return;
+        if (tmp is null)
+        {
+            return;
+        }
         if (string.IsNullOrEmpty(stageName))
         {
             tmp.alpha = 0f;
@@ -52,7 +56,7 @@ public class StageNameDisplay : MonoBehaviour
             await Ease.Do(Ease.Linear, fadeOutDuration, (value) => { tmp.alpha = 1f - value; }, cancellationToken);
             gameObject.SetActive(false);
         }
-        catch (System.OperationCanceledException)
+        catch (OperationCanceledException)
         {
             // Show の再呼び出しまたは Destroy でキャンセルされた
         }
