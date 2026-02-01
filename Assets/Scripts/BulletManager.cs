@@ -228,7 +228,7 @@ public class BulletManager : InitializeMonobehaviour
             float actualDamage = boss.TakeDamage(bulletDamage);
             if (actualDamage > 0)
             {
-                damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage);
+                damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage, boss.CollisionRadius);
             }
 
             _bulletActive[i] = false;

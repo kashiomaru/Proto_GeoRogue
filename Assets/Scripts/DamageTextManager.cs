@@ -21,9 +21,12 @@ public class DamageTextManager : MonoBehaviour
         }
     }
 
-    public void ShowDamage(Vector3 worldPos, int damage)
+    /// <param name="collisionRadius">表示位置をワールド座標でランダムにオフセットする範囲の半径（XZ平面）。ボスなどは CollisionRadius を渡す。0 ならオフセットなし。</param>
+    public void ShowDamage(Vector3 worldPos, int damage, float collisionRadius = 0f)
     {
         if (_pool.Count == 0 || mainCamera == null) return;
+
+        worldPos += Random.insideUnitSphere * collisionRadius * 0.5f;
 
         var text = _pool[_nextIndex];
         _nextIndex = (_nextIndex + 1) % _pool.Count;
