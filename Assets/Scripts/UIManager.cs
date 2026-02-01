@@ -35,7 +35,10 @@ public class UIManager : MonoBehaviour
     [Header("Countdown Timer")]
     [SerializeField] private GameManager gameManager; // GameManagerへの参照
     [SerializeField] private TextMeshProUGUI countdownText; // カウントダウン表示用テキスト
-    
+
+    [Header("Stage Name")]
+    [SerializeField] private StageNameDisplay stageNameDisplay; // ステージ開始時のステージ名表示
+
     // レベルアップ選択時のコールバック
     private Action<UpgradeType> _onUpgradeSelected;
     // リトライ時のコールバック
@@ -161,7 +164,15 @@ public class UIManager : MonoBehaviour
     {
         countdownText?.gameObject.SetActive(true);
     }
-    
+
+    /// <summary>
+    /// ステージ名を表示する（Normal 開始時などに呼ぶ）。0.5秒表示後アルファアウト。
+    /// </summary>
+    public void ShowStageName(string stageName)
+    {
+        stageNameDisplay?.Show(stageName);
+    }
+
     /// <summary>
     /// タイトルを表示する。スタートボタン押下時に onStartClicked が呼ばれる。
     /// </summary>

@@ -13,6 +13,9 @@ public class NormalGameState : GameStateBase
         context.SwitchCamera(0, immediate: true);
         context.UIManager?.ShowStatus();
         context.UIManager?.ShowCountdownTimer();
+
+        string stageName = context.GetCurrentStageData()?.StageDisplayName ?? "";
+        context.UIManager?.ShowStageName(stageName);
     }
     
     public override void OnUpdate(GameManager context)
