@@ -4,11 +4,12 @@ using System.Collections.Generic;
 public class RenderManager : MonoBehaviour
 {
     [Header("Enemy Settings")]
-    [SerializeField] private Mesh enemyMesh;
-    [SerializeField] private Material enemyMaterial;
+    // Mesh/Material はステージデータで SetEnemyDisplay により設定（未設定時は null で描画スキップ）
+    private Mesh enemyMesh;
+    private Material enemyMaterial;
     [SerializeField] private float flashIntensity = 0.8f;
 
-    // ステージ適用用（SetEnemyDisplay で設定。null の場合は上記の serialized 値を使用）
+    // ステージ適用用（SetEnemyDisplay で設定。未設定時は上記 enemyMesh / enemyMaterial を使用）
     private Mesh _runtimeEnemyMesh;
     private Material _runtimeEnemyMaterial;
     private Vector3 _runtimeEnemyScale = Vector3.one;

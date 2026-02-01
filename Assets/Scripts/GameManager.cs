@@ -51,11 +51,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private CameraManager cameraManager;
     
-    [Header("Countdown Timer")]
-    [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
+    private const float DefaultCountdownDuration = 60f;
 
     [Header("Stages")]
-    [Tooltip("ステージの並び。空の場合は従来どおり EnemyManager / RenderManager のインスペクタ設定を使用")]
+    [Tooltip("ステージの並び。各ステージの通常敵・ボス・カウントダウンが適用される")]
     [SerializeField] private StageData[] stages;
 
     private int _currentStageIndex;
@@ -295,7 +294,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ上書き → 現在ステージの値 → countdownDuration の順で採用。
+    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ上書き → 現在ステージの値 → DefaultCountdownDuration の順で採用。
     /// </summary>
     private float GetEffectiveCountdownDuration()
     {
@@ -310,7 +309,7 @@ public class GameManager : MonoBehaviour
         {
             return stage.CountdownDuration;
         }
-        return countdownDuration;
+        return DefaultCountdownDuration;
     }
 
     /// <summary>

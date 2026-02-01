@@ -9,25 +9,22 @@ using System.Collections.Generic;
 public class EnemyManager : InitializeMonobehaviour
 {
     [Header("Enemy Settings")]
-    [Tooltip("管理する敵の最大数（配列・リストのサイズ）。初期化時に固定。")]
+    [Tooltip("管理する敵の最大数（配列・リストのサイズ）。初期化時に固定。ステージデータに含まれないためここで指定。")]
     [SerializeField] private int maxEnemyCount = 1000;
-    [Tooltip("実際に出現させる敵の数。ランタイムで変更可能。")]
-    [SerializeField] private int spawnCount = 10;
-    [SerializeField] private float enemySpeed = 4f;
-    [SerializeField] private float enemyMaxHp = 1.0f;
-    [SerializeField] private float enemyFlashDuration = 0.1f;
-    [SerializeField] private float enemyDamageRadius = 1.0f;
-    [SerializeField] private float cellSize = 2.0f;
-    
-    [Header("Respawn Settings")]
-    [SerializeField] private float respawnDistance = 50f;
-    [SerializeField] private float respawnMinRadius = 20f;
-    [SerializeField] private float respawnMaxRadius = 30f;
-    
-    [Header("Boss Settings")]
-    [SerializeField] private GameObject bossPrefab; // ボスのプレハブ
-    [SerializeField] private float bossSpawnDistance = 20f; // ボス生成位置の距離（プレイヤーからの距離）
-    
+
+    // ステージデータで上書きされる値（ApplyNormalEnemyConfig 前は以下のデフォルト）
+    private int spawnCount = 10;
+    private float enemySpeed = 4f;
+    private float enemyMaxHp = 1f;
+    private float enemyFlashDuration = 0.1f;
+    private float enemyDamageRadius = 1f;
+    private float cellSize = 2f;
+    private float respawnDistance = 50f;
+    private float respawnMinRadius = 20f;
+    private float respawnMaxRadius = 30f;
+    private GameObject bossPrefab;
+    private float bossSpawnDistance = 20f;
+
     [Header("References")]
     [SerializeField] private RenderManager renderManager;
     [SerializeField] private DamageTextManager damageTextManager;
@@ -36,8 +33,8 @@ public class EnemyManager : InitializeMonobehaviour
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
-    private GameObject _bossPrefabOverride; // ステージ適用時のボス Prefab（null なら serialized を使用）
-    private float _bossSpawnDistanceOverride = -1f; // ステージ適用時の距離（< 0 なら serialized を使用）
+    private GameObject _bossPrefabOverride; // ステージ適用時のボス Prefab（null なら上記 bossPrefab を使用）
+    private float _bossSpawnDistanceOverride = -1f; // ステージ適用時の距離（< 0 なら上記 bossSpawnDistance を使用）
 
     // 通常敵・ボスの有効フラグ（GameManager が SetNormalEnemiesEnabled / SetBossActive で設定）
     private bool _normalEnemiesEnabled;
