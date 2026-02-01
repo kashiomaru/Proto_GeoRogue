@@ -1698,9 +1698,9 @@ MonoBehaviour:
   uiManager: {fileID: 614781147}
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
-  countdownDuration: 60
   stages:
-  - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
+  - {fileID: 11400000, guid: 12881cfb280dd4b93802f2fafb31c527, type: 2}
+  - {fileID: 11400000, guid: 2a35fdbd5e9c34468be937d8bfd29077, type: 2}
   debugSettings: {fileID: 985743518}
 --- !u!4 &379471279
 Transform:
@@ -1973,8 +1973,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e903d99dd0a145df8856e2d0d82561c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RenderManager
-  enemyMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
-  enemyMaterial: {fileID: 2100000, guid: 5e60ad6f09f7d4fdaa8594399ff2bcd8, type: 2}
   flashIntensity: 0.8
   gemMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   gemMaterial: {fileID: 2100000, guid: f9af9187d6a0e49b6adf174222c2d463, type: 2}
@@ -4745,17 +4743,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyManager
   maxEnemyCount: 1000
-  spawnCount: 10
-  enemySpeed: 4
-  enemyMaxHp: 1
-  enemyFlashDuration: 0.1
-  enemyDamageRadius: 1
-  cellSize: 2
-  respawnDistance: 50
-  respawnMinRadius: 20
-  respawnMaxRadius: 30
-  bossPrefab: {fileID: 1309990021478730655, guid: 6e16e97244c5649bd88f0a234774caba, type: 3}
-  bossSpawnDistance: 20
   renderManager: {fileID: 454398054}
   damageTextManager: {fileID: 614781148}
   gemManager: {fileID: 420920856}

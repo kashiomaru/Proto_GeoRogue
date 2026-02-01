@@ -11,10 +11,9 @@ GameObject:
   - component: {fileID: 1774866847270216648}
   - component: {fileID: 1279999253987167774}
   - component: {fileID: 4188895564783497277}
-  - component: {fileID: 480774771295234990}
   - component: {fileID: 4684715710736635099}
   m_Layer: 0
-  m_Name: Boss
+  m_Name: Boss_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -94,27 +93,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &480774771295234990
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1309990021478730655}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 0
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &4684715710736635099
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -127,10 +105,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b1345779ef34ff48bd8e476a1c2851, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Boss
-  speed: 3
-  rotationSpeed: 3
+  speed: 4
+  rotationSpeed: 4
   damageRadius: 1
-  damageAmount: 1
+  damageAmount: 2
   maxHp: 100
   collisionRadius: 2
   flashDuration: 0.1
