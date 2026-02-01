@@ -7,8 +7,8 @@ using UnityEditor;
 /// </summary>
 public static class CreateEnemyDataAsset
 {
-    private const string DefaultPath = "Assets/Data/EnemyDatas";
-    private const string DefaultFileName = "EnemyData_Default";
+    private const string DefaultPath = "Assets/Data/Enemies";
+    private const string DefaultFileName = "Enemy_00";
 
     [MenuItem("Geo Rogue/Create Default Enemy Data")]
     public static void Create()
@@ -17,9 +17,9 @@ public static class CreateEnemyDataAsset
         {
             AssetDatabase.CreateFolder("Assets", "Data");
         }
-        if (!Directory.Exists(Application.dataPath + "/Data/EnemyDatas"))
+        if (!Directory.Exists(Application.dataPath + "/Data/Enemies"))
         {
-            AssetDatabase.CreateFolder("Assets/Data", "EnemyDatas");
+            AssetDatabase.CreateFolder("Assets/Data", "Enemies");
         }
 
         string assetPath = $"{DefaultPath}/{DefaultFileName}.asset";

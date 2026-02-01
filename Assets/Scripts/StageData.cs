@@ -4,7 +4,7 @@ using UnityEngine;
 /// ステージ構成を定義する ScriptableObject。
 /// 通常敵は EnemyData を複数参照し、ボス Prefab とステージメタを保持する。
 /// </summary>
-[CreateAssetMenu(fileName = "Stage_01", menuName = "Proto GeoRogue/Stage Data", order = 0)]
+[CreateAssetMenu(fileName = "Stage_00", menuName = "Geo Rogue/Stage Data", order = 0)]
 public class StageData : ScriptableObject
 {
     [Header("Stage Info")]

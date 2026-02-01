@@ -4,7 +4,7 @@ using UnityEngine;
 /// 通常敵 1 種類分の設定を定義する ScriptableObject。
 /// 見た目・ステータス・スポーンを保持し、StageData から複数参照できる。
 /// </summary>
-[CreateAssetMenu(fileName = "EnemyData_Default", menuName = "Geo Rogue/Enemy Data", order = 1)]
+[CreateAssetMenu(fileName = "Enemy_00", menuName = "Geo Rogue/Enemy Data", order = 1)]
 public class EnemyData : ScriptableObject
 {
     [Header("Appearance")]
