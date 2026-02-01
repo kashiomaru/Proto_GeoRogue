@@ -8,6 +8,12 @@ public class RenderManager : MonoBehaviour
     [SerializeField] private Material enemyMaterial;
     [SerializeField] private float flashIntensity = 0.8f;
 
+    // ステージ適用用（SetEnemyDisplay で設定。null の場合は上記の serialized 値を使用）
+    private Mesh _runtimeEnemyMesh;
+    private Material _runtimeEnemyMaterial;
+    private Vector3 _runtimeEnemyScale = Vector3.one;
+    private bool _runtimeEnemyDisplaySet;
+
     [Header("Gem Settings")]
     [SerializeField] private Mesh gemMesh;
     [SerializeField] private Material gemMaterial;
@@ -33,6 +39,17 @@ public class RenderManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 通常敵の表示設定をステージから適用する。null の項目は既存の値を維持する。
+    /// </summary>
+    public void SetEnemyDisplay(Mesh mesh, Material material, Vector3 scale)
+    {
+        _runtimeEnemyMesh = mesh;
+        _runtimeEnemyMaterial = material;
+        _runtimeEnemyScale = scale;
+        _runtimeEnemyDisplaySet = true;
+    }
+
+    /// <summary>
     /// 敵を座標・回転リストで描画。回転は Job で計算済み（プレイヤー方向）。
     /// </summary>
     /// <param name="count">描画する敵の数。省略時は positions.Count を使用。</param>
@@ -48,10 +65,11 @@ public class RenderManager : MonoBehaviour
                 continue;
             }
 
+            Vector3 scale = _runtimeEnemyDisplaySet ? _runtimeEnemyScale : Vector3.one;
             _matrices[batchIndex] = Matrix4x4.TRS(
                 positions[i],
                 rotations[i],
-                Vector3.one
+                scale
             );
 
             // 2. フラッシュ色の計算
@@ -86,19 +104,23 @@ public class RenderManager : MonoBehaviour
 
     private void ExecuteDrawEnemies(int count)
     {
+        Mesh mesh = _runtimeEnemyDisplaySet && _runtimeEnemyMesh != null ? _runtimeEnemyMesh : enemyMesh;
+        Material mat = _runtimeEnemyDisplaySet && _runtimeEnemyMaterial != null ? _runtimeEnemyMaterial : enemyMaterial;
+        if (mesh == null || mat == null) return;
+
         // プロパティブロックに配列をセット
         _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
 
         // 描画発行
         // count引数には「実際に配列に入れた数」を渡す（配列全部ではない）
         Graphics.DrawMeshInstanced(
-            enemyMesh, 
-            0, 
-            enemyMaterial, 
-            _matrices, 
-            count, 
-            _mpb, 
-            UnityEngine.Rendering.ShadowCastingMode.On, 
+            mesh,
+            0,
+            mat,
+            _matrices,
+            count,
+            _mpb,
+            UnityEngine.Rendering.ShadowCastingMode.On,
             true // Receive Shadows
         );
     }

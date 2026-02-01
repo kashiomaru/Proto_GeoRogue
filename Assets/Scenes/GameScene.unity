@@ -1699,6 +1699,8 @@ MonoBehaviour:
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
   countdownDuration: 60
+  stages:
+  - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
   debugSettings: {fileID: 985743518}
 --- !u!4 &379471279
 Transform:

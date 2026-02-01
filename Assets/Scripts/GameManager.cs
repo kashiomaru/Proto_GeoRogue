@@ -54,6 +54,12 @@ public class GameManager : MonoBehaviour
     [Header("Countdown Timer")]
     [SerializeField] private float countdownDuration = 60f; // カウントダウン時間（秒、デフォルト1分）
 
+    [Header("Stages")]
+    [Tooltip("ステージの並び。空の場合は従来どおり EnemyManager / RenderManager のインスペクタ設定を使用")]
+    [SerializeField] private StageData[] stages;
+
+    private int _currentStageIndex;
+
 #if UNITY_EDITOR
     [Header("Debug")]
     [Tooltip("デバッグ設定。空の場合はデバッグ無効。GameDebugSettings コンポーネントを付けた GameObject を割り当てると、そのインスペクタで一括 On/Off 可能。")]
@@ -85,6 +91,40 @@ public class GameManager : MonoBehaviour
     public UIManager UIManager => uiManager;
     public CameraManager CameraManager => cameraManager;
     public Transform PlayerTransform => playerTransform;
+
+    /// <summary>現在プレイ中のステージデータ。ステージ未設定の場合は null。</summary>
+    public StageData GetCurrentStageData()
+    {
+        if (stages == null || stages.Length == 0) return null;
+        if (_currentStageIndex < 0 || _currentStageIndex >= stages.Length) return null;
+        return stages[_currentStageIndex];
+    }
+
+    /// <summary>次のステージが存在するか。</summary>
+    public bool HasNextStage()
+    {
+        return stages != null && stages.Length > 0 && _currentStageIndex + 1 < stages.Length;
+    }
+
+    /// <summary>次のステージへ進める（GameClear で次ステージへ行くときに呼ぶ）。</summary>
+    public void AdvanceToNextStage()
+    {
+        if (stages != null && _currentStageIndex + 1 < stages.Length)
+        {
+            _currentStageIndex++;
+        }
+    }
+
+    /// <summary>Normal 開始時に現在ステージの通常敵設定とカウントダウンを適用する。</summary>
+    public void PrepareForNormalStage()
+    {
+        StageData stage = GetCurrentStageData();
+        if (stage != null)
+        {
+            enemyManager?.ApplyNormalEnemyConfig(stage);
+        }
+        _countdownTimer = GetEffectiveCountdownDuration();
+    }
 
     void Start()
     {
@@ -237,6 +277,8 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void ResetGameState()
     {
+        _currentStageIndex = 0;
+
         // プレイヤーをリセット（HP・経験値・レベル・アップグレードパラメータは Player.Reset() で復元）
         player?.Reset();
 
@@ -253,7 +295,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ有効かつカウントダウン上書き時はデバッグ用の値（エディタのみ）。
+    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ上書き → 現在ステージの値 → countdownDuration の順で採用。
     /// </summary>
     private float GetEffectiveCountdownDuration()
     {
@@ -263,6 +305,11 @@ public class GameManager : MonoBehaviour
             return debugSettings.DebugCountdownTime;
         }
 #endif
+        StageData stage = GetCurrentStageData();
+        if (stage != null && stage.CountdownDuration > 0f)
+        {
+            return stage.CountdownDuration;
+        }
         return countdownDuration;
     }
 

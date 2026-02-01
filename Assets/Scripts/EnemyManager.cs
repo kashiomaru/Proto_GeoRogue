@@ -36,6 +36,8 @@ public class EnemyManager : InitializeMonobehaviour
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
+    private GameObject _bossPrefabOverride; // ステージ適用時のボス Prefab（null なら serialized を使用）
+    private float _bossSpawnDistanceOverride = -1f; // ステージ適用時の距離（< 0 なら serialized を使用）
 
     // 通常敵・ボスの有効フラグ（GameManager が SetNormalEnemiesEnabled / SetBossActive で設定）
     private bool _normalEnemiesEnabled;
@@ -314,13 +316,15 @@ public class EnemyManager : InitializeMonobehaviour
         }
         
         // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
+        GameObject prefabToUse = _bossPrefabOverride != null ? _bossPrefabOverride : bossPrefab;
+        float distanceToUse = _bossSpawnDistanceOverride >= 0f ? _bossSpawnDistanceOverride : bossSpawnDistance;
         Vector3 playerBackward = -playerForward; // プレイヤーの後ろ方向
-        Vector3 bossPosition = playerPosition + playerBackward * bossSpawnDistance; // 指定距離の位置
+        Vector3 bossPosition = playerPosition + playerBackward * distanceToUse; // 指定距離の位置
         bossPosition.y = 0f; // Y座標を0に固定
-        
-        if (bossPrefab != null)
+
+        if (prefabToUse != null)
         {
-            _currentBoss = Instantiate(bossPrefab, bossPosition, Quaternion.identity, transform);
+            _currentBoss = Instantiate(prefabToUse, bossPosition, Quaternion.identity, transform);
 
             // ボスの向きをプレイヤー方向に設定（Y軸は0で水平面のみ）
             Vector3 dirToPlayer = playerPosition - bossPosition;
@@ -348,10 +352,10 @@ public class EnemyManager : InitializeMonobehaviour
         }
         else
         {
-            Debug.LogWarning("EnemyManager: Boss prefab is not assigned!");
+            Debug.LogWarning("EnemyManager: Boss prefab is not assigned (stage override and serialized both null)!");
         }
     }
-    
+
     // 現在のボスを取得
     public GameObject GetCurrentBoss()
     {
@@ -415,7 +419,38 @@ public class EnemyManager : InitializeMonobehaviour
             _currentBoss = null;
         }
     }
-    
+
+    /// <summary>
+    /// ステージの通常敵設定を適用する。EnemyManager のパラメータと RenderManager の表示を更新する。
+    /// </summary>
+    public void ApplyNormalEnemyConfig(StageData stage)
+    {
+        if (stage == null) return;
+        enemySpeed = stage.EnemySpeed;
+        enemyMaxHp = stage.EnemyMaxHp;
+        enemyFlashDuration = stage.EnemyFlashDuration;
+        enemyDamageRadius = stage.EnemyDamageRadius;
+        cellSize = stage.CellSize;
+        respawnDistance = stage.RespawnDistance;
+        respawnMinRadius = stage.RespawnMinRadius;
+        respawnMaxRadius = stage.RespawnMaxRadius;
+        if (stage.SpawnCount > 0)
+        {
+            SpawnCount = Mathf.Clamp(stage.SpawnCount, 1, maxEnemyCount);
+        }
+        renderManager?.SetEnemyDisplay(stage.EnemyMesh, stage.EnemyMaterial, stage.EnemyScale);
+    }
+
+    /// <summary>
+    /// ステージのボス設定を適用する。次回 SpawnBoss で使用される。
+    /// </summary>
+    public void ApplyBossConfig(StageData stage)
+    {
+        if (stage == null) return;
+        _bossPrefabOverride = stage.BossPrefab;
+        _bossSpawnDistanceOverride = stage.BossSpawnDistance;
+    }
+
     protected override void FinalizeInternal()
     {
         if (_enemyPositions.IsCreated)

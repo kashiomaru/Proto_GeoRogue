@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEngine;
 using UnityEditor;
 
@@ -10,20 +11,17 @@ public static class CreateStageDataAsset
     private const string DefaultPath = "Assets/Data/Stages";
     private const string DefaultFileName = "Stage_01";
 
-    [MenuItem("Proto GeoRogue/Create Default Stage Data")]
+    [MenuItem("Geo Rogue/Create Default Stage Data")]
     public static void Create()
     {
-        if (AssetDatabase.IsValidPath(DefaultPath) == false)
+        // Application.dataPath は "Assets" フォルダの絶対パス
+        if (!Directory.Exists(Application.dataPath + "/Data"))
         {
-            string parent = "Assets/Data";
-            if (AssetDatabase.IsValidPath("Assets/Data") == false)
-            {
-                AssetDatabase.CreateFolder("Assets", "Data");
-            }
-            if (AssetDatabase.IsValidPath(DefaultPath) == false)
-            {
-                AssetDatabase.CreateFolder("Assets/Data", "Stages");
-            }
+            AssetDatabase.CreateFolder("Assets", "Data");
+        }
+        if (!Directory.Exists(Application.dataPath + "/Data/Stages"))
+        {
+            AssetDatabase.CreateFolder("Assets/Data", "Stages");
         }
 
         string assetPath = $"{DefaultPath}/{DefaultFileName}.asset";

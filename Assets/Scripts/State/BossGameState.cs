@@ -16,6 +16,13 @@ public class BossGameState : GameStateBase
         context.ResetBullets();
         context.UIManager?.ShowStatus();
 
+        // 現在ステージのボス設定を適用してから生成
+        StageData stage = context.GetCurrentStageData();
+        if (stage != null && context.EnemyManager != null)
+        {
+            context.EnemyManager.ApplyBossConfig(stage);
+        }
+
         // ボスを生成（プレイヤーの位置と方向を渡す）
         if (context.EnemyManager != null && context.PlayerTransform != null)
         {

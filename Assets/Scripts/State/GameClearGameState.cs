@@ -10,6 +10,15 @@ public class GameClearGameState : GameStateBase
     {
         UnityEngine.Time.timeScale = 0f;
         context.ResetDamageText();
+
+        // 次のステージがあれば Normal に戻す（ボス撃破 → 次ステージの通常プレイ）
+        if (context.HasNextStage())
+        {
+            context.AdvanceToNextStage();
+            context.ChangeGameMode(GameMode.Normal);
+            return;
+        }
+
         context.UIManager?.ShowGameClear(() =>
         {
             context.ResetGameState();
