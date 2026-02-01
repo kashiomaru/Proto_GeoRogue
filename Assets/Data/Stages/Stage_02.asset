@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfb6f46c292324f4bbdbb145e3c9f405, type: 3}
   m_Name: Stage_02
   m_EditorClassIdentifier: Assembly-CSharp::StageData
-  stageDisplayName: 
+  stageDisplayName: Stage 2
   countdownDuration: 60
   enemyDatas:
   - {fileID: 11400000, guid: 3ef501967bea6453c85810198bf7b719, type: 2}
