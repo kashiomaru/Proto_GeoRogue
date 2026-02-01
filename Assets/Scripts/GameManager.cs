@@ -80,11 +80,6 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public bool IsPlaying => (_stateMachine?.CurrentState as GameStateBase)?.IsPlaying ?? false;
 
-    /// <summary>
-    /// 遷移先のゲームモード（OnExit 呼び出し中のみ有効。時間復帰の判定に使用）
-    /// </summary>
-    public GameMode? NextGameMode { get; private set; }
-    
     // ステートからアクセスするためのプロパティ
     public EnemyManager EnemyManager => enemyManager;
     public UIManager UIManager => uiManager;
@@ -359,9 +354,7 @@ public class GameManager : MonoBehaviour
     {
         if (_stateMachine != null)
         {
-            NextGameMode = newMode;
             _stateMachine.ChangeState(newMode);
-            NextGameMode = null;
             ApplyEnemyManagerFlags(newMode);
         }
     }
