@@ -25,10 +25,18 @@ public class NormalGameState : GameStateBase
         {
             context.UpdateCountdownTimer(UnityEngine.Time.deltaTime);
             
-            // タイマーがゼロになった瞬間、ボスモードに切り替える
+            // タイマーがゼロになった瞬間の分岐
             if (context.IsCountdownFinished())
             {
-                context.ChangeGameMode(GameMode.Boss);
+                var stage = context.GetCurrentStageData();
+                if (stage != null && stage.BossPrefab != null)
+                {
+                    context.ChangeGameMode(GameMode.Boss);
+                }
+                else
+                {
+                    context.ChangeGameMode(GameMode.GameClear);
+                }
             }
         }
     }
