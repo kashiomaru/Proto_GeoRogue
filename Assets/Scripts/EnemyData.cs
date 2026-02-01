@@ -15,7 +15,6 @@ public class EnemyData : ScriptableObject
     [Header("Stats")]
     [SerializeField] private float speed = 4f;
     [SerializeField] private float maxHp = 1f;
-    [SerializeField] private float flashDuration = 0.1f;
     [SerializeField] private float damageRadius = 1f;
     [SerializeField] private float cellSize = 2f;
 
@@ -28,7 +27,6 @@ public class EnemyData : ScriptableObject
     public Vector3 Scale => scale;
     public float Speed => speed;
     public float MaxHp => maxHp;
-    public float FlashDuration => flashDuration;
     public float DamageRadius => damageRadius;
     public float CellSize => cellSize;
     public int SpawnCount => spawnCount;

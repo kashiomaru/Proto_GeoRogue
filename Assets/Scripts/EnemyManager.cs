@@ -16,6 +16,7 @@ public class EnemyManager : InitializeMonobehaviour
     private int spawnCount = 10;
     private float enemySpeed = 4f;
     private float enemyMaxHp = 1f;
+    [Tooltip("ダメージ受けた際のヒットフラッシュ表示時間（全敵共通）。ステージからは上書きしない。")]
     private float enemyFlashDuration = 0.1f;
     private float enemyDamageRadius = 1f;
     private float cellSize = 2f;
@@ -443,7 +444,7 @@ public class EnemyManager : InitializeMonobehaviour
         }
         enemySpeed = stage.EnemySpeed;
         enemyMaxHp = stage.EnemyMaxHp;
-        enemyFlashDuration = stage.EnemyFlashDuration;
+        // enemyFlashDuration は EnemyManager 側の共通値のまま（ステージからは上書きしない）
         enemyDamageRadius = stage.EnemyDamageRadius;
         cellSize = stage.CellSize;
         if (stage.SpawnCount > 0)

@@ -14,7 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageData
   stageDisplayName: Stage 2
   countdownDuration: 60
-  enemyDatas:
-  - {fileID: 11400000, guid: 3ef501967bea6453c85810198bf7b719, type: 2}
+  enemyData0: {fileID: 11400000, guid: 3ef501967bea6453c85810198bf7b719, type: 2}
+  enemyData1: {fileID: 0}
+  enemyData2: {fileID: 0}
+  enemyData3: {fileID: 0}
+  enemyData4: {fileID: 0}
   bossPrefab: {fileID: 1309990021478730655, guid: 018603bcd87454decbaa9aebd9f7a1fc, type: 3}
   bossSpawnDistance: 20
