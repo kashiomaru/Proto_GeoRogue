@@ -88,7 +88,6 @@ public class EnemyGroup
             _flashDuration = flashDuration;
             _damageRadius = 1f;
             _collisionRadius = 1f;
-            _cellSize = 2f;
             _respawnDistance = respawnDistance;
             _respawnMinRadius = respawnMinRadius;
             _respawnMaxRadius = respawnMaxRadius;
@@ -105,7 +104,6 @@ public class EnemyGroup
             _flashDuration = flashDuration;
             _damageRadius = data.DamageRadius;
             _collisionRadius = data.CollisionRadius;
-            _cellSize = data.CellSize;
             _respawnDistance = respawnDistance;
             _respawnMinRadius = respawnMinRadius;
             _respawnMaxRadius = respawnMaxRadius;
@@ -113,6 +111,9 @@ public class EnemyGroup
             _material = data.Material;
             _scale = data.Scale;
         }
+
+        // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
+        _cellSize = Mathf.Max(0.5f, _collisionRadius * 0.51f);
 
         _positions = new NativeArray<float3>(_maxCount, Allocator.Persistent);
         _rotations = new NativeArray<quaternion>(_maxCount, Allocator.Persistent);

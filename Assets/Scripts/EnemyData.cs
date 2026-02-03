@@ -18,7 +18,6 @@ public class EnemyData : ScriptableObject
     [SerializeField] private float damageRadius = 1f;
     [Tooltip("弾との当たり判定に使う半径。敵の見た目の大きさに合わせて設定する。")]
     [SerializeField] private float collisionRadius = 1f;
-    [SerializeField] private float cellSize = 2f;
 
     [Header("Spawn")]
     [Tooltip("出現数。0 のときは適用側で既存値を使う想定")]
@@ -31,6 +30,5 @@ public class EnemyData : ScriptableObject
     public float MaxHp => maxHp;
     public float DamageRadius => damageRadius;
     public float CollisionRadius => collisionRadius;
-    public float CellSize => cellSize;
     public int SpawnCount => spawnCount;
 }

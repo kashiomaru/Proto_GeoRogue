@@ -18,5 +18,5 @@ MonoBehaviour:
   speed: 2
   maxHp: 5
   damageRadius: 2
-  cellSize: 2
+  collisionRadius: 2
   spawnCount: 3
