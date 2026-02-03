@@ -123,44 +123,43 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 弾の移動・通常敵との衝突 Job をスケジュール。敵の移動 Job 完了後に実行するため dependency を渡す。
-    /// 敵グループごとに1本ずつ BulletMoveAndCollideJob を直列にスケジュールする（弾は全グループで共有）。
+    /// 弾の移動 Job と通常敵との衝突 Job をスケジュール。敵の移動 Job 完了後に実行するため dependency を渡す。
+    /// 移動は1回、当たり判定は敵グループごとに1本ずつ直列にスケジュールする。
     /// </summary>
     public JobHandle ScheduleMoveAndCollideJob(float deltaTime, JobHandle dependency, EnemyManager enemyManager)
     {
-        if (enemyManager == null)
+        var moveJob = new BulletMoveJob
         {
-            return default;
-        }
-        var groups = enemyManager.GetGroups();
-        if (groups == null || groups.Count == 0)
+            deltaTime = deltaTime,
+            bulletPositions = _bulletPositions,
+            bulletVelocities = _bulletVelocities,
+            bulletActive = _bulletActive,
+            bulletLifeTime = _bulletLifeTime
+        };
+        JobHandle dep = moveJob.Schedule(maxBullets, 64, dependency);
+
+        var groups = enemyManager != null ? enemyManager.GetGroups() : null;
+        if (groups != null && groups.Count > 0)
         {
-            return dependency;
-        }
-        JobHandle dep = dependency;
-        foreach (var g in groups)
-        {
-            var bulletJob = new BulletMoveAndCollideJob
+            foreach (var g in groups)
             {
-                deltaTime = deltaTime,
-                speed = player != null ? player.GetBulletSpeed() : 20f,
-                cellSize = g.CellSize,
-                enemyCollisionRadius = g.CollisionRadius,
-                spatialMap = g.SpatialMap,
-                enemyPositions = g.EnemyPositions,
-                bulletPositions = _bulletPositions,
-                bulletDirections = _bulletDirections,
-                bulletVelocities = _bulletVelocities,
-                bulletActive = _bulletActive,
-                bulletLifeTime = _bulletLifeTime,
-                enemyActive = g.EnemyActive,
-                enemyHp = g.EnemyHp,
-                bulletDamage = bulletDamage,
-                deadEnemyPositions = g.GetDeadEnemyPositionsWriter(),
-                enemyDamageQueue = g.GetEnemyDamageQueueWriter(),
-                enemyFlashQueue = g.GetEnemyFlashQueueWriter()
-            };
-            dep = bulletJob.Schedule(maxBullets, 64, dep);
+                var collideJob = new BulletCollideJob
+                {
+                    cellSize = g.CellSize,
+                    enemyCollisionRadius = g.CollisionRadius,
+                    spatialMap = g.SpatialMap,
+                    enemyPositions = g.EnemyPositions,
+                    bulletPositions = _bulletPositions,
+                    bulletActive = _bulletActive,
+                    enemyActive = g.EnemyActive,
+                    enemyHp = g.EnemyHp,
+                    bulletDamage = bulletDamage,
+                    deadEnemyPositions = g.GetDeadEnemyPositionsWriter(),
+                    enemyDamageQueue = g.GetEnemyDamageQueueWriter(),
+                    enemyFlashQueue = g.GetEnemyFlashQueueWriter()
+                };
+                dep = collideJob.Schedule(maxBullets, 64, dep);
+            }
         }
         return dep;
     }
