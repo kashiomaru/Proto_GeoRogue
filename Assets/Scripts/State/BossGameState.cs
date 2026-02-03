@@ -15,6 +15,7 @@ public class BossGameState : GameStateBase
         UnityEngine.Time.timeScale = 0f;
         context.ResetBullets();
         context.UIManager?.ShowStatus();
+        context.UIManager?.ShowBossHpBar();
 
         // 現在ステージのボス設定を適用してから生成
         StageData stage = context.GetCurrentStageData();
@@ -69,5 +70,6 @@ public class BossGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
+        context.UIManager?.HideBossHpBar();
     }
 }

@@ -39,6 +39,9 @@ public class UIManager : MonoBehaviour
     [Header("Stage Name")]
     [SerializeField] private StageNameDisplay stageNameDisplay; // ステージ開始時のステージ名表示
 
+    [Header("Boss HP Bar")]
+    [SerializeField] private Slider bossHpBar; // ボス戦時のみ表示するボスHPバー
+
     // レベルアップ選択時のコールバック
     private Action<UpgradeType> _onUpgradeSelected;
     // リトライ時のコールバック
@@ -85,6 +88,12 @@ public class UIManager : MonoBehaviour
         
         // カウントダウンタイマーを更新
         UpdateCountdownTimer();
+
+        // ボスモード時はボスHPバーを更新
+        if (gameManager != null && gameManager.CurrentMode == GameMode.Boss)
+        {
+            UpdateBossHpBar();
+        }
         
         // レベルアップ可能フラグをチェック
         if (player != null && player.CanLevelUp && _isLevelUpUIOpen == false)
@@ -231,6 +240,43 @@ public class UIManager : MonoBehaviour
     public void HideStatus()
     {
         statusParent?.SetActive(false);
+    }
+
+    /// <summary>
+    /// ボスHPバーを表示する（ボスステート進入時に呼ぶ）
+    /// </summary>
+    public void ShowBossHpBar()
+    {
+        if (bossHpBar != null)
+        {
+            bossHpBar.gameObject.SetActive(true);
+        }
+    }
+
+    /// <summary>
+    /// ボスHPバーを非表示にする（ボスステート終了時に呼ぶ）
+    /// </summary>
+    public void HideBossHpBar()
+    {
+        if (bossHpBar != null)
+        {
+            bossHpBar.gameObject.SetActive(false);
+        }
+    }
+
+    void UpdateBossHpBar()
+    {
+        if (bossHpBar == null || gameManager?.EnemyManager == null)
+        {
+            return;
+        }
+
+        var boss = gameManager.EnemyManager.GetCurrentBossComponent();
+        if (boss != null)
+        {
+            float max = boss.MaxHp;
+            bossHpBar.value = max > 0f ? boss.CurrentHp / max : 0f;
+        }
     }
     
     // レベルアップUIを表示（内部メソッド）
