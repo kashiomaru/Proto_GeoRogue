@@ -3,13 +3,14 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// ステージ名を TextMeshPro で表示する。Show 呼び出し後、一定時間表示してからアルファアウトする。
 /// </summary>
-[RequireComponent(typeof(TextMeshProUGUI))]
 public class StageNameDisplay : MonoBehaviour
 {
+    [SerializeField] private CanvasGroup canvasGroup;
     [SerializeField] private TextMeshProUGUI tmp;
     [SerializeField] private float displayDuration = 1.0f;
     [SerializeField] private float fadeOutDuration = 1.0f;
@@ -27,13 +28,13 @@ public class StageNameDisplay : MonoBehaviour
     /// </summary>
     public void Show(string stageName)
     {
-        if (tmp is null)
+        if (tmp is null || canvasGroup is null)
         {
             return;
         }
         if (string.IsNullOrEmpty(stageName))
         {
-            tmp.alpha = 0f;
+            canvasGroup.alpha = 0f;
             return;
         }
 
@@ -53,7 +54,15 @@ public class StageNameDisplay : MonoBehaviour
         {
             await UniTask.Delay((int)(displayDuration * 1000), DelayType.UnscaledDeltaTime, cancellationToken: cancellationToken);
 
-            await Ease.Do(Ease.Linear, fadeOutDuration, (value) => { tmp.alpha = 1f - value; }, cancellationToken);
+            await Ease.Do(
+                Ease.EaseOutQuad,
+                fadeOutDuration,
+                (value) =>
+                {
+                    canvasGroup.alpha = 1f - value;
+                },
+                cancellationToken);
+
             gameObject.SetActive(false);
         }
         catch (OperationCanceledException)
