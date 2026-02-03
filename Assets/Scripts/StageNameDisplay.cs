@@ -34,7 +34,7 @@ public class StageNameDisplay : MonoBehaviour
         }
         if (string.IsNullOrEmpty(stageName))
         {
-            canvasGroup.alpha = 0f;
+            canvasGroup.alpha = 1f;
             return;
         }
 

@@ -62,7 +62,8 @@ public class EnemyGroup
     public Vector3 Scale => _scale;
 
     /// <summary>
-    /// 敵データと共通パラメータでグループを生成する。バッファを確保し初期配置を行う。
+    /// 敵データと共通パラメータでグループを生成する。バッファを確保し、全敵を非アクティブで初期化する。
+    /// 配置は次フレーム以降の HandleRespawn に任せる（プレイヤー周りのドーナツ状に配置される）。
     /// </summary>
     /// <param name="data">敵データ（null 不可）。</param>
     /// <param name="maxCount">このグループの最大数（配列サイズ）。</param>
@@ -126,16 +127,7 @@ public class EnemyGroup
 
         for (int i = 0; i < _maxCount; i++)
         {
-            bool active = i < _spawnCount;
-            _active[i] = active;
-            if (active)
-            {
-                var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
-                pos.y = 0;
-                _positions[i] = pos;
-                _rotations[i] = quaternion.identity;
-                _hp[i] = _maxHp;
-            }
+            _active[i] = false;
             _flashTimers.Add(0f);
             _positionList.Add(Vector3.zero);
             _rotationList.Add(Quaternion.identity);
@@ -266,20 +258,12 @@ public class EnemyGroup
         }
     }
 
-    /// <summary>このグループの敵を初期配置にリセットする。</summary>
+    /// <summary>このグループの敵をすべて非アクティブにし、キューとフラッシュをクリアする。配置は次フレーム以降の HandleRespawn に任せる。</summary>
     public void ResetEnemies()
     {
-        for (int i = 0; i < _spawnCount; i++)
-        {
-            var pos = (float3)UnityEngine.Random.insideUnitSphere * 40f;
-            pos.y = 0;
-            _positions[i] = pos;
-            _active[i] = true;
-            _hp[i] = _maxHp;
-        }
-        for (int i = _spawnCount; i < _maxCount; i++)
+        for (int i = 0; i < _maxCount; i++)
             _active[i] = false;
-        for (int i = 0; i < _spawnCount && i < _flashTimers.Count; i++)
+        for (int i = 0; i < _flashTimers.Count; i++)
             _flashTimers[i] = 0f;
         while (_deadPositions.TryDequeue(out _)) { }
         while (_damageQueue.TryDequeue(out _)) { }
