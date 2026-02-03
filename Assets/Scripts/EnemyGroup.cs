@@ -155,8 +155,8 @@ public class EnemyGroup
         if (_flashQueue.IsCreated) _flashQueue.Dispose();
     }
 
-    /// <summary>このグループの敵移動Jobをスケジュールする。</summary>
-    public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
+    /// <summary>このグループの敵移動Jobをスケジュールする。複数グループ時は前のグループの Job を dependsOn に渡すこと（同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
+    public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue, JobHandle dependsOn = default)
     {
         if (_spatialMap.IsCreated)
             _spatialMap.Clear();
@@ -176,7 +176,7 @@ public class EnemyGroup
             activeFlags = _active,
             damageQueue = playerDamageQueue
         };
-        return job.Schedule(_spawnCount, 64);
+        return job.Schedule(_spawnCount, 64, dependsOn);
     }
 
     /// <summary>死んだ敵の位置をキューから取り出しジェム生成に渡す。</summary>

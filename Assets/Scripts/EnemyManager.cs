@@ -76,20 +76,19 @@ public class EnemyManager : InitializeMonobehaviour
         _groups = new List<EnemyGroup>();
     }
 
-    /// <summary>敵の移動Jobをスケジュール（全グループ分を結合）。</summary>
+    /// <summary>敵の移動Jobをスケジュール（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
     public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
     {
         if (_normalEnemiesEnabled == false || _groups == null || _groups.Count == 0)
         {
             return default;
         }
-        JobHandle combined = default;
+        JobHandle dep = default;
         foreach (var g in _groups)
         {
-            JobHandle h = g.ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue);
-            combined = combined.Equals(default) ? h : JobHandle.CombineDependencies(combined, h);
+            dep = g.ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue, dep);
         }
-        return combined;
+        return dep;
     }
 
     /// <summary>死んだ敵の位置を取得（ジェム生成用）。</summary>
@@ -255,11 +254,23 @@ public class EnemyManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// ステージの通常敵設定を適用する。既存のグループを破棄し、ステージの敵データ（先頭1種類）で1つの EnemyGroup を作成する。
+    /// ステージの通常敵設定を適用する。既存のグループを破棄し、ステージの敵データスロット（最大5種類）のうち
+    /// 非 null のものそれぞれで EnemyGroup を作成する。1グループあたりの最大数は maxEnemyCount をグループ数で割った値。
     /// </summary>
     public void ApplyNormalEnemyConfig(StageData stage)
     {
-        if (stage is null || stage.FirstEnemyData is null)
+        if (stage is null)
+        {
+            return;
+        }
+        // 非 null の敵データを数える
+        int dataCount = 0;
+        for (int i = 0; i < StageData.MaxEnemyDataSlots; i++)
+        {
+            if (stage.GetEnemyData(i) != null)
+                dataCount++;
+        }
+        if (dataCount == 0)
         {
             return;
         }
@@ -274,16 +285,22 @@ public class EnemyManager : InitializeMonobehaviour
         {
             _groups = new List<EnemyGroup>();
         }
-        // 先頭の敵データで1グループ作成
-        var data = stage.FirstEnemyData;
-        var group = new EnemyGroup(
-            data,
-            maxEnemyCount,
-            enemyFlashDuration,
-            respawnDistance,
-            respawnMinRadius,
-            respawnMaxRadius);
-        _groups.Add(group);
+        // 1グループあたりの最大数（合計が maxEnemyCount を超えないように割り振る）
+        int maxPerGroup = Mathf.Max(1, maxEnemyCount / dataCount);
+        for (int i = 0; i < StageData.MaxEnemyDataSlots; i++)
+        {
+            var data = stage.GetEnemyData(i);
+            if (data == null)
+                continue;
+            var group = new EnemyGroup(
+                data,
+                maxPerGroup,
+                enemyFlashDuration,
+                respawnDistance,
+                respawnMinRadius,
+                respawnMaxRadius);
+            _groups.Add(group);
+        }
     }
 
     /// <summary>
