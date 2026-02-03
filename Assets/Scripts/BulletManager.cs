@@ -124,6 +124,7 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <summary>
     /// 弾の移動・通常敵との衝突 Job をスケジュール。敵の移動 Job 完了後に実行するため dependency を渡す。
+    /// 敵グループごとに1本ずつ BulletMoveAndCollideJob を直列にスケジュールする（弾は全グループで共有）。
     /// </summary>
     public JobHandle ScheduleMoveAndCollideJob(float deltaTime, JobHandle dependency, EnemyManager enemyManager)
     {
@@ -131,27 +132,36 @@ public class BulletManager : InitializeMonobehaviour
         {
             return default;
         }
-        float bulletSpeed = player != null ? player.GetBulletSpeed() : 20f;
-        var bulletJob = new BulletMoveAndCollideJob
+        var groups = enemyManager.GetGroups();
+        if (groups == null || groups.Count == 0)
         {
-            deltaTime = deltaTime,
-            speed = bulletSpeed,
-            cellSize = enemyManager.CellSize,
-            spatialMap = enemyManager.SpatialMap,
-            enemyPositions = enemyManager.EnemyPositions,
-            bulletPositions = _bulletPositions,
-            bulletDirections = _bulletDirections,
-            bulletVelocities = _bulletVelocities,
-            bulletActive = _bulletActive,
-            bulletLifeTime = _bulletLifeTime,
-            enemyActive = enemyManager.EnemyActive,
-            enemyHp = enemyManager.EnemyHp,
-            bulletDamage = bulletDamage,
-            deadEnemyPositions = enemyManager.GetDeadEnemyPositionsWriter(),
-            enemyDamageQueue = enemyManager.GetEnemyDamageQueueWriter(),
-            enemyFlashQueue = enemyManager.GetEnemyFlashQueueWriter()
-        };
-        return bulletJob.Schedule(maxBullets, 64, dependency);
+            return dependency;
+        }
+        JobHandle dep = dependency;
+        foreach (var g in groups)
+        {
+            var bulletJob = new BulletMoveAndCollideJob
+            {
+                deltaTime = deltaTime,
+                speed = player != null ? player.GetBulletSpeed() : 20f,
+                cellSize = g.CellSize,
+                spatialMap = g.SpatialMap,
+                enemyPositions = g.EnemyPositions,
+                bulletPositions = _bulletPositions,
+                bulletDirections = _bulletDirections,
+                bulletVelocities = _bulletVelocities,
+                bulletActive = _bulletActive,
+                bulletLifeTime = _bulletLifeTime,
+                enemyActive = g.EnemyActive,
+                enemyHp = g.EnemyHp,
+                bulletDamage = bulletDamage,
+                deadEnemyPositions = g.GetDeadEnemyPositionsWriter(),
+                enemyDamageQueue = g.GetEnemyDamageQueueWriter(),
+                enemyFlashQueue = g.GetEnemyFlashQueueWriter()
+            };
+            dep = bulletJob.Schedule(maxBullets, 64, dep);
+        }
+        return dep;
     }
 
     /// <summary>
