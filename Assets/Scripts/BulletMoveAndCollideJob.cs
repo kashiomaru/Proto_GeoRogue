@@ -9,6 +9,8 @@ public struct BulletMoveAndCollideJob : IJobParallelFor
     public float deltaTime;
     public float speed;
     public float cellSize;
+    /// <summary>弾との当たり判定に使う敵の半径（このグループ共通）。</summary>
+    public float enemyCollisionRadius;
 
     [ReadOnly] public NativeParallelMultiHashMap<int, int> spatialMap;
     [ReadOnly] public NativeArray<float3> enemyPositions;
@@ -89,8 +91,9 @@ public struct BulletMoveAndCollideJob : IJobParallelFor
                         float3 enemyPos = enemyPositions[enemyIndex];
                         float distSq = math.distancesq(pos, enemyPos);
 
-                        // 当たり判定（半径1.0同士とする）
-                        if (distSq < 1.0f)
+                        // 当たり判定（敵の当たり半径を使用）
+                        float radiusSq = enemyCollisionRadius * enemyCollisionRadius;
+                        if (distSq < radiusSq)
                         {
                             // ヒット！
                             // 敵がまだ生きている場合のみ処理

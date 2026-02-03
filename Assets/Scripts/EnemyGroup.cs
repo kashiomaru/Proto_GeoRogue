@@ -18,6 +18,7 @@ public class EnemyGroup
     private readonly float _maxHp;
     private readonly float _flashDuration;
     private readonly float _damageRadius;
+    private readonly float _collisionRadius;
     private readonly float _cellSize;
     private readonly float _respawnDistance;
     private readonly float _respawnMinRadius;
@@ -49,6 +50,8 @@ public class EnemyGroup
     public NativeArray<bool> EnemyActive => _active;
     /// <summary>敵HP（弾衝突Job用）。</summary>
     public NativeArray<float> EnemyHp => _hp;
+    /// <summary>弾との当たり判定に使う半径（弾衝突Job用）。</summary>
+    public float CollisionRadius => _collisionRadius;
     /// <summary>セルサイズ（弾衝突Job用）。</summary>
     public float CellSize => _cellSize;
     /// <summary>表示用メッシュ。</summary>
@@ -84,6 +87,7 @@ public class EnemyGroup
             _maxHp = 1f;
             _flashDuration = flashDuration;
             _damageRadius = 1f;
+            _collisionRadius = 1f;
             _cellSize = 2f;
             _respawnDistance = respawnDistance;
             _respawnMinRadius = respawnMinRadius;
@@ -100,6 +104,7 @@ public class EnemyGroup
             _maxHp = data.MaxHp;
             _flashDuration = flashDuration;
             _damageRadius = data.DamageRadius;
+            _collisionRadius = data.CollisionRadius;
             _cellSize = data.CellSize;
             _respawnDistance = respawnDistance;
             _respawnMinRadius = respawnMinRadius;

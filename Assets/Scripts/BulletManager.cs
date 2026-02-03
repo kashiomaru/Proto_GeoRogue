@@ -145,6 +145,7 @@ public class BulletManager : InitializeMonobehaviour
                 deltaTime = deltaTime,
                 speed = player != null ? player.GetBulletSpeed() : 20f,
                 cellSize = g.CellSize,
+                enemyCollisionRadius = g.CollisionRadius,
                 spatialMap = g.SpatialMap,
                 enemyPositions = g.EnemyPositions,
                 bulletPositions = _bulletPositions,
