@@ -201,7 +201,7 @@ public class EnemyGroup
         {
             int damageInt = (int)damageInfo.damage;
             if (damageInt > 0)
-                damageTextManager?.ShowDamage(damageInfo.position, damageInt);
+                damageTextManager?.ShowDamage(damageInfo.position, damageInt, _collisionRadius);
         }
         while (_flashQueue.TryDequeue(out int enemyIndex))
         {
