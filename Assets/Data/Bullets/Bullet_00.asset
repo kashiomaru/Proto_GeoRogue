@@ -17,7 +17,7 @@ MonoBehaviour:
   material: {fileID: 2100000, guid: 556a1e60458b64ed3979020300f4c0dd, type: 2}
   speed: 5
   damage: 1
-  lifeTime: 3
+  lifeTime: 10
   fireInterval: 2
   countPerShot: 1
   spreadAngle: 10
