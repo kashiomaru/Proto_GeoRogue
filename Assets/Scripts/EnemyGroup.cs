@@ -285,7 +285,7 @@ public class EnemyGroup
                     ? -spreadAngle * (countPerShot - 1) * 0.5f + (spreadAngle * j)
                     : 0f;
                 quaternion rot = quaternion.RotateY(math.radians(angleDeg));
-                float3 dir = math.mul(rot, baseDir);
+                float3 dir = math.rotate(rot, baseDir);
                 if (math.lengthsq(dir) > 0.0001f)
                 {
                     dir = math.normalize(dir);

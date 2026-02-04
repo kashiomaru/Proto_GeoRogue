@@ -116,6 +116,16 @@ public class EnemyManager : InitializeMonobehaviour
             g.HandleRespawn(playerPos);
     }
 
+    /// <summary>
+    /// 弾を撃つ敵の発射処理。各グループの ProcessBulletFiring を呼ぶ。BulletManager の Job 完了後に GameManager から呼ぶ。
+    /// </summary>
+    public void ProcessEnemyBulletFiring(float deltaTime, float3 playerPos, BulletManager bulletManager)
+    {
+        if (_groups == null || bulletManager == null) return;
+        foreach (var g in _groups)
+            g.ProcessBulletFiring(deltaTime, playerPos, bulletManager);
+    }
+
     void UpdateFlashTimers()
     {
         if (_groups == null) return;

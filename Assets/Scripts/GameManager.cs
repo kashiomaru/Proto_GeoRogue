@@ -208,6 +208,7 @@ public class GameManager : MonoBehaviour
             JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
             JobHandle bulletHandle = bulletManager.ScheduleMoveAndCollideJob(deltaTime, enemyHandle, enemyManager);
             bulletHandle.Complete();
+            enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos, bulletManager);
             bulletManager.CheckEnemyBulletVsPlayer();
             bulletManager.RenderBullets();
         }
