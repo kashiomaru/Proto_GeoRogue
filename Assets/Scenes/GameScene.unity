@@ -1909,11 +1909,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c24c7e145761b4774924117327a792ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletManager
-  maxBullets: 1000
+  maxPlayerBullets: 1000
+  maxEnemyBullets: 500
   playerTransform: {fileID: 322285197}
+  playerCollisionRadius: 1
   multiShotSpreadAngle: 10
   bulletDamage: 1
   player: {fileID: 322285198}
+  gameManager: {fileID: 379471278}
   damageTextManager: {fileID: 614781148}
   renderManager: {fileID: 454398054}
 --- !u!4 &420466359

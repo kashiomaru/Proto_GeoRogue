@@ -4,89 +4,84 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
+/// <summary>
+/// プレイヤー弾と敵弾の 2 つの BulletPool を保持し、発射・移動スケジュール・当たり判定・描画をまとめて行う。
+/// </summary>
 public class BulletManager : InitializeMonobehaviour
 {
     [Header("Settings")]
-    [SerializeField] private int maxBullets = 1000;
+    [SerializeField] private int maxPlayerBullets = 1000;
+    [SerializeField] private int maxEnemyBullets = 500;
 
     [Header("Params")]
     [SerializeField] private Transform playerTransform;
+    [Tooltip("敵弾とプレイヤーの当たり判定に使うプレイヤー側の半径")]
+    [SerializeField] private float playerCollisionRadius = 1f;
 
-    [Header("MultiShot Settings")]
+    [Header("Player Shot")]
     [SerializeField] private float multiShotSpreadAngle = 10f;
-
-    [Header("Combat")]
     [SerializeField] private float bulletDamage = 1.0f;
 
     [Header("References")]
     [SerializeField] private Player player;
+    [SerializeField] private GameManager gameManager;
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private RenderManager renderManager;
 
-    private NativeArray<float3> _bulletPositions;
-    private NativeArray<float3> _bulletDirections;
-    private NativeArray<float3> _bulletVelocities;
-    private NativeArray<bool> _bulletActive;
-    private NativeArray<float> _bulletLifeTime;
-    private List<Vector3> _bulletPositionList;
-    private List<Quaternion> _bulletRotationList;
-    private List<bool> _bulletActiveList;
+    private BulletPool _playerBullets;
+    private BulletPool _enemyBullets;
+    private float _playerShotTimer;
 
-    private float _timer;
-    private int _bulletIndexHead;
+    // 描画用リスト（RenderManager に渡す）
+    private List<Vector3> _playerBulletPositionList;
+    private List<Quaternion> _playerBulletRotationList;
+    private List<bool> _playerBulletActiveList;
+    private List<Vector3> _enemyBulletPositionList;
+    private List<Quaternion> _enemyBulletRotationList;
+    private List<bool> _enemyBulletActiveList;
 
     public float BulletDamage => bulletDamage;
 
     protected override void InitializeInternal()
     {
-        _bulletPositions = new NativeArray<float3>(maxBullets, Allocator.Persistent);
-        _bulletDirections = new NativeArray<float3>(maxBullets, Allocator.Persistent);
-        _bulletVelocities = new NativeArray<float3>(maxBullets, Allocator.Persistent);
-        _bulletActive = new NativeArray<bool>(maxBullets, Allocator.Persistent);
-        _bulletLifeTime = new NativeArray<float>(maxBullets, Allocator.Persistent);
-        _bulletPositionList = new List<Vector3>(maxBullets);
-        _bulletRotationList = new List<Quaternion>(maxBullets);
-        _bulletActiveList = new List<bool>(maxBullets);
+        _playerBullets = new BulletPool();
+        _playerBullets.Initialize(maxPlayerBullets, useDamageArray: false);
 
-        for (int i = 0; i < maxBullets; i++)
+        _enemyBullets = new BulletPool();
+        _enemyBullets.Initialize(maxEnemyBullets, useDamageArray: true);
+
+        _playerBulletPositionList = new List<Vector3>(maxPlayerBullets);
+        _playerBulletRotationList = new List<Quaternion>(maxPlayerBullets);
+        _playerBulletActiveList = new List<bool>(maxPlayerBullets);
+        for (int i = 0; i < maxPlayerBullets; i++)
         {
-            _bulletActive[i] = false;
-            _bulletPositionList.Add(default);
-            _bulletRotationList.Add(default);
-            _bulletActiveList.Add(false);
+            _playerBulletPositionList.Add(default);
+            _playerBulletRotationList.Add(default);
+            _playerBulletActiveList.Add(false);
+        }
+        _enemyBulletPositionList = new List<Vector3>(maxEnemyBullets);
+        _enemyBulletRotationList = new List<Quaternion>(maxEnemyBullets);
+        _enemyBulletActiveList = new List<bool>(maxEnemyBullets);
+        for (int i = 0; i < maxEnemyBullets; i++)
+        {
+            _enemyBulletPositionList.Add(default);
+            _enemyBulletRotationList.Add(default);
+            _enemyBulletActiveList.Add(false);
         }
     }
 
     protected override void FinalizeInternal()
     {
-        if (_bulletPositions.IsCreated)
-        {
-            _bulletPositions.Dispose();
-        }
-        if (_bulletDirections.IsCreated)
-        {
-            _bulletDirections.Dispose();
-        }
-        if (_bulletVelocities.IsCreated)
-        {
-            _bulletVelocities.Dispose();
-        }
-        if (_bulletActive.IsCreated)
-        {
-            _bulletActive.Dispose();
-        }
-        if (_bulletLifeTime.IsCreated)
-        {
-            _bulletLifeTime.Dispose();
-        }
+        _playerBullets?.Dispose();
+        _enemyBullets?.Dispose();
     }
 
     /// <summary>
-    /// 発射処理（プレイ中に GameManager の Update から呼ぶ）
+    /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）
     /// </summary>
-    public void HandleShooting()
+    public void HandlePlayerShooting()
     {
-        if (IsInitialized == false || player == null)
+        if (IsInitialized == false || player == null || _playerBullets == null)
         {
             return;
         }
@@ -94,17 +89,14 @@ public class BulletManager : InitializeMonobehaviour
         int bulletCountPerShot = player.GetBulletCountPerShot();
         float bulletSpeed = player.GetBulletSpeed();
 
-        _timer += Time.deltaTime;
-        if (_timer >= fireRate)
+        _playerShotTimer += Time.deltaTime;
+        if (_playerShotTimer >= fireRate)
         {
-            _timer = 0f;
+            _playerShotTimer = 0f;
             Vector3 baseDir = playerTransform.forward;
 
             for (int i = 0; i < bulletCountPerShot; i++)
             {
-                int id = _bulletIndexHead;
-                _bulletIndexHead = (_bulletIndexHead + 1) % maxBullets;
-
                 float angle = 0f;
                 if (bulletCountPerShot > 1)
                 {
@@ -113,30 +105,35 @@ public class BulletManager : InitializeMonobehaviour
                 Quaternion rot = Quaternion.AngleAxis(angle, Vector3.up);
                 Vector3 finalDir = rot * baseDir;
 
-                _bulletActive[id] = true;
-                _bulletLifeTime[id] = 2.0f;
-                _bulletPositions[id] = (float3)playerTransform.position;
-                _bulletDirections[id] = (float3)finalDir;
-                _bulletVelocities[id] = (float3)(finalDir.normalized * bulletSpeed);
+                _playerBullets.Spawn(
+                    playerTransform.position,
+                    finalDir,
+                    bulletSpeed,
+                    2.0f,
+                    damage: 0f
+                );
             }
         }
     }
 
     /// <summary>
-    /// 弾の移動 Job と通常敵との衝突 Job をスケジュール。敵の移動 Job 完了後に実行するため dependency を渡す。
-    /// 移動は1回、当たり判定は敵グループごとに1本ずつ直列にスケジュールする。
+    /// 敵・ボス弾を 1 発生成する。敵グループやボスの Update から呼ぶ。
+    /// </summary>
+    public void SpawnEnemyBullet(Vector3 position, Vector3 direction, float speed, float damage, float lifeTime)
+    {
+        if (IsInitialized == false || _enemyBullets == null)
+        {
+            return;
+        }
+        _enemyBullets.Spawn(position, direction, speed, lifeTime, damage);
+    }
+
+    /// <summary>
+    /// プレイヤー弾の移動・敵との衝突 Job と敵弾の移動 Job をスケジュール。敵の移動 Job 完了後に実行するため dependency を渡す。
     /// </summary>
     public JobHandle ScheduleMoveAndCollideJob(float deltaTime, JobHandle dependency, EnemyManager enemyManager)
     {
-        var moveJob = new BulletMoveJob
-        {
-            deltaTime = deltaTime,
-            bulletPositions = _bulletPositions,
-            bulletVelocities = _bulletVelocities,
-            bulletActive = _bulletActive,
-            bulletLifeTime = _bulletLifeTime
-        };
-        JobHandle dep = moveJob.Schedule(maxBullets, 64, dependency);
+        JobHandle dep = _playerBullets.ScheduleMoveJob(deltaTime, dependency);
 
         var groups = enemyManager != null ? enemyManager.GetGroups() : null;
         if (groups != null && groups.Count > 0)
@@ -149,8 +146,8 @@ public class BulletManager : InitializeMonobehaviour
                     enemyCollisionRadius = g.CollisionRadius,
                     spatialMap = g.SpatialMap,
                     enemyPositions = g.EnemyPositions,
-                    bulletPositions = _bulletPositions,
-                    bulletActive = _bulletActive,
+                    bulletPositions = _playerBullets.Positions,
+                    bulletActive = _playerBullets.Active,
                     enemyActive = g.EnemyActive,
                     enemyHp = g.EnemyHp,
                     bulletDamage = bulletDamage,
@@ -158,9 +155,11 @@ public class BulletManager : InitializeMonobehaviour
                     enemyDamageQueue = g.GetEnemyDamageQueueWriter(),
                     enemyFlashQueue = g.GetEnemyFlashQueueWriter()
                 };
-                dep = collideJob.Schedule(maxBullets, 64, dep);
+                dep = collideJob.Schedule(_playerBullets.MaxCount, 64, dep);
             }
         }
+
+        dep = _enemyBullets.ScheduleMoveJob(deltaTime, dep);
         return dep;
     }
 
@@ -173,38 +172,80 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        for (int i = 0; i < maxBullets; i++)
+        CopyPoolToRenderLists(_playerBullets, _playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
+        renderManager.RenderBullets(_playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
+
+        CopyPoolToRenderLists(_enemyBullets, _enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
+        renderManager.RenderBullets(_enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
+    }
+
+    private static void CopyPoolToRenderLists(
+        BulletPool pool,
+        List<Vector3> positionList,
+        List<Quaternion> rotationList,
+        List<bool> activeList)
+    {
+        int maxCount = pool.MaxCount;
+        for (int i = 0; i < maxCount; i++)
         {
-            _bulletPositionList[i] = _bulletPositions[i];
-            _bulletActiveList[i] = _bulletActive[i];
-            float3 dir = _bulletDirections[i];
+            positionList[i] = pool.Positions[i];
+            activeList[i] = pool.Active[i];
+            float3 dir = pool.Directions[i];
             if (math.lengthsq(dir) > 0.0001f)
             {
-                _bulletRotationList[i] = Quaternion.LookRotation(dir);
+                rotationList[i] = Quaternion.LookRotation(dir);
             }
         }
-        renderManager.RenderBullets(_bulletPositionList, _bulletRotationList, _bulletActiveList);
     }
 
     /// <summary>
-    /// 弾をすべてリセット（画面外へ）。ResetGameState 時などに呼ぶ。
+    /// 弾をすべてリセット（プレイヤー弾・敵弾とも）。ResetGameState 時などに呼ぶ。
     /// </summary>
     public void ResetBullets()
     {
-        for (int i = 0; i < maxBullets; i++)
-        {
-            _bulletActive[i] = false;
-        }
-        _bulletIndexHead = 0;
-        _timer = 0f;
+        _playerBullets?.Reset();
+        _enemyBullets?.Reset();
+        _playerShotTimer = 0f;
     }
 
     /// <summary>
-    /// ボスと弾の当たり判定。ヒットした弾は無効化する。
+    /// 敵弾とプレイヤーの当たり判定。ヒットした弾は無効化し、プレイヤーにダメージを通知する。Job 完了後に GameManager から呼ぶ。
+    /// </summary>
+    public void CheckEnemyBulletVsPlayer()
+    {
+        if (IsInitialized == false || playerTransform == null || player == null || player.IsDead || _enemyBullets == null)
+        {
+            return;
+        }
+        float3 playerPos = (float3)playerTransform.position;
+        float playerRadiusSq = playerCollisionRadius * playerCollisionRadius;
+        int maxCount = _enemyBullets.MaxCount;
+
+        for (int i = 0; i < maxCount; i++)
+        {
+            if (_enemyBullets.Active[i] == false)
+            {
+                continue;
+            }
+            float3 bulletPos = _enemyBullets.Positions[i];
+            float distSq = math.distancesq(bulletPos, playerPos);
+            if (distSq >= playerRadiusSq)
+            {
+                continue;
+            }
+
+            float damage = _enemyBullets.Damage[i];
+            gameManager?.AddPlayerDamage(Mathf.RoundToInt(damage));
+            _enemyBullets.SetActive(i, false);
+        }
+    }
+
+    /// <summary>
+    /// ボスとプレイヤー弾の当たり判定。ヒットした弾は無効化する。
     /// </summary>
     public void CheckBossBulletCollision(EnemyManager enemyManager)
     {
-        if (enemyManager == null)
+        if (enemyManager == null || _playerBullets == null)
         {
             return;
         }
@@ -216,14 +257,15 @@ public class BulletManager : InitializeMonobehaviour
 
         float3 bossPos = (float3)boss.Position;
         float bossRadiusSq = boss.CollisionRadius * boss.CollisionRadius;
+        int maxCount = _playerBullets.MaxCount;
 
-        for (int i = 0; i < maxBullets; i++)
+        for (int i = 0; i < maxCount; i++)
         {
-            if (_bulletActive[i] == false)
+            if (_playerBullets.Active[i] == false)
             {
                 continue;
             }
-            float3 bulletPos = _bulletPositions[i];
+            float3 bulletPos = _playerBullets.Positions[i];
             float distSq = math.distancesq(bulletPos, bossPos);
             if (distSq >= bossRadiusSq)
             {
@@ -236,7 +278,7 @@ public class BulletManager : InitializeMonobehaviour
                 damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage, boss.CollisionRadius);
             }
 
-            _bulletActive[i] = false;
+            _playerBullets.SetActive(i, false);
 
             if (boss.IsDead)
             {

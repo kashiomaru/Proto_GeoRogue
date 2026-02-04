@@ -198,7 +198,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        bulletManager?.HandleShooting();
+        bulletManager?.HandlePlayerShooting();
 
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
@@ -208,6 +208,7 @@ public class GameManager : MonoBehaviour
             JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
             JobHandle bulletHandle = bulletManager.ScheduleMoveAndCollideJob(deltaTime, enemyHandle, enemyManager);
             bulletHandle.Complete();
+            bulletManager.CheckEnemyBulletVsPlayer();
             bulletManager.RenderBullets();
         }
 
