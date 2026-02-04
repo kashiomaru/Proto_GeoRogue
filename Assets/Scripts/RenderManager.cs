@@ -5,15 +5,12 @@ public class RenderManager : MonoBehaviour
 {
     [Header("Enemy Settings")]
     // Mesh/Material はステージデータで SetEnemyDisplay により設定（未設定時は null で描画スキップ）
-    private Mesh enemyMesh;
-    private Material enemyMaterial;
     [SerializeField] private float flashIntensity = 0.8f;
 
-    // ステージ適用用（SetEnemyDisplay で設定。未設定時は上記 enemyMesh / enemyMaterial を使用）
+    // ステージ適用用（SetEnemyDisplay で設定）
     private Mesh _runtimeEnemyMesh;
     private Material _runtimeEnemyMaterial;
     private Vector3 _runtimeEnemyScale = Vector3.one;
-    private bool _runtimeEnemyDisplaySet;
 
     [Header("Gem Settings")]
     [SerializeField] private Mesh gemMesh;
@@ -47,7 +44,6 @@ public class RenderManager : MonoBehaviour
         _runtimeEnemyMesh = mesh;
         _runtimeEnemyMaterial = material;
         _runtimeEnemyScale = scale;
-        _runtimeEnemyDisplaySet = true;
     }
 
     /// <summary>
@@ -56,11 +52,11 @@ public class RenderManager : MonoBehaviour
     /// <param name="count">描画する敵の数。省略時は positions.Count を使用。</param>
     public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags, int? count = null)
     {
-        Mesh mesh = _runtimeEnemyDisplaySet && _runtimeEnemyMesh != null ? _runtimeEnemyMesh : enemyMesh;
-        Material mat = _runtimeEnemyDisplaySet && _runtimeEnemyMaterial != null ? _runtimeEnemyMaterial : enemyMaterial;
+        Mesh mesh = _runtimeEnemyMesh;
+        Material mat = _runtimeEnemyMaterial;
         if (mesh == null || mat == null) return;
 
-        Vector3 scale = _runtimeEnemyDisplaySet ? _runtimeEnemyScale : Vector3.one;
+        Vector3 scale = _runtimeEnemyScale;
         int drawCount = count ?? positions.Count;
         int batchIndex = 0;
 
