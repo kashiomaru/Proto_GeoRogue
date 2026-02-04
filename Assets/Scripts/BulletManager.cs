@@ -172,30 +172,11 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        CopyPoolToRenderLists(_playerBullets, _playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
+        _playerBullets.CopyToRenderLists(_playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
         renderManager.RenderBullets(_playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
 
-        CopyPoolToRenderLists(_enemyBullets, _enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
+        _enemyBullets.CopyToRenderLists(_enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
         renderManager.RenderBullets(_enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
-    }
-
-    private static void CopyPoolToRenderLists(
-        BulletPool pool,
-        List<Vector3> positionList,
-        List<Quaternion> rotationList,
-        List<bool> activeList)
-    {
-        int maxCount = pool.MaxCount;
-        for (int i = 0; i < maxCount; i++)
-        {
-            positionList[i] = pool.Positions[i];
-            activeList[i] = pool.Active[i];
-            float3 dir = pool.Directions[i];
-            if (math.lengthsq(dir) > 0.0001f)
-            {
-                rotationList[i] = Quaternion.LookRotation(dir);
-            }
-        }
     }
 
     /// <summary>

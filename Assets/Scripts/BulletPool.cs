@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
 /// <summary>
 /// 弾 1 種類分のバッファと移動を担当する共通クラス。
@@ -124,6 +125,28 @@ public class BulletPool
             bulletLifeTime = _lifeTime
         };
         return moveJob.Schedule(MaxCount, 64, dependency);
+    }
+
+    /// <summary>
+    /// 描画用に座標・回転・アクティブをリストへコピーする。RenderManager に渡す前に呼ぶ。
+    /// </summary>
+    public void CopyToRenderLists(List<Vector3> positionList, List<Quaternion> rotationList, List<bool> activeList)
+    {
+        if (_disposed || !_positions.IsCreated || positionList == null || rotationList == null || activeList == null)
+        {
+            return;
+        }
+        int maxCount = MaxCount;
+        for (int i = 0; i < maxCount; i++)
+        {
+            positionList[i] = _positions[i];
+            activeList[i] = _active[i];
+            float3 dir = _directions[i];
+            if (math.lengthsq(dir) > 0.0001f)
+            {
+                rotationList[i] = Quaternion.LookRotation(dir);
+            }
+        }
     }
 
     /// <summary>
