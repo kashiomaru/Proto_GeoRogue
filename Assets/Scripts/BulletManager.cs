@@ -173,10 +173,10 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
         _playerBullets.CopyToRenderLists(_playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
-        renderManager.RenderBullets(_playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
+        renderManager.RenderPlayerBullets(_playerBulletPositionList, _playerBulletRotationList, _playerBulletActiveList);
 
         _enemyBullets.CopyToRenderLists(_enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
-        renderManager.RenderBullets(_enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
+        renderManager.RenderEnemyBullets(_enemyBulletPositionList, _enemyBulletRotationList, _enemyBulletActiveList);
     }
 
     /// <summary>

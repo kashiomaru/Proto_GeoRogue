@@ -22,12 +22,6 @@ public class BulletData : ScriptableObject
     [Tooltip("弾の飛ぶ方向。Forward=発射元の向き、TowardPlayer=プレイヤー方向")]
     [SerializeField] private BulletDirectionType directionType = BulletDirectionType.Forward;
 
-    [Header("Appearance")]
-    [Tooltip("弾のメッシュ。未設定時は BulletManager / RenderManager のデフォルトを使用")]
-    [SerializeField] private Mesh mesh;
-    [Tooltip("弾のマテリアル。未設定時は BulletManager / RenderManager のデフォルトを使用")]
-    [SerializeField] private Material material;
-
     [Header("Stats")]
     [Tooltip("弾の飛ぶ速度")]
     [SerializeField] private float speed = 15f;
@@ -45,8 +39,6 @@ public class BulletData : ScriptableObject
     [SerializeField] private float spreadAngle = 10f;
 
     public BulletDirectionType DirectionType => directionType;
-    public Mesh Mesh => mesh;
-    public Material Material => material;
     public float Speed => speed;
     public float Damage => damage;
     public float LifeTime => lifeTime;

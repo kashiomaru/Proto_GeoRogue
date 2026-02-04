@@ -17,10 +17,15 @@ public class RenderManager : MonoBehaviour
     [SerializeField] private Material gemMaterial;
     [SerializeField] private float gemScale = 0.4f;
 
-    [Header("Bullet Settings")]
-    [SerializeField] private Mesh bulletMesh;
-    [SerializeField] private Material bulletMaterial;
-    [SerializeField] private float bulletScale = 0.5f;
+    [Header("Player Bullet Settings")]
+    [SerializeField] private Mesh playerBulletMesh;
+    [SerializeField] private Material playerBulletMaterial;
+    [SerializeField] private float playerBulletScale = 0.5f;
+
+    [Header("Enemy Bullet Settings")]
+    [SerializeField] private Mesh enemyBulletMesh;
+    [SerializeField] private Material enemyBulletMaterial;
+    [SerializeField] private float enemyBulletScale = 0.5f;
 
     private const int BATCH_SIZE = 1023;
 
@@ -164,17 +169,31 @@ public class RenderManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 弾を座標・回転・アクティブリストで描画（敵・ジェムと同様に DrawMeshInstanced、Instantiate なし）。
+    /// プレイヤー弾を座標・回転・アクティブリストで描画。
     /// </summary>
-    public void RenderBullets(IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
+    public void RenderPlayerBullets(IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
     {
-        if (bulletMesh == null || bulletMaterial == null)
+        RenderBulletsInternal(playerBulletMesh, playerBulletMaterial, playerBulletScale, positions, rotations, activeFlags);
+    }
+
+    /// <summary>
+    /// 敵弾を座標・回転・アクティブリストで描画。
+    /// </summary>
+    public void RenderEnemyBullets(IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
+    {
+        RenderBulletsInternal(enemyBulletMesh, enemyBulletMaterial, enemyBulletScale, positions, rotations, activeFlags);
+    }
+
+    private void RenderBulletsInternal(Mesh mesh, Material mat, float scale, IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
+    {
+        if (mesh == null || mat == null)
         {
             return;
         }
 
         int count = positions.Count;
         int batchIndex = 0;
+        Vector3 scaleVec = Vector3.one * scale;
 
         for (int i = 0; i < count; i++)
         {
@@ -186,16 +205,16 @@ public class RenderManager : MonoBehaviour
             _matrices[batchIndex] = Matrix4x4.TRS(
                 positions[i],
                 rotations[i],
-                Vector3.one * bulletScale
+                scaleVec
             );
             batchIndex++;
 
             if (batchIndex >= BATCH_SIZE)
             {
                 Graphics.DrawMeshInstanced(
-                    bulletMesh,
+                    mesh,
                     0,
-                    bulletMaterial,
+                    mat,
                     _matrices,
                     batchIndex,
                     null,
@@ -209,9 +228,9 @@ public class RenderManager : MonoBehaviour
         if (batchIndex > 0)
         {
             Graphics.DrawMeshInstanced(
-                bulletMesh,
+                mesh,
                 0,
-                bulletMaterial,
+                mat,
                 _matrices,
                 batchIndex,
                 null,

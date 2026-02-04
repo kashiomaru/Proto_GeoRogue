@@ -2017,9 +2017,12 @@ MonoBehaviour:
   gemMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   gemMaterial: {fileID: 2100000, guid: f9af9187d6a0e49b6adf174222c2d463, type: 2}
   gemScale: 0.4
-  bulletMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
-  bulletMaterial: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
-  bulletScale: 0.5
+  playerBulletMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  playerBulletMaterial: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
+  playerBulletScale: 0.5
+  enemyBulletMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  enemyBulletMaterial: {fileID: 2100000, guid: 556a1e60458b64ed3979020300f4c0dd, type: 2}
+  enemyBulletScale: 0.5
 --- !u!4 &454398055
 Transform:
   m_ObjectHideFlags: 0
