@@ -224,7 +224,10 @@ public class EnemyGroup
                 _positions[i] = newPos;
                 _active[i] = true;
                 _hp[i] = _maxHp;
-                _fireTimers[i] = 0f;
+                // 最初の発射タイミングを 0～fireInterval の間でランダムにし、敵が一斉に撃たないようにする
+                _fireTimers[i] = _bulletData != null
+                    ? UnityEngine.Random.Range(0f, _bulletData.FireInterval)
+                    : 0f;
                 _flashTimers[i] = 0f;
             }
         }
