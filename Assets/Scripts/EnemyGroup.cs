@@ -26,11 +26,13 @@ public class EnemyGroup
     private readonly Mesh _mesh;
     private readonly Material _material;
     private readonly Vector3 _scale;
+    private readonly BulletData _bulletData;
 
     private NativeArray<float3> _positions;
     private NativeArray<quaternion> _rotations;
     private NativeArray<bool> _active;
     private NativeArray<float> _hp;
+    private NativeArray<float> _fireTimers;
     private List<float> _flashTimers;
     private List<Vector3> _positionList;
     private List<Quaternion> _rotationList;
@@ -95,6 +97,7 @@ public class EnemyGroup
             _mesh = null;
             _material = null;
             _scale = Vector3.one;
+            _bulletData = null;
         }
         else
         {
@@ -111,6 +114,7 @@ public class EnemyGroup
             _mesh = data.Mesh;
             _material = data.Material;
             _scale = data.Scale;
+            _bulletData = data.BulletData;
         }
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
@@ -120,6 +124,7 @@ public class EnemyGroup
         _rotations = new NativeArray<quaternion>(_maxCount, Allocator.Persistent);
         _active = new NativeArray<bool>(_maxCount, Allocator.Persistent);
         _hp = new NativeArray<float>(_maxCount, Allocator.Persistent);
+        _fireTimers = new NativeArray<float>(_maxCount, Allocator.Persistent);
         _flashTimers = new List<float>(_maxCount);
         _positionList = new List<Vector3>(_maxCount);
         _rotationList = new List<Quaternion>(_maxCount);
@@ -128,6 +133,7 @@ public class EnemyGroup
         for (int i = 0; i < _maxCount; i++)
         {
             _active[i] = false;
+            _fireTimers[i] = 0f;
             _flashTimers.Add(0f);
             _positionList.Add(Vector3.zero);
             _rotationList.Add(Quaternion.identity);
@@ -147,6 +153,7 @@ public class EnemyGroup
         if (_rotations.IsCreated) _rotations.Dispose();
         if (_active.IsCreated) _active.Dispose();
         if (_hp.IsCreated) _hp.Dispose();
+        if (_fireTimers.IsCreated) _fireTimers.Dispose();
         if (_spatialMap.IsCreated) _spatialMap.Dispose();
         if (_deadPositions.IsCreated) _deadPositions.Dispose();
         if (_damageQueue.IsCreated) _damageQueue.Dispose();
@@ -217,7 +224,73 @@ public class EnemyGroup
                 _positions[i] = newPos;
                 _active[i] = true;
                 _hp[i] = _maxHp;
+                _fireTimers[i] = 0f;
                 _flashTimers[i] = 0f;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 弾を撃つ敵について発射タイマーを進め、間隔が来たら BulletManager に弾を生成させる。BulletManager の Job 完了後に GameManager から呼ぶ。
+    /// </summary>
+    public void ProcessBulletFiring(float deltaTime, float3 playerPos, BulletManager bulletManager)
+    {
+        if (_bulletData == null || bulletManager == null)
+        {
+            return;
+        }
+        float interval = _bulletData.FireInterval;
+        float speed = _bulletData.Speed;
+        float damage = _bulletData.Damage;
+        float lifeTime = _bulletData.LifeTime;
+        int countPerShot = _bulletData.CountPerShot;
+        float spreadAngle = _bulletData.SpreadAngle;
+        bool towardPlayer = _bulletData.DirectionType == BulletDirectionType.TowardPlayer;
+
+        for (int i = 0; i < _spawnCount; i++)
+        {
+            if (_active[i] == false)
+            {
+                continue;
+            }
+            _fireTimers[i] += deltaTime;
+            if (_fireTimers[i] < interval)
+            {
+                continue;
+            }
+            _fireTimers[i] = 0f;
+
+            float3 pos = _positions[i];
+            float3 baseDir;
+            if (towardPlayer)
+            {
+                baseDir = math.normalize(playerPos - pos);
+                if (math.lengthsq(baseDir) < 0.0001f)
+                {
+                    baseDir = math.forward(_rotations[i]);
+                }
+            }
+            else
+            {
+                baseDir = math.forward(_rotations[i]);
+                if (math.lengthsq(baseDir) < 0.0001f)
+                {
+                    baseDir = new float3(0f, 0f, 1f);
+                }
+            }
+
+            for (int j = 0; j < countPerShot; j++)
+            {
+                float angleDeg = countPerShot > 1
+                    ? -spreadAngle * (countPerShot - 1) * 0.5f + (spreadAngle * j)
+                    : 0f;
+                quaternion rot = quaternion.RotateY(math.radians(angleDeg));
+                float3 dir = math.mul(rot, baseDir);
+                if (math.lengthsq(dir) > 0.0001f)
+                {
+                    dir = math.normalize(dir);
+                }
+                bulletManager.SpawnEnemyBullet(pos, dir, speed, damage, lifeTime);
             }
         }
     }
@@ -262,7 +335,13 @@ public class EnemyGroup
     public void ResetEnemies()
     {
         for (int i = 0; i < _maxCount; i++)
+        {
             _active[i] = false;
+            if (_fireTimers.IsCreated)
+            {
+                _fireTimers[i] = 0f;
+            }
+        }
         for (int i = 0; i < _flashTimers.Count; i++)
             _flashTimers[i] = 0f;
         while (_deadPositions.TryDequeue(out _)) { }

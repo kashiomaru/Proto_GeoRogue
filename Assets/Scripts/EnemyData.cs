@@ -23,6 +23,10 @@ public class EnemyData : ScriptableObject
     [Tooltip("出現数。0 のときは適用側で既存値を使う想定")]
     [SerializeField] private int spawnCount = 10;
 
+    [Header("Bullet")]
+    [Tooltip("弾を撃つ場合に設定。null のときは弾を撃たない")]
+    [SerializeField] private BulletData bulletData;
+
     public Mesh Mesh => mesh;
     public Material Material => material;
     public Vector3 Scale => scale;
@@ -31,4 +35,5 @@ public class EnemyData : ScriptableObject
     public float DamageRadius => damageRadius;
     public float CollisionRadius => collisionRadius;
     public int SpawnCount => spawnCount;
+    public BulletData BulletData => bulletData;
 }
