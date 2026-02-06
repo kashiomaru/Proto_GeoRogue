@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using System.Collections.Generic;
 
 public class RenderManager : MonoBehaviour
@@ -109,26 +110,20 @@ public class RenderManager : MonoBehaviour
 
     private void ExecuteDrawEnemies(Mesh mesh, Material mat, int count)
     {
-        // プロパティブロックに配列をセット
         _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
 
-        // 描画発行
-        // count引数には「実際に配列に入れた数」を渡す（配列全部ではない）
-        Graphics.DrawMeshInstanced(
-            mesh,
-            0,
-            mat,
-            _matrices,
-            count,
-            _mpb,
-            UnityEngine.Rendering.ShadowCastingMode.On,
-            true // Receive Shadows
-        );
+        var rp = new RenderParams(mat)
+        {
+            matProps = _mpb,
+            shadowCastingMode = ShadowCastingMode.On,
+            receiveShadows = true
+        };
+        Graphics.RenderMeshInstanced(rp, mesh, 0, _matrices, count);
     }
 
 
     /// <summary>
-    /// ジェムを座標・アクティブリストで描画（敵と同様に DrawMeshInstanced、Instantiate なし）。
+    /// ジェムを座標・アクティブリストで描画（敵と同様に RenderMeshInstanced、Instantiate なし）。
     /// </summary>
     public void RenderGems(IList<Vector3> positions, IList<bool> activeFlags)
     {
@@ -211,46 +206,34 @@ public class RenderManager : MonoBehaviour
 
             if (batchIndex >= BATCH_SIZE)
             {
-                Graphics.DrawMeshInstanced(
-                    mesh,
-                    0,
-                    mat,
-                    _matrices,
-                    batchIndex,
-                    null,
-                    UnityEngine.Rendering.ShadowCastingMode.On,
-                    true
-                );
+                ExecuteDrawBullets(mesh, mat, batchIndex);
                 batchIndex = 0;
             }
         }
 
         if (batchIndex > 0)
         {
-            Graphics.DrawMeshInstanced(
-                mesh,
-                0,
-                mat,
-                _matrices,
-                batchIndex,
-                null,
-                UnityEngine.Rendering.ShadowCastingMode.On,
-                true
-            );
+            ExecuteDrawBullets(mesh, mat, batchIndex);
         }
+    }
+
+    private void ExecuteDrawBullets(Mesh mesh, Material mat, int count)
+    {
+        var rp = new RenderParams(mat)
+        {
+            shadowCastingMode = ShadowCastingMode.On,
+            receiveShadows = true
+        };
+        Graphics.RenderMeshInstanced(rp, mesh, 0, _matrices, count);
     }
 
     private void ExecuteDrawGems(int count)
     {
-        Graphics.DrawMeshInstanced(
-            gemMesh,
-            0,
-            gemMaterial,
-            _matrices,
-            count,
-            null,
-            UnityEngine.Rendering.ShadowCastingMode.On,
-            true
-        );
+        var rp = new RenderParams(gemMaterial)
+        {
+            shadowCastingMode = ShadowCastingMode.On,
+            receiveShadows = true
+        };
+        Graphics.RenderMeshInstanced(rp, gemMesh, 0, _matrices, count);
     }
 }
