@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using Unity.Collections;
 using System.Collections.Generic;
 
 public class RenderManager : MonoBehaviour
@@ -30,7 +31,7 @@ public class RenderManager : MonoBehaviour
 
     private const int BATCH_SIZE = 1023;
 
-    private Matrix4x4[] _matrices = new Matrix4x4[BATCH_SIZE];
+    private NativeArray<Matrix4x4> _matrices;
     private Vector4[] _emissionColors = new Vector4[BATCH_SIZE];
 
     private MaterialPropertyBlock _mpb;
@@ -38,8 +39,17 @@ public class RenderManager : MonoBehaviour
 
     void Start()
     {
+        _matrices = new NativeArray<Matrix4x4>(BATCH_SIZE, Allocator.Persistent);
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+    }
+
+    void OnDestroy()
+    {
+        if (_matrices.IsCreated)
+        {
+            _matrices.Dispose();
+        }
     }
 
     /// <summary>
