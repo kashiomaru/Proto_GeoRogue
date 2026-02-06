@@ -1734,6 +1734,7 @@ MonoBehaviour:
   uiManager: {fileID: 614781147}
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
+  renderManager: {fileID: 454398054}
   stages:
   - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
   - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}

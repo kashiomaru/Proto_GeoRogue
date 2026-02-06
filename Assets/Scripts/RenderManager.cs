@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 using Unity.Collections;
 using System.Collections.Generic;
 
-public class RenderManager : MonoBehaviour
+public class RenderManager : InitializeMonobehaviour
 {
     [Header("Enemy Settings")]
     // Mesh/Material はステージデータで SetEnemyDisplay により設定（未設定時は null で描画スキップ）
@@ -37,14 +37,28 @@ public class RenderManager : MonoBehaviour
     private MaterialPropertyBlock _mpb;
     private int _propertyID_EmissionColor;
 
-    void Start()
+    // 毎フレーム new を避けるためキャッシュ（敵は mat / matProps を毎回設定、弾は mat を毎回設定）
+    private RenderParams _rpEnemy;
+    private RenderParams _rpGem;
+    private RenderParams _rpBullet;
+
+    protected override void InitializeInternal()
     {
         _matrices = new NativeArray<Matrix4x4>(BATCH_SIZE, Allocator.Persistent);
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+
+        if (gemMaterial != null)
+        {
+            _rpGem = new RenderParams(gemMaterial)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
     }
 
-    void OnDestroy()
+    protected override void FinalizeInternal()
     {
         if (_matrices.IsCreated)
         {
@@ -64,6 +78,7 @@ public class RenderManager : MonoBehaviour
 
     /// <summary>
     /// 敵を座標・回転リストで描画。回転は Job で計算済み（プレイヤー方向）。
+    /// 描画数が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
     /// </summary>
     /// <param name="count">描画する敵の数。省略時は positions.Count を使用。</param>
     public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags, int? count = null)
@@ -74,7 +89,7 @@ public class RenderManager : MonoBehaviour
 
         Vector3 scale = _runtimeEnemyScale;
         int drawCount = count ?? positions.Count;
-        int batchIndex = 0;
+        int writeIndex = 0;
 
         for (int i = 0; i < drawCount; i++)
         {
@@ -83,38 +98,33 @@ public class RenderManager : MonoBehaviour
                 continue;
             }
 
-            _matrices[batchIndex] = Matrix4x4.TRS(
+            if (writeIndex >= BATCH_SIZE)
+            {
+                Debug.LogWarning($"[RenderManager] 敵の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
+                break;
+            }
+
+            _matrices[writeIndex] = Matrix4x4.TRS(
                 positions[i],
                 rotations[i],
                 scale
             );
 
-            // 2. フラッシュ色の計算
-            // タイマーが残っていれば「白」、なければ「元の色（黒）」
             if (flashTimers[i] > 0f)
             {
-                // 強烈な白（HDR）
-                _emissionColors[batchIndex] = new Vector4(flashIntensity, flashIntensity, flashIntensity, 1f); 
+                _emissionColors[writeIndex] = new Vector4(flashIntensity, flashIntensity, flashIntensity, 1f);
             }
             else
             {
-                // 通常色（黒、またはマテリアルの設定色）
-                _emissionColors[batchIndex] = Vector4.zero;
+                _emissionColors[writeIndex] = Vector4.zero;
             }
 
-            batchIndex++;
-
-            // バッチが満タンなら描画実行
-            if (batchIndex >= BATCH_SIZE)
-            {
-                ExecuteDrawEnemies(mesh, mat, batchIndex);
-                batchIndex = 0;
-            }
+            writeIndex++;
         }
 
-        if (batchIndex > 0)
+        if (writeIndex > 0)
         {
-            ExecuteDrawEnemies(mesh, mat, batchIndex);
+            ExecuteDrawEnemies(mesh, mat, writeIndex);
         }
     }
 
@@ -122,18 +132,27 @@ public class RenderManager : MonoBehaviour
     {
         _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
 
-        var rp = new RenderParams(mat)
+        if (_rpEnemy.material == null)
         {
-            matProps = _mpb,
-            shadowCastingMode = ShadowCastingMode.On,
-            receiveShadows = true
-        };
-        Graphics.RenderMeshInstanced(rp, mesh, 0, _matrices, count);
+            _rpEnemy = new RenderParams(mat)
+            {
+                matProps = _mpb,
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
+        else
+        {
+            _rpEnemy.material = mat;
+            _rpEnemy.matProps = _mpb;
+        }
+        Graphics.RenderMeshInstanced(_rpEnemy, mesh, 0, _matrices, count);
     }
 
 
     /// <summary>
     /// ジェムを座標・アクティブリストで描画（敵と同様に RenderMeshInstanced、Instantiate なし）。
+    /// 描画数が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
     /// </summary>
     public void RenderGems(IList<Vector3> positions, IList<bool> activeFlags)
     {
@@ -143,7 +162,7 @@ public class RenderManager : MonoBehaviour
         }
 
         int count = positions.Count;
-        int batchIndex = 0;
+        int writeIndex = 0;
 
         for (int i = 0; i < count; i++)
         {
@@ -152,24 +171,23 @@ public class RenderManager : MonoBehaviour
                 continue;
             }
 
-            _matrices[batchIndex] = Matrix4x4.TRS(
+            if (writeIndex >= BATCH_SIZE)
+            {
+                Debug.LogWarning($"[RenderManager] ジェムの描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
+                break;
+            }
+
+            _matrices[writeIndex] = Matrix4x4.TRS(
                 positions[i],
                 Quaternion.identity,
                 Vector3.one * gemScale
             );
-            batchIndex++;
-
-            if (batchIndex >= BATCH_SIZE)
-            {
-                ExecuteDrawGems(batchIndex);
-
-                batchIndex = 0;
-            }
+            writeIndex++;
         }
 
-        if (batchIndex > 0)
+        if (writeIndex > 0)
         {
-            ExecuteDrawGems(batchIndex);
+            ExecuteDrawGems(writeIndex);
         }
     }
 
@@ -189,6 +207,9 @@ public class RenderManager : MonoBehaviour
         RenderBulletsInternal(enemyBulletMesh, enemyBulletMaterial, enemyBulletScale, positions, rotations, activeFlags);
     }
 
+    /// <summary>
+    /// 弾を座標・回転・アクティブリストで描画。描画数が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
+    /// </summary>
     private void RenderBulletsInternal(Mesh mesh, Material mat, float scale, IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
     {
         if (mesh == null || mat == null)
@@ -197,7 +218,7 @@ public class RenderManager : MonoBehaviour
         }
 
         int count = positions.Count;
-        int batchIndex = 0;
+        int writeIndex = 0;
         Vector3 scaleVec = Vector3.one * scale;
 
         for (int i = 0; i < count; i++)
@@ -207,43 +228,45 @@ public class RenderManager : MonoBehaviour
                 continue;
             }
 
-            _matrices[batchIndex] = Matrix4x4.TRS(
+            if (writeIndex >= BATCH_SIZE)
+            {
+                Debug.LogWarning($"[RenderManager] 弾の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
+                break;
+            }
+
+            _matrices[writeIndex] = Matrix4x4.TRS(
                 positions[i],
                 rotations[i],
                 scaleVec
             );
-            batchIndex++;
-
-            if (batchIndex >= BATCH_SIZE)
-            {
-                ExecuteDrawBullets(mesh, mat, batchIndex);
-                batchIndex = 0;
-            }
+            writeIndex++;
         }
 
-        if (batchIndex > 0)
+        if (writeIndex > 0)
         {
-            ExecuteDrawBullets(mesh, mat, batchIndex);
+            ExecuteDrawBullets(mesh, mat, writeIndex);
         }
     }
 
     private void ExecuteDrawBullets(Mesh mesh, Material mat, int count)
     {
-        var rp = new RenderParams(mat)
+        if (_rpBullet.material == null)
         {
-            shadowCastingMode = ShadowCastingMode.On,
-            receiveShadows = true
-        };
-        Graphics.RenderMeshInstanced(rp, mesh, 0, _matrices, count);
+            _rpBullet = new RenderParams(mat)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
+        else
+        {
+            _rpBullet.material = mat;
+        }
+        Graphics.RenderMeshInstanced(_rpBullet, mesh, 0, _matrices, count);
     }
 
     private void ExecuteDrawGems(int count)
     {
-        var rp = new RenderParams(gemMaterial)
-        {
-            shadowCastingMode = ShadowCastingMode.On,
-            receiveShadows = true
-        };
-        Graphics.RenderMeshInstanced(rp, gemMesh, 0, _matrices, count);
+        Graphics.RenderMeshInstanced(_rpGem, gemMesh, 0, _matrices, count);
     }
 }

@@ -50,7 +50,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UIManager uiManager;
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private CameraManager cameraManager;
-    
+    [SerializeField] private RenderManager renderManager;
+
     private const float DefaultCountdownDuration = 60f;
 
     [Header("Stages")]
@@ -154,6 +155,7 @@ public class GameManager : MonoBehaviour
         bulletManager?.Initialize();
         enemyManager?.Initialize();
         gemManager?.Initialize();
+        renderManager?.Initialize();
 
 #if UNITY_EDITOR
         GameMode startMode = (debugSettings != null && debugSettings.EnableDebug)
