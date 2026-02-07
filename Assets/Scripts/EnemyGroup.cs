@@ -27,6 +27,8 @@ public class EnemyGroup
     private readonly Material _material;
     private readonly Vector3 _scale;
     private readonly BulletData _bulletData;
+    /// <summary>1発あたりの拡散用 Y 軸回転（CountPerShot 分）。初期化時に計算。</summary>
+    private readonly quaternion[] _bulletSpreadRotations;
 
     /// <summary>描画用。コンストラクタで一度だけ初期化。matProps は RenderManager が毎フレーム設定する。</summary>
     private RenderParams _rpEnemy;
@@ -107,6 +109,25 @@ public class EnemyGroup
         _material = data.Material;
         _scale = data.Scale;
         _bulletData = data.BulletData;
+
+        // 弾の拡散方向用 Y 軸回転を事前計算（countPerShot / spreadAngle はグループ固定のため）
+        if (_bulletData != null)
+        {
+            int n = _bulletData.CountPerShot;
+            _bulletSpreadRotations = new quaternion[n];
+            float spreadAngle = _bulletData.SpreadAngle;
+            for (int j = 0; j < n; j++)
+            {
+                float angleDeg = n > 1
+                    ? -spreadAngle * (n - 1) * 0.5f + (spreadAngle * j)
+                    : 0f;
+                _bulletSpreadRotations[j] = quaternion.RotateY(math.radians(angleDeg));
+            }
+        }
+        else
+        {
+            _bulletSpreadRotations = null;
+        }
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
         _cellSize = Mathf.Max(0.5f, _collisionRadius * 0.51f);
@@ -252,7 +273,6 @@ public class EnemyGroup
         float damage = _bulletData.Damage;
         float lifeTime = _bulletData.LifeTime;
         int countPerShot = _bulletData.CountPerShot;
-        float spreadAngle = _bulletData.SpreadAngle;
         bool towardPlayer = _bulletData.DirectionType == BulletDirectionType.TowardPlayer;
 
         for (int i = 0; i < _spawnCount; i++)
@@ -289,11 +309,7 @@ public class EnemyGroup
 
             for (int j = 0; j < countPerShot; j++)
             {
-                float angleDeg = countPerShot > 1
-                    ? -spreadAngle * (countPerShot - 1) * 0.5f + (spreadAngle * j)
-                    : 0f;
-                quaternion rot = quaternion.RotateY(math.radians(angleDeg));
-                float3 dir = math.rotate(rot, baseDir);
+                float3 dir = math.rotate(_bulletSpreadRotations[j], baseDir);
                 if (math.lengthsq(dir) > 0.0001f)
                 {
                     dir = math.normalize(dir);

@@ -20,4 +20,4 @@ MonoBehaviour:
   damageRadius: 1
   collisionRadius: 1
   spawnCount: 10
-  bulletData: {fileID: 11400000, guid: 3b3414c638894472b9302942caf3e851, type: 2}
+  bulletData: {fileID: 11400000, guid: 4042353be6163441688176725bb0b249, type: 2}
