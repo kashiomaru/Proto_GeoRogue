@@ -207,14 +207,15 @@ public class GameManager : MonoBehaviour
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 
-        // 1. プレイヤー・敵の移動
+        // 1. プレイヤー・敵・ボスの移動
         player.ProcessMovement();
         JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
         enemyHandle.Complete();
+        enemyManager.ProcessBossMovement(deltaTime);
 
-        // 2. 弾発射（プレイヤー・敵）
+        // 2. 弾発射（プレイヤー・敵・ボス）
         player.HandlePlayerShooting();
-        enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos);
+        enemyManager.ProcessBulletFiring(deltaTime, playerPos);
 
         // 3. 弾移動
         JobHandle bulletMoveHandle = bulletManager.ScheduleMoveJob(deltaTime, default(JobHandle));
@@ -225,9 +226,7 @@ public class GameManager : MonoBehaviour
         bulletManager.CheckEnemyBulletVsPlayer();
 
         // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン
-        enemyManager.CheckBossDeath();
-        enemyManager.ProcessDeadEnemies(gemManager);
-        enemyManager.ProcessEnemyDamage();
+        enemyManager.ProcessDamage(gemManager);
         enemyManager.HandleRespawn();
 
         // 6. プレイヤーへのダメージ処理

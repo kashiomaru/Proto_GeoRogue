@@ -29,6 +29,7 @@ public abstract class BossBase : MonoBehaviour
     protected float _effectiveMaxHp;
     protected Func<Vector3> getPlayerPosition;
     protected Action<int> addPlayerDamage;
+    protected BulletManager _bulletManager;
     protected float _currentRotationVelocity;
     protected float _flashTimer;
     protected float _flashTotalTime;
@@ -38,10 +39,11 @@ public abstract class BossBase : MonoBehaviour
     /// <summary>
     /// ボスの初期化（生成時に呼び出す）
     /// </summary>
-    public virtual void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage, float? maxHpOverride = null)
+    public virtual void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage, BulletManager bulletManager = null, float? maxHpOverride = null)
     {
         this.getPlayerPosition = getPlayerPosition;
         this.addPlayerDamage = addPlayerDamage;
+        _bulletManager = bulletManager;
         _effectiveMaxHp = maxHpOverride ?? maxHp;
         _currentHp = _effectiveMaxHp;
 
@@ -75,19 +77,25 @@ public abstract class BossBase : MonoBehaviour
         return damageTextPositionAnchor != null ? damageTextPositionAnchor.position : transform.position;
     }
 
-    void Update()
+    /// <summary>
+    /// ボスの移動・挙動処理。GameManager から順序制御のため呼ばれる。
+    /// </summary>
+    public void ProcessMovement(float deltaTime)
     {
-        if (getPlayerPosition == null || addPlayerDamage == null)
-        {
-            return;
-        }
-
+        if (getPlayerPosition == null || addPlayerDamage == null) return;
         UpdateFlashColor();
-        UpdateBehavior(Time.deltaTime);
+        UpdateBehavior(deltaTime);
     }
 
     /// <summary>
-    /// サブクラスで実装。移動・攻撃・弾発射・雑魚召喚などの挙動を記述する。
+    /// ボスの弾発射処理。GameManager から順序制御のため呼ばれる。サブクラスでオーバーライドして弾を発射できる。
+    /// </summary>
+    public virtual void ProcessBulletFiring(float deltaTime, float3 playerPos)
+    {
+    }
+
+    /// <summary>
+    /// サブクラスで実装。移動・攻撃・接触ダメージなどの挙動を記述する。弾発射は ProcessBulletFiring で行う。
     /// </summary>
     protected abstract void UpdateBehavior(float deltaTime);
 

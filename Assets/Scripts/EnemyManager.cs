@@ -186,6 +186,7 @@ public class EnemyManager : InitializeMonobehaviour
                 _currentBossComponent.Initialize(
                     () => gameManager.GetPlayerPosition(),
                     (damage) => gameManager.AddPlayerDamage(damage),
+                    bulletManager,
                     bossHpOverride
                 );
             }
@@ -211,6 +212,35 @@ public class EnemyManager : InitializeMonobehaviour
     public BossBase GetCurrentBossComponent()
     {
         return _currentBossComponent;
+    }
+
+    /// <summary>ボスの移動処理。GameManager から順序制御のため呼ばれる。</summary>
+    public void ProcessBossMovement(float deltaTime)
+    {
+        if (_bossActive == false || _currentBossComponent == null) return;
+        _currentBossComponent.ProcessMovement(deltaTime);
+    }
+
+    /// <summary>ボスの弾発射処理。GameManager から順序制御のため呼ばれる。</summary>
+    public void ProcessBossBulletFiring(float deltaTime, float3 playerPos)
+    {
+        if (_bossActive == false || _currentBossComponent == null) return;
+        _currentBossComponent.ProcessBulletFiring(deltaTime, playerPos);
+    }
+
+    /// <summary>通常敵・ボスの弾発射処理をまとめて実行。GameManager から呼ばれる。</summary>
+    public void ProcessBulletFiring(float deltaTime, float3 playerPos)
+    {
+        ProcessEnemyBulletFiring(deltaTime, playerPos);
+        ProcessBossBulletFiring(deltaTime, playerPos);
+    }
+
+    /// <summary>ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーンをまとめて実行。GameManager から呼ばれる。</summary>
+    public void ProcessDamage(GemManager gemManager)
+    {
+        CheckBossDeath();
+        ProcessDeadEnemies(gemManager);
+        ProcessEnemyDamage();
     }
 
     // ボスの死亡チェックと削除処理
