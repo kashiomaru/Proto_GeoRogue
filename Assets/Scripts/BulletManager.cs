@@ -40,6 +40,8 @@ public class BulletManager : InitializeMonobehaviour
     private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
+    /// <summary>CollectHitsAgainstCircle の結果を入れるリスト（敵弾vsプレイヤー・プレイヤー弾vsボスで共用）。</summary>
+    private readonly List<BulletHitResult> _collectedHits = new List<BulletHitResult>();
 
     public float BulletDamage => bulletDamage;
 
@@ -186,27 +188,11 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        var pool = _enemyBullets.Pool;
-        float3 playerPos = (float3)playerTransform.position;
-        float playerRadiusSq = playerCollisionRadius * playerCollisionRadius;
-        int maxCount = pool.MaxCount;
-
-        for (int i = 0; i < maxCount; i++)
+        _collectedHits.Clear();
+        _enemyBullets.Pool.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius * playerCollisionRadius, _collectedHits);
+        foreach (var h in _collectedHits)
         {
-            if (pool.Active[i] == false)
-            {
-                continue;
-            }
-            float3 bulletPos = pool.Positions[i];
-            float distSq = math.distancesq(bulletPos, playerPos);
-            if (distSq >= playerRadiusSq)
-            {
-                continue;
-            }
-
-            float damage = pool.Damage[i];
-            gameManager?.AddPlayerDamage(Mathf.RoundToInt(damage));
-            pool.SetActive(i, false);
+            gameManager?.AddPlayerDamage(Mathf.RoundToInt(h.Damage));
         }
     }
 
@@ -224,33 +210,15 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-
-        var pool = _playerBullets.Pool;
-        float3 bossPos = (float3)boss.Position;
-        float bossRadiusSq = boss.CollisionRadius * boss.CollisionRadius;
-        int maxCount = pool.MaxCount;
-
-        for (int i = 0; i < maxCount; i++)
+        _collectedHits.Clear();
+        _playerBullets.Pool.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius * boss.CollisionRadius, _collectedHits, damageWhenNoArray: bulletDamage);
+        foreach (var h in _collectedHits)
         {
-            if (pool.Active[i] == false)
-            {
-                continue;
-            }
-            float3 bulletPos = pool.Positions[i];
-            float distSq = math.distancesq(bulletPos, bossPos);
-            if (distSq >= bossRadiusSq)
-            {
-                continue;
-            }
-
             float actualDamage = boss.TakeDamage(bulletDamage);
             if (actualDamage > 0)
             {
                 damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage, boss.CollisionRadius);
             }
-
-            pool.SetActive(i, false);
-
             if (boss.IsDead)
             {
                 break;

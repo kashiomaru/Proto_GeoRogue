@@ -2,6 +2,14 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using System.Collections.Generic;
+
+/// <summary>弾と円の当たり判定で、ヒットした弾のインデックスとダメージ（敵弾用は弾ごと、プレイヤー弾用は 0 で呼び出し側で定数を使用）。</summary>
+public struct BulletHitResult
+{
+    public int Index;
+    public float Damage;
+}
 
 /// <summary>
 /// 弾 1 種類分のバッファと移動を担当する共通クラス。
@@ -102,6 +110,34 @@ public class BulletPool
             return;
         }
         _active[index] = value;
+    }
+
+    /// <summary>
+    /// 指定円（中心・半径の2乗）と当たった弾を収集し、該当弾を無効化する。
+    /// 結果は hitsOut に追加する（呼び出し側でリストをクリアする必要はない）。
+    /// HasDamageArray が true のときは弾ごとのダメージを、false のときは damageWhenNoArray を Damage に詰める。
+    /// </summary>
+    public void CollectHitsAgainstCircle(float3 center, float radiusSq, List<BulletHitResult> hitsOut, float damageWhenNoArray = 0f)
+    {
+        if (_disposed || !_positions.IsCreated || hitsOut == null)
+        {
+            return;
+        }
+        for (int i = 0; i < MaxCount; i++)
+        {
+            if (_active[i] == false)
+            {
+                continue;
+            }
+            float distSq = math.distancesq(_positions[i], center);
+            if (distSq >= radiusSq)
+            {
+                continue;
+            }
+            float damage = _hasDamageArray && _damage.IsCreated ? _damage[i] : damageWhenNoArray;
+            hitsOut.Add(new BulletHitResult { Index = i, Damage = damage });
+            _active[i] = false;
+        }
     }
 
     /// <summary>
