@@ -1,7 +1,25 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using System.Collections.Generic;
+
+/// <summary>NativeArray の Emission を managed 配列へコピーする。SetVectorArray 用。</summary>
+[BurstCompile]
+public unsafe struct CopyEmissionToManagedJob : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<Vector4> emissionColors;
+
+    [NativeDisableUnsafePtrRestriction]
+    public Vector4* targetColors;
+
+    public void Execute(int index)
+    {
+        targetColors[index] = emissionColors[index];
+    }
+}
 
 public class RenderManager : InitializeMonobehaviour
 {
@@ -57,7 +75,7 @@ public class RenderManager : InitializeMonobehaviour
     /// rpEnemy と mesh は呼び出し元（EnemyGroup）が保持する RenderParams と Mesh を渡す。
     /// count が BATCH_SIZE（1023）を超える場合は警告し、先頭 1023 件のみ描画する。
     /// </summary>
-    public void RenderEnemies(RenderParams rpEnemy, Mesh mesh, NativeArray<Matrix4x4> matrices, NativeArray<Vector4> emissionColors, int count)
+    public unsafe void RenderEnemies(RenderParams rpEnemy, Mesh mesh, NativeArray<Matrix4x4> matrices, NativeArray<Vector4> emissionColors, int count)
     {
         if (mesh == null || rpEnemy.material == null || count <= 0) return;
 
@@ -66,8 +84,11 @@ public class RenderManager : InitializeMonobehaviour
             Debug.LogWarning($"[RenderManager] 敵の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
             count = BATCH_SIZE;
         }
-        for (int i = 0; i < count; i++)
-            _emissionColors[i] = emissionColors[i];
+        fixed (Vector4* ptr = _emissionColors)
+        {
+            var job = new CopyEmissionToManagedJob { emissionColors = emissionColors, targetColors = ptr };
+            job.Schedule(count, 64).Complete();
+        }
         _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
         rpEnemy.matProps = _mpb;
         Graphics.RenderMeshInstanced(rpEnemy, mesh, 0, matrices, count);
