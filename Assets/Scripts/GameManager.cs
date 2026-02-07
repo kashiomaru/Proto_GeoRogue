@@ -209,7 +209,7 @@ public class GameManager : MonoBehaviour
 
         // 1. プレイヤー・敵・ボスの移動
         player.ProcessMovement();
-        enemyManager.ProcessMovement(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
+        enemyManager.ProcessMovement(deltaTime, playerPos, _playerDamageQueue);
 
         // 2. 弾発射（プレイヤー・敵・ボス）
         player.HandlePlayerShooting();

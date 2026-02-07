@@ -86,11 +86,11 @@ public class EnemyManager : InitializeMonobehaviour
         dep.Complete();
     }
 
-    /// <summary>通常敵の移動 Job とボスの移動処理をまとめて実行する。GameManager から呼ぶ。</summary>
-    public void ProcessMovement(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
+    /// <summary>通常敵の移動 Job とボスの移動処理をまとめて実行する。GameManager から呼ぶ。プレイヤーへのダメージは playerDamageQueue に登録する。</summary>
+    public void ProcessMovement(float deltaTime, float3 playerPos, NativeQueue<int> playerDamageQueue)
     {
-        ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue);
-        ProcessBossMovement(deltaTime);
+        ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue.AsParallelWriter());
+        ProcessBossMovement(deltaTime, playerDamageQueue);
     }
 
     /// <summary>死んだ敵の位置を取得（ジェム生成用）。</summary>
@@ -192,7 +192,6 @@ public class EnemyManager : InitializeMonobehaviour
                 float? bossHpOverride = gameManager.GetDebugBossHpOverride();
                 _currentBossComponent.Initialize(
                     () => gameManager.GetPlayerPosition(),
-                    (damage) => gameManager.AddPlayerDamage(damage),
                     bulletManager,
                     bossHpOverride
                 );
@@ -221,11 +220,11 @@ public class EnemyManager : InitializeMonobehaviour
         return _currentBossComponent;
     }
 
-    /// <summary>ボスの移動処理。GameManager から順序制御のため呼ばれる。</summary>
-    public void ProcessBossMovement(float deltaTime)
+    /// <summary>ボスの移動処理。プレイヤーへの接触ダメージは playerDamageQueue に登録する。</summary>
+    public void ProcessBossMovement(float deltaTime, NativeQueue<int> playerDamageQueue)
     {
         if (_bossActive == false || _currentBossComponent == null) return;
-        _currentBossComponent.ProcessMovement(deltaTime);
+        _currentBossComponent.ProcessMovement(deltaTime, playerDamageQueue);
     }
 
     /// <summary>ボスの弾発射処理。GameManager から順序制御のため呼ばれる。</summary>

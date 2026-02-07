@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Mathematics;
+using Unity.Collections;
 using System;
 
 /// <summary>
@@ -28,7 +29,6 @@ public abstract class BossBase : MonoBehaviour
     protected float _currentHp;
     protected float _effectiveMaxHp;
     protected Func<Vector3> getPlayerPosition;
-    protected Action<int> addPlayerDamage;
     protected BulletManager _bulletManager;
     protected float _currentRotationVelocity;
     protected float _flashTimer;
@@ -39,10 +39,9 @@ public abstract class BossBase : MonoBehaviour
     /// <summary>
     /// ボスの初期化（生成時に呼び出す）
     /// </summary>
-    public virtual void Initialize(Func<Vector3> getPlayerPosition, Action<int> addPlayerDamage, BulletManager bulletManager = null, float? maxHpOverride = null)
+    public virtual void Initialize(Func<Vector3> getPlayerPosition, BulletManager bulletManager = null, float? maxHpOverride = null)
     {
         this.getPlayerPosition = getPlayerPosition;
-        this.addPlayerDamage = addPlayerDamage;
         _bulletManager = bulletManager;
         _effectiveMaxHp = maxHpOverride ?? maxHp;
         _currentHp = _effectiveMaxHp;
@@ -78,13 +77,13 @@ public abstract class BossBase : MonoBehaviour
     }
 
     /// <summary>
-    /// ボスの移動・挙動処理。GameManager から順序制御のため呼ばれる。
+    /// ボスの移動・挙動処理。プレイヤーへの接触ダメージは playerDamageQueue に登録する。
     /// </summary>
-    public void ProcessMovement(float deltaTime)
+    public void ProcessMovement(float deltaTime, NativeQueue<int> playerDamageQueue)
     {
-        if (getPlayerPosition == null || addPlayerDamage == null) return;
+        if (getPlayerPosition == null || !playerDamageQueue.IsCreated) return;
         UpdateFlashColor();
-        UpdateBehavior(deltaTime);
+        UpdateBehavior(deltaTime, playerDamageQueue);
     }
 
     /// <summary>
@@ -95,9 +94,9 @@ public abstract class BossBase : MonoBehaviour
     }
 
     /// <summary>
-    /// サブクラスで実装。移動・攻撃・接触ダメージなどの挙動を記述する。弾発射は ProcessBulletFiring で行う。
+    /// サブクラスで実装。移動・攻撃・接触ダメージなどの挙動を記述する。弾発射は ProcessBulletFiring で行う。プレイヤーへのダメージは playerDamageQueue に Enqueue する。
     /// </summary>
-    protected abstract void UpdateBehavior(float deltaTime);
+    protected abstract void UpdateBehavior(float deltaTime, NativeQueue<int> playerDamageQueue);
 
     /// <summary>
     /// プレイヤー方向を向く（Y軸のみ）。サブクラスから利用可能。
@@ -113,21 +112,6 @@ public abstract class BossBase : MonoBehaviour
             float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
             float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
-        }
-    }
-
-    /// <summary>
-    /// プレイヤーに接触ダメージを与える（範囲内なら addPlayerDamage を呼ぶ）。サブクラスから利用可能。
-    /// </summary>
-    protected void TryDealContactDamage()
-    {
-        float3 pos = transform.position;
-        float3 target = (float3)getPlayerPosition();
-        float distSq = math.distancesq(pos, target);
-        float damageRadiusSq = damageRadius * damageRadius;
-        if (distSq <= damageRadiusSq)
-        {
-            addPlayerDamage(damageAmount);
         }
     }
 
