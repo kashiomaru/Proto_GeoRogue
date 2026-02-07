@@ -1,9 +1,7 @@
 using UnityEngine;
-using UnityEngine.Assertions;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using System.Collections.Generic;
 
 /// <summary>
 /// 1種類の敵データ（1つの EnemyData）に対応する1グループを管理するクラス。
@@ -33,10 +31,10 @@ public class EnemyGroup
     private NativeArray<bool> _active;
     private NativeArray<float> _hp;
     private NativeArray<float> _fireTimers;
-    private List<float> _flashTimers;
-    private List<Vector3> _positionList;
-    private List<Quaternion> _rotationList;
-    private List<bool> _activeList;
+    private NativeArray<float> _flashTimers;
+    private NativeArray<Matrix4x4> _matrices;
+    private NativeArray<Vector4> _emissionColors;
+    private NativeReference<int> _drawCounter;
     private NativeParallelMultiHashMap<int, int> _spatialMap;
     private NativeQueue<float3> _deadPositions;
     private NativeQueue<EnemyDamageInfo> _damageQueue;
@@ -125,19 +123,16 @@ public class EnemyGroup
         _active = new NativeArray<bool>(_maxCount, Allocator.Persistent);
         _hp = new NativeArray<float>(_maxCount, Allocator.Persistent);
         _fireTimers = new NativeArray<float>(_maxCount, Allocator.Persistent);
-        _flashTimers = new List<float>(_maxCount);
-        _positionList = new List<Vector3>(_maxCount);
-        _rotationList = new List<Quaternion>(_maxCount);
-        _activeList = new List<bool>(_maxCount);
+        _flashTimers = new NativeArray<float>(_maxCount, Allocator.Persistent);
+        _matrices = new NativeArray<Matrix4x4>(_maxCount, Allocator.Persistent);
+        _emissionColors = new NativeArray<Vector4>(_maxCount, Allocator.Persistent);
+        _drawCounter = new NativeReference<int>(0, Allocator.Persistent);
 
         for (int i = 0; i < _maxCount; i++)
         {
             _active[i] = false;
             _fireTimers[i] = 0f;
-            _flashTimers.Add(0f);
-            _positionList.Add(Vector3.zero);
-            _rotationList.Add(Quaternion.identity);
-            _activeList.Add(false);
+            _flashTimers[i] = 0f;
         }
 
         _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
@@ -154,6 +149,10 @@ public class EnemyGroup
         if (_active.IsCreated) _active.Dispose();
         if (_hp.IsCreated) _hp.Dispose();
         if (_fireTimers.IsCreated) _fireTimers.Dispose();
+        if (_flashTimers.IsCreated) _flashTimers.Dispose();
+        if (_matrices.IsCreated) _matrices.Dispose();
+        if (_emissionColors.IsCreated) _emissionColors.Dispose();
+        if (_drawCounter.IsCreated) _drawCounter.Dispose();
         if (_spatialMap.IsCreated) _spatialMap.Dispose();
         if (_deadPositions.IsCreated) _deadPositions.Dispose();
         if (_damageQueue.IsCreated) _damageQueue.Dispose();
@@ -204,7 +203,7 @@ public class EnemyGroup
         }
         while (_flashQueue.TryDequeue(out int enemyIndex))
         {
-            if (enemyIndex >= 0 && enemyIndex < _spawnCount && enemyIndex < _flashTimers.Count)
+            if (enemyIndex >= 0 && enemyIndex < _spawnCount && _flashTimers.IsCreated)
                 _flashTimers[enemyIndex] = _flashDuration;
         }
     }
@@ -228,7 +227,8 @@ public class EnemyGroup
                 _fireTimers[i] = _bulletData != null
                     ? UnityEngine.Random.Range(0f, _bulletData.FireInterval)
                     : 0f;
-                _flashTimers[i] = 0f;
+                if (_flashTimers.IsCreated)
+                    _flashTimers[i] = 0f;
             }
         }
     }
@@ -298,40 +298,37 @@ public class EnemyGroup
         }
     }
 
-    /// <summary>フラッシュタイマーを更新し、Native から List へコピーする（描画用）。</summary>
-    public void UpdateFlashTimers()
-    {
-        for (int i = 0; i < _spawnCount; i++)
-        {
-            if (i < _flashTimers.Count && _flashTimers[i] > 0)
-                _flashTimers[i] -= Time.deltaTime;
-        }
-        Assert.IsTrue(_maxCount == _activeList.Count);
-        for (int i = 0; i < _spawnCount; i++)
-        {
-            _activeList[i] = _active[i];
-            _positionList[i] = _positions[i];
-            var q = _rotations[i];
-            _rotationList[i] = new Quaternion(q.value.x, q.value.y, q.value.z, q.value.w);
-        }
-    }
-
-    /// <summary>このグループの敵を RenderManager で描画する（SetEnemyDisplay + RenderEnemies）。</summary>
-    public void Render(RenderManager renderManager)
+    /// <summary>このグループの敵を RenderManager で描画する（SetEnemyDisplay + Matrix Job + RenderEnemies）。フラッシュ減算も Job 内で行う。</summary>
+    /// <param name="deltaTime">フラッシュタイマー減算用。通常は Time.deltaTime を渡す。</param>
+    public void Render(RenderManager renderManager, float deltaTime)
     {
         if (renderManager == null) return;
         renderManager.SetEnemyDisplay(_mesh, _material, _scale);
-        renderManager.RenderEnemies(_positionList, _rotationList, _flashTimers, _activeList, _spawnCount);
+        _drawCounter.Value = 0;
+        var job = new EnemyDrawMatrixJob
+        {
+            positions = _positions,
+            rotations = _rotations,
+            activeFlags = _active,
+            flashTimers = _flashTimers,
+            deltaTime = deltaTime,
+            matrices = _matrices,
+            emissionColors = _emissionColors,
+            counter = _drawCounter,
+            scale = (float3)_scale,
+            flashIntensity = renderManager.FlashIntensity
+        };
+        job.Schedule(_spawnCount, 64).Complete();
+        int drawCount = _drawCounter.Value;
+        if (drawCount > 0)
+            renderManager.RenderEnemies(_matrices, _emissionColors, drawCount);
     }
 
     /// <summary>このグループの敵をすべて非表示（非アクティブ）にする。</summary>
     public void ClearAllEnemies()
     {
         for (int i = 0; i < _spawnCount; i++)
-        {
             _active[i] = false;
-            _activeList[i] = false;
-        }
     }
 
     /// <summary>このグループの敵をすべて非アクティブにし、キューとフラッシュをクリアする。配置は次フレーム以降の HandleRespawn に任せる。</summary>
@@ -345,8 +342,11 @@ public class EnemyGroup
                 _fireTimers[i] = 0f;
             }
         }
-        for (int i = 0; i < _flashTimers.Count; i++)
-            _flashTimers[i] = 0f;
+        if (_flashTimers.IsCreated)
+        {
+            for (int i = 0; i < _maxCount; i++)
+                _flashTimers[i] = 0f;
+        }
         while (_deadPositions.TryDequeue(out _)) { }
         while (_damageQueue.TryDequeue(out _)) { }
         while (_flashQueue.TryDequeue(out _)) { }

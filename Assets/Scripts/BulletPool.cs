@@ -1,8 +1,20 @@
 using UnityEngine;
 using Unity.Collections;
+using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
 using System.Collections.Generic;
+
+[BurstCompile]
+struct BulletInitActiveJob : IJobParallelFor
+{
+    public NativeArray<bool> active;
+
+    public void Execute(int index)
+    {
+        active[index] = false;
+    }
+}
 
 /// <summary>
 /// 弾 1 種類分のバッファと移動を担当する共通クラス。
@@ -58,10 +70,8 @@ public class BulletPool
             _damage = new NativeArray<float>(maxCount, Allocator.Persistent);
         }
 
-        for (int i = 0; i < maxCount; i++)
-        {
-            _active[i] = false;
-        }
+        var initJob = new BulletInitActiveJob { active = _active };
+        initJob.Schedule(maxCount, 64).Complete();
         _indexHead = 0;
         _disposed = false;
     }
@@ -128,28 +138,6 @@ public class BulletPool
     }
 
     /// <summary>
-    /// 描画用に座標・回転・アクティブをリストへコピーする。RenderManager に渡す前に呼ぶ。
-    /// </summary>
-    public void CopyToRenderLists(List<Vector3> positionList, List<Quaternion> rotationList, List<bool> activeList)
-    {
-        if (_disposed || !_positions.IsCreated || positionList == null || rotationList == null || activeList == null)
-        {
-            return;
-        }
-        int maxCount = MaxCount;
-        for (int i = 0; i < maxCount; i++)
-        {
-            positionList[i] = _positions[i];
-            activeList[i] = _active[i];
-            float3 dir = _directions[i];
-            if (math.lengthsq(dir) > 0.0001f)
-            {
-                rotationList[i] = Quaternion.LookRotation(dir);
-            }
-        }
-    }
-
-    /// <summary>
     /// すべての弾を無効化する。
     /// </summary>
     public void Reset()
@@ -158,10 +146,8 @@ public class BulletPool
         {
             return;
         }
-        for (int i = 0; i < MaxCount; i++)
-        {
-            _active[i] = false;
-        }
+        var initJob = new BulletInitActiveJob { active = _active };
+        initJob.Schedule(MaxCount, 64).Complete();
         _indexHead = 0;
     }
 

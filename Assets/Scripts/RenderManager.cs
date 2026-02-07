@@ -73,11 +73,38 @@ public class RenderManager : InitializeMonobehaviour
         _runtimeEnemyScale = scale;
     }
 
+    /// <summary>ヒットフラッシュの Emission 強度。敵の Matrix Job で使用する。</summary>
+    public float FlashIntensity => flashIntensity;
+
     /// <summary>
-    /// 敵を座標・回転リストで描画。回転は Job で計算済み（プレイヤー方向）。
+    /// 敵を Job で詰めた Matrix4x4 と Emission 配列で描画する。
+    /// SetEnemyDisplay で設定した Mesh/Material を使用。count が BATCH_SIZE（1023）を超える場合は警告し、先頭 1023 件のみ描画する。
+    /// </summary>
+    public void RenderEnemies(NativeArray<Matrix4x4> matrices, NativeArray<Vector4> emissionColors, int count)
+    {
+        Mesh mesh = _runtimeEnemyMesh;
+        Material mat = _runtimeEnemyMaterial;
+        if (mesh == null || mat == null || count <= 0) return;
+
+        if (count > BATCH_SIZE)
+        {
+            Debug.LogWarning($"[RenderManager] 敵の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
+            count = BATCH_SIZE;
+        }
+        for (int i = 0; i < count; i++)
+        {
+            _matrices[i] = matrices[i];
+            _emissionColors[i] = emissionColors[i];
+        }
+        ExecuteDrawEnemies(mesh, mat, count);
+    }
+
+    /// <summary>
+    /// 敵を座標・回転リストで描画（旧 API）。回転は Job で計算済み（プレイヤー方向）。
     /// 描画数が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
     /// </summary>
     /// <param name="count">描画する敵の数。省略時は positions.Count を使用。</param>
+    [System.Obsolete("Matrix を事前に詰めて RenderEnemies(NativeArray<Matrix4x4>, NativeArray<Vector4>, int) を使用してください。")]
     public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags, int? count = null)
     {
         Mesh mesh = _runtimeEnemyMesh;

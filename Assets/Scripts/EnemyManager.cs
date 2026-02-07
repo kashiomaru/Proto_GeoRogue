@@ -66,7 +66,6 @@ public class EnemyManager : InitializeMonobehaviour
             ProcessDeadEnemies(gemManager);
             ProcessEnemyDamage();
             HandleRespawn();
-            UpdateFlashTimers();
             RenderEnemies();
         }
     }
@@ -126,18 +125,12 @@ public class EnemyManager : InitializeMonobehaviour
             g.ProcessBulletFiring(deltaTime, playerPos, bulletManager);
     }
 
-    void UpdateFlashTimers()
-    {
-        if (_groups == null) return;
-        foreach (var g in _groups)
-            g.UpdateFlashTimers();
-    }
-
     void RenderEnemies()
     {
         if (renderManager == null || _groups == null) return;
+        float dt = Time.deltaTime;
         foreach (var g in _groups)
-            g.Render(renderManager);
+            g.Render(renderManager, dt);
     }
 
     /// <summary>全グループの敵を非表示にする。</summary>
