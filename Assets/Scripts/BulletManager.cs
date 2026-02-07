@@ -38,6 +38,8 @@ public class BulletManager : InitializeMonobehaviour
     private int _lastBulletCountPerShot = -1;
     /// <summary>拡散方向（forward 基準）。bulletCountPerShot が変わったときだけ更新。</summary>
     private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
+    /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
+    private BulletCollideJob _cachedCollideJob;
 
     public float BulletDamage => bulletDamage;
 
@@ -126,24 +128,22 @@ public class BulletManager : InitializeMonobehaviour
         var groups = enemyManager != null ? enemyManager.GetGroups() : null;
         if (groups != null && groups.Count > 0)
         {
+            _cachedCollideJob.bulletPositions = _playerBullets.Pool.Positions;
+            _cachedCollideJob.bulletActive = _playerBullets.Pool.Active;
+            _cachedCollideJob.bulletDamage = bulletDamage;
+
             foreach (var g in groups)
             {
-                var collideJob = new BulletCollideJob
-                {
-                    cellSize = g.CellSize,
-                    enemyCollisionRadius = g.CollisionRadius,
-                    spatialMap = g.SpatialMap,
-                    enemyPositions = g.EnemyPositions,
-                    bulletPositions = _playerBullets.Pool.Positions,
-                    bulletActive = _playerBullets.Pool.Active,
-                    enemyActive = g.EnemyActive,
-                    enemyHp = g.EnemyHp,
-                    bulletDamage = bulletDamage,
-                    deadEnemyPositions = g.GetDeadEnemyPositionsWriter(),
-                    enemyDamageQueue = g.GetEnemyDamageQueueWriter(),
-                    enemyFlashQueue = g.GetEnemyFlashQueueWriter()
-                };
-                dep = collideJob.Schedule(_playerBullets.Pool.MaxCount, 64, dep);
+                _cachedCollideJob.cellSize = g.CellSize;
+                _cachedCollideJob.enemyCollisionRadius = g.CollisionRadius;
+                _cachedCollideJob.spatialMap = g.SpatialMap;
+                _cachedCollideJob.enemyPositions = g.EnemyPositions;
+                _cachedCollideJob.enemyActive = g.EnemyActive;
+                _cachedCollideJob.enemyHp = g.EnemyHp;
+                _cachedCollideJob.deadEnemyPositions = g.GetDeadEnemyPositionsWriter();
+                _cachedCollideJob.enemyDamageQueue = g.GetEnemyDamageQueueWriter();
+                _cachedCollideJob.enemyFlashQueue = g.GetEnemyFlashQueueWriter();
+                dep = _cachedCollideJob.Schedule(_playerBullets.Pool.MaxCount, 64, dep);
             }
         }
 
