@@ -40,10 +40,10 @@ public class EnemyManager : InitializeMonobehaviour
     private bool _bossActive;
 
     // --- 通常敵は EnemyGroup で管理（1種類＝1グループ、複数種類の場合は複数グループ）---
-    private List<EnemyGroup> _groups;
+    private List<EnemyGroup> _groups = new List<EnemyGroup>();
 
     /// <summary>通常敵グループのリスト（弾衝突などで参照）。空の場合は未適用。</summary>
-    public IReadOnlyList<EnemyGroup> GetGroups() => _groups ?? (IReadOnlyList<EnemyGroup>)new List<EnemyGroup>();
+    public IReadOnlyList<EnemyGroup> GetGroups() => _groups;
     
     void Update()
     {
@@ -70,7 +70,7 @@ public class EnemyManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
-        _groups = new List<EnemyGroup>();
+        // _groups はフィールド初期化で new 済み
     }
 
     /// <summary>敵の移動Jobをスケジュール（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
@@ -266,16 +266,10 @@ public class EnemyManager : InitializeMonobehaviour
             return;
         }
         // 既存グループを破棄
-        if (_groups != null)
-        {
-            foreach (var g in _groups)
-                g.Dispose();
-            _groups.Clear();
-        }
-        else
-        {
-            _groups = new List<EnemyGroup>();
-        }
+        foreach (var g in _groups)
+            g.Dispose();
+        _groups.Clear();
+
         int maxPerGroup = Mathf.Max(1, maxEnemyCountPerGroup);
         for (int i = 0; i < StageData.MaxEnemyDataSlots; i++)
         {
@@ -305,12 +299,9 @@ public class EnemyManager : InitializeMonobehaviour
 
     protected override void FinalizeInternal()
     {
-        if (_groups != null)
-        {
-            foreach (var g in _groups)
-                g.Dispose();
-            _groups.Clear();
-        }
+        foreach (var g in _groups)
+            g.Dispose();
+        _groups.Clear();
 
         if (_currentBoss != null)
         {
