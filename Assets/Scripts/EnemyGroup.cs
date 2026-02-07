@@ -328,8 +328,7 @@ public class EnemyGroup
             activeFlags = _active,
             matrices = _matrices,
             counter = _drawCounter,
-            scale = 0f,
-            scale3 = (float3)_scale
+            scale = _scale
         };
         matrixJob.Schedule(_spawnCount, 64).Complete();
 

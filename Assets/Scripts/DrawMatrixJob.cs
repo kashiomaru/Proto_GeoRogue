@@ -5,6 +5,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 /// <summary>
 /// アクティブな要素の座標（と任意の方向）を詰めた Matrix4x4 配列を出力する。
@@ -26,20 +27,20 @@ public struct DrawMatrixJob : IJobParallelFor
     [NativeDisableParallelForRestriction]
     public NativeReference<int> counter;
 
-    /// <summary>均一スケール。scale3 が (0,0,0) のときのみ使用。</summary>
-    public float scale;
-    /// <summary>XYZ 別スケール（敵用）。0 でないときは scale より優先。</summary>
-    public float3 scale3;
+    /// <summary>描画スケール（XYZ 別指定可）。</summary>
+    public Vector3 scale;
 
     public unsafe void Execute(int index)
     {
         if (!activeFlags[index])
             return;
 
+        Assert.IsFalse(scale == Vector3.zero, "DrawMatrixJob.scale must not be zero.");
+        Assert.IsTrue(dir.sqrMagnitude > 0.0001f, "Direction must not be zero.");
+
         int writeIndex = Interlocked.Increment(ref UnsafeUtility.AsRef<int>(NativeReferenceUnsafeUtility.GetUnsafePtr(counter))) - 1;
-        Vector3 scaleVec = math.any(scale3 != 0f) ? (Vector3)scale3 : new Vector3(scale, scale, scale);
         Vector3 dir = (Vector3)directions[index];
-        Quaternion rot = dir.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(dir) : Quaternion.identity;
-        matrices[writeIndex] = Matrix4x4.TRS((Vector3)positions[index], rot, scaleVec);
+        Quaternion rot = Quaternion.LookRotation(dir);
+        matrices[writeIndex] = Matrix4x4.TRS((Vector3)positions[index], rot, scale);
     }
 }

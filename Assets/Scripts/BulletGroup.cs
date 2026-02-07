@@ -44,7 +44,7 @@ public class BulletGroup
             activeFlags = _pool.Active,
             matrices = _matrices,
             counter = _matrixCounter,
-            scale = _scale
+            scale = new Vector3(_scale, _scale, _scale)
         };
     }
 
@@ -86,7 +86,7 @@ public class BulletGroup
         _matrixJob.activeFlags = _pool.Active;
         _matrixJob.matrices = _matrices;
         _matrixJob.counter = _matrixCounter;
-        _matrixJob.scale = _scale;
+        _matrixJob.scale = new Vector3(_scale, _scale, _scale);
         _matrixCounter.Value = 0;
         _matrixJob.Schedule(_matrices.Length, 64).Complete();
         _drawCount[0] = _matrixCounter.Value;

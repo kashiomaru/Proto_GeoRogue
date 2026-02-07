@@ -61,7 +61,7 @@ public class GemManager : InitializeMonobehaviour
         _gemMatrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
-        var initJob = new GemInitFlagsJob { active = _gemActive, flying = _gemIsFlying };
+        var initJob = new GemInitFlagsJob { active = _gemActive, flying = _gemIsFlying, directions = _gemDirections };
         initJob.Schedule(maxGems, 64).Complete();
 
         // フレーム共通の Job フィールドを一度だけ設定
@@ -75,7 +75,7 @@ public class GemManager : InitializeMonobehaviour
         _gemMatrixJob.activeFlags = _gemActive;
         _gemMatrixJob.matrices = _gemMatrices;
         _gemMatrixJob.counter = _gemMatrixCounter;
-        _gemMatrixJob.scale = gemScale;
+        _gemMatrixJob.scale = new Vector3(gemScale, gemScale, gemScale);
     }
 
     void Update()
