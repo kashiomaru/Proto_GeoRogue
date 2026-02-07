@@ -45,6 +45,8 @@ public class RenderManager : InitializeMonobehaviour
     private MaterialPropertyBlock _mpb;
     private int _propertyID_EmissionColor;
 
+    private CopyEmissionToManagedJob _copyEmissionJob;
+
     private RenderParams _rpGem;
     private RenderParams _rpBullet;
 
@@ -86,8 +88,9 @@ public class RenderManager : InitializeMonobehaviour
         }
         fixed (Vector4* ptr = _emissionColors)
         {
-            var job = new CopyEmissionToManagedJob { emissionColors = emissionColors, targetColors = ptr };
-            job.Schedule(count, 64).Complete();
+            _copyEmissionJob.emissionColors = emissionColors;
+            _copyEmissionJob.targetColors = ptr;
+            _copyEmissionJob.Schedule(count, 64).Complete();
         }
         _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
         rpEnemy.matProps = _mpb;
