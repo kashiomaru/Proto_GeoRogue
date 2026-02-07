@@ -201,8 +201,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        bulletManager?.HandlePlayerShooting();
-
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 

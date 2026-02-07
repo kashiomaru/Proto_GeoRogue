@@ -1341,6 +1341,7 @@ MonoBehaviour:
   bulletSpeed: 20
   bulletCountPerShot: 1
   magnetDist: 5
+  multiShotSpreadAngle: 10
   initialMoveSpeed: 5
   initialFireRate: 0.1
   initialBulletSpeed: 20
@@ -1352,6 +1353,8 @@ MonoBehaviour:
   flashIntensity: 0.8
   initialFlashInterval: 0.1
   maxLevel: 99
+  bulletManager: {fileID: 420466358}
+  gameManager: {fileID: 379471278}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1911,15 +1914,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c24c7e145761b4774924117327a792ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletManager
-  maxPlayerBullets: 1000
-  maxEnemyBullets: 500
+  maxBullets: 1000
   playerTransform: {fileID: 322285197}
   playerCollisionRadius: 1
-  multiShotSpreadAngle: 10
   bulletDamage: 1
   playerBulletScale: 0.5
   enemyBulletScale: 0.5
-  player: {fileID: 322285198}
   gameManager: {fileID: 379471278}
   damageTextManager: {fileID: 614781148}
   renderManager: {fileID: 454398054}
@@ -5385,7 +5385,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2a2439e7363f457bbc4abd6ce3f8e73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyManager
-  maxEnemyCount: 1000
+  maxEnemyCountPerGroup: 1000
   enemyFlashDuration: 0.1
   respawnDistance: 50
   respawnMinRadius: 20

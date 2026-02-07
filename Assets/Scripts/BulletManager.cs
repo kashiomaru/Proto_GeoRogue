@@ -2,7 +2,6 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using System.Collections.Generic;
 
 /// <summary>
 /// プレイヤー弾と敵弾の 2 つの BulletPool を保持し、発射・移動スケジュール・当たり判定・描画をまとめて行う。
@@ -18,25 +17,18 @@ public class BulletManager : InitializeMonobehaviour
     [SerializeField] private float playerCollisionRadius = 1f;
 
     [Header("Player Shot")]
-    [SerializeField] private float multiShotSpreadAngle = 10f;
     [SerializeField] private float bulletDamage = 1.0f;
     [SerializeField] private float playerBulletScale = 0.5f;
     [SerializeField] private float enemyBulletScale = 0.5f;
 
     [Header("References")]
-    [SerializeField] private Player player;
     [SerializeField] private GameManager gameManager;
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private RenderManager renderManager;
 
     private BulletGroup _playerBullets;
     private BulletGroup _enemyBullets;
-    private float _playerShotTimer;
 
-    /// <summary>前回の弾数。変わったときだけ拡散方向を再計算する。</summary>
-    private int _lastBulletCountPerShot = -1;
-    /// <summary>拡散方向（forward 基準）。bulletCountPerShot が変わったときだけ更新。</summary>
-    private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
     /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるバッファ。敵弾vsプレイヤー・プレイヤー弾vsボスで共用。</summary>
@@ -66,51 +58,15 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）
+    /// プレイヤー弾を 1 発生成する。Player.HandlePlayerShooting から呼ぶ。
     /// </summary>
-    public void HandlePlayerShooting()
+    public void SpawnPlayerBullet(Vector3 position, Vector3 direction, float speed, float lifeTime = 2f)
     {
-        if (IsInitialized == false || player == null || _playerBullets == null)
+        if (IsInitialized == false || _playerBullets == null)
         {
             return;
         }
-        float fireRate = player.GetFireRate();
-        int bulletCountPerShot = player.GetBulletCountPerShot();
-        float bulletSpeed = player.GetBulletSpeed();
-
-        _playerShotTimer += Time.deltaTime;
-        if (_playerShotTimer >= fireRate)
-        {
-            _playerShotTimer = 0f;
-            Vector3 baseDir = playerTransform.forward;
-
-            if (bulletCountPerShot != _lastBulletCountPerShot)
-            {
-                _cachedShotDirections.Clear();
-                for (int i = 0; i < bulletCountPerShot; i++)
-                {
-                    float angle = bulletCountPerShot > 1
-                        ? -multiShotSpreadAngle * (bulletCountPerShot - 1) * 0.5f + (multiShotSpreadAngle * i)
-                        : 0f;
-                    Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
-                    _cachedShotDirections.Add(dir);
-                }
-                _lastBulletCountPerShot = bulletCountPerShot;
-            }
-
-            Quaternion baseRot = Quaternion.LookRotation(baseDir);
-            for (int i = 0; i < bulletCountPerShot; i++)
-            {
-                Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                _playerBullets.Spawn(
-                    playerTransform.position,
-                    finalDir,
-                    bulletSpeed,
-                    2.0f,
-                    damage: bulletDamage
-                );
-            }
-        }
+        _playerBullets.Spawn(position, direction, speed, lifeTime, damage: bulletDamage);
     }
 
     /// <summary>
@@ -180,7 +136,6 @@ public class BulletManager : InitializeMonobehaviour
     {
         _playerBullets?.Reset();
         _enemyBullets?.Reset();
-        _playerShotTimer = 0f;
     }
 
     /// <summary>
@@ -188,7 +143,7 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void CheckEnemyBulletVsPlayer()
     {
-        if (IsInitialized == false || playerTransform == null || player == null || player.IsDead || _enemyBullets == null)
+        if (IsInitialized == false || playerTransform == null || _enemyBullets == null)
         {
             return;
         }

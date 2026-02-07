@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class Player : InitializeMonobehaviour
 {
@@ -12,6 +13,8 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float bulletSpeed = 20f;
     [SerializeField] private int bulletCountPerShot = 1;
     [SerializeField] private float magnetDist = 5f;
+    [Tooltip("マルチショット時の拡散角度（度）")]
+    [SerializeField] private float multiShotSpreadAngle = 10f;
 
     [Header("Reset 時の復元値（上記の初期値。インスペクターで編集可）")]
     [SerializeField] private float initialMoveSpeed = 5f;
@@ -31,7 +34,11 @@ public class Player : InitializeMonobehaviour
     
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
-    
+
+    [Header("References")]
+    [SerializeField] private BulletManager bulletManager;
+    [SerializeField] private GameManager gameManager;
+
     private int _currentHp;
     private float _invincibleTimer = 0f;
     private bool _isInvincible = false;
@@ -49,6 +56,11 @@ public class Player : InitializeMonobehaviour
     private bool _canLevelUp = false; // レベルアップ可能フラグ
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
+
+    // プレイヤー弾発射用
+    private float _playerShotTimer;
+    private int _lastBulletCountPerShot = -1;
+    private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
 
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
@@ -128,6 +140,12 @@ public class Player : InitializeMonobehaviour
         UpdateFlashColor();
         
         HandleMovement();
+
+        // プレイ中のみ発射処理
+        if (gameManager != null && gameManager.IsPlaying)
+        {
+            HandlePlayerShooting();
+        }
     }
     
     // ダメージを受ける（実際に与えたダメージを返す）
@@ -225,7 +243,52 @@ public class Player : InitializeMonobehaviour
         bulletCountPerShot = initialBulletCountPerShot;
         magnetDist = initialMagnetDist;
 
+        _playerShotTimer = 0f;
+        _lastBulletCountPerShot = -1;
+
         UpdateFlashColor();
+    }
+
+    /// <summary>
+    /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）
+    /// </summary>
+    public void HandlePlayerShooting()
+    {
+        if (IsInitialized == false || bulletManager == null)
+        {
+            return;
+        }
+        float rate = GetFireRate();
+        int countPerShot = GetBulletCountPerShot();
+        float speed = GetBulletSpeed();
+
+        _playerShotTimer += Time.deltaTime;
+        if (_playerShotTimer >= rate)
+        {
+            _playerShotTimer = 0f;
+            Vector3 baseDir = transform.forward;
+
+            if (countPerShot != _lastBulletCountPerShot)
+            {
+                _cachedShotDirections.Clear();
+                for (int i = 0; i < countPerShot; i++)
+                {
+                    float angle = countPerShot > 1
+                        ? -multiShotSpreadAngle * (countPerShot - 1) * 0.5f + (multiShotSpreadAngle * i)
+                        : 0f;
+                    Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
+                    _cachedShotDirections.Add(dir);
+                }
+                _lastBulletCountPerShot = countPerShot;
+            }
+
+            Quaternion baseRot = Quaternion.LookRotation(baseDir);
+            for (int i = 0; i < countPerShot; i++)
+            {
+                Vector3 finalDir = baseRot * _cachedShotDirections[i];
+                bulletManager.SpawnPlayerBullet(transform.position, finalDir, speed, 2f);
+            }
+        }
     }
 
     // 後方互換のため残す（Reset を呼ぶ）
