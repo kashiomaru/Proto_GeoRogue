@@ -27,6 +27,7 @@ public class GemManager : InitializeMonobehaviour
     private NativeReference<int> _gemMatrixCounter;
 
     // 毎フレーム new を避けるため Job をキャッシュ
+    private GemInitFlagsJob _cachedInitJob;
     private GemMagnetJob _gemMagnetJob;
     private DrawMatrixJob _gemMatrixJob;
 
@@ -61,8 +62,10 @@ public class GemManager : InitializeMonobehaviour
         _gemMatrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
-        var initJob = new GemInitFlagsJob { active = _gemActive, flying = _gemIsFlying, directions = _gemDirections };
-        initJob.Schedule(maxGems, 64).Complete();
+        _cachedInitJob.active = _gemActive;
+        _cachedInitJob.flying = _gemIsFlying;
+        _cachedInitJob.directions = _gemDirections;
+        _cachedInitJob.Schedule(maxGems, 64).Complete();
 
         // フレーム共通の Job フィールドを一度だけ設定
         _gemMagnetJob.moveSpeed = gemSpeed;
@@ -128,11 +131,7 @@ public class GemManager : InitializeMonobehaviour
             return;
         }
 
-        for (int i = 0; i < maxGems; i++)
-        {
-            _gemActive[i] = false;
-            _gemIsFlying[i] = false;
-        }
+        _cachedInitJob.Schedule(maxGems, 64).Complete();
         while (_collectedGemQueue.TryDequeue(out _)) { }
     }
 
