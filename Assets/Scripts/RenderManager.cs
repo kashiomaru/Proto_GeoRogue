@@ -99,59 +99,6 @@ public class RenderManager : InitializeMonobehaviour
         ExecuteDrawEnemies(mesh, mat, count);
     }
 
-    /// <summary>
-    /// 敵を座標・回転リストで描画（旧 API）。回転は Job で計算済み（プレイヤー方向）。
-    /// 描画数が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
-    /// </summary>
-    /// <param name="count">描画する敵の数。省略時は positions.Count を使用。</param>
-    [System.Obsolete("Matrix を事前に詰めて RenderEnemies(NativeArray<Matrix4x4>, NativeArray<Vector4>, int) を使用してください。")]
-    public void RenderEnemies(IList<Vector3> positions, IList<Quaternion> rotations, IList<float> flashTimers, IList<bool> activeFlags, int? count = null)
-    {
-        Mesh mesh = _runtimeEnemyMesh;
-        Material mat = _runtimeEnemyMaterial;
-        if (mesh == null || mat == null) return;
-
-        Vector3 scale = _runtimeEnemyScale;
-        int drawCount = count ?? positions.Count;
-        int writeIndex = 0;
-
-        for (int i = 0; i < drawCount; i++)
-        {
-            if (activeFlags[i] == false)
-            {
-                continue;
-            }
-
-            if (writeIndex >= BATCH_SIZE)
-            {
-                Debug.LogWarning($"[RenderManager] 敵の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
-                break;
-            }
-
-            _matrices[writeIndex] = Matrix4x4.TRS(
-                positions[i],
-                rotations[i],
-                scale
-            );
-
-            if (flashTimers[i] > 0f)
-            {
-                _emissionColors[writeIndex] = new Vector4(flashIntensity, flashIntensity, flashIntensity, 1f);
-            }
-            else
-            {
-                _emissionColors[writeIndex] = Vector4.zero;
-            }
-
-            writeIndex++;
-        }
-
-        if (writeIndex > 0)
-        {
-            ExecuteDrawEnemies(mesh, mat, writeIndex);
-        }
-    }
-
     private void ExecuteDrawEnemies(Mesh mesh, Material mat, int count)
     {
         _mpb.SetVectorArray(_propertyID_EmissionColor, _emissionColors);
