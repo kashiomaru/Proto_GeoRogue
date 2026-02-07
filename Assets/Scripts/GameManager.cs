@@ -183,6 +183,9 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        // 参照はインスペクターで必ず指定すること
+        Debug.Assert(enemyManager != null && bulletManager != null, "[GameManager] enemyManager または bulletManager が未設定です。インスペクターで指定してください。");
+
         // ステートマシンを更新（現在ステートの OnUpdate）
         _stateMachine?.Update();
 
@@ -206,15 +209,12 @@ public class GameManager : MonoBehaviour
 
         player.HandlePlayerShooting();
 
-        if (enemyManager != null && bulletManager != null)
-        {
-            JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
-            JobHandle bulletHandle = bulletManager.ScheduleMoveAndCollideJob(deltaTime, enemyHandle, enemyManager);
-            bulletHandle.Complete();
-            enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos);
-            bulletManager.CheckEnemyBulletVsPlayer();
-            bulletManager.RenderBullets();
-        }
+        JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
+        JobHandle bulletHandle = bulletManager.ScheduleMoveAndCollideJob(deltaTime, enemyHandle, enemyManager);
+        bulletHandle.Complete();
+        enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos);
+        bulletManager.CheckEnemyBulletVsPlayer();
+        bulletManager.RenderBullets();
 
         // 3. プレイヤーへのダメージ処理
         HandlePlayerDamage();
