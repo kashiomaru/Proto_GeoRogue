@@ -10,8 +10,7 @@ using System.Collections.Generic;
 public class BulletManager : InitializeMonobehaviour
 {
     [Header("Settings")]
-    [SerializeField] private int maxPlayerBullets = 1000;
-    [SerializeField] private int maxEnemyBullets = 500;
+    [SerializeField] private int maxBullets = 1000;
 
     [Header("Params")]
     [SerializeField] private Transform playerTransform;
@@ -48,12 +47,12 @@ public class BulletManager : InitializeMonobehaviour
     protected override void InitializeInternal()
     {
         _playerBullets = new BulletGroup();
-        _playerBullets.Initialize(maxPlayerBullets, scale: playerBulletScale);
+        _playerBullets.Initialize(maxBullets, scale: playerBulletScale);
 
         _enemyBullets = new BulletGroup();
-        _enemyBullets.Initialize(maxEnemyBullets, scale: enemyBulletScale);
+        _enemyBullets.Initialize(maxBullets, scale: enemyBulletScale);
 
-        int maxHitCapacity = Mathf.Max(maxPlayerBullets, maxEnemyBullets);
+        int maxHitCapacity = maxBullets;
         _collectedHitDamages = new NativeList<float>(maxHitCapacity, Allocator.Persistent);
     }
 
