@@ -34,7 +34,7 @@ public class StageNameDisplay : MonoBehaviour
         }
         if (string.IsNullOrEmpty(stageName))
         {
-            canvasGroup.alpha = 1f;
+            canvasGroup.alpha = 0f;
             return;
         }
 
@@ -44,7 +44,7 @@ public class StageNameDisplay : MonoBehaviour
         CancellationTokenSource cts = _cts;
         tmp.text = stageName;
         gameObject.SetActive(true);
-        tmp.alpha = 1f;
+        canvasGroup.alpha = 1f;
         DisplayAndFadeOutAsync(cts.Token, cts).Forget();
     }
 
