@@ -109,8 +109,9 @@ public class EnemyManager : InitializeMonobehaviour
     {
         if (_groups == null || gameManager == null) return;
         float3 playerPos = (float3)gameManager.GetPlayerPosition();
+        uint seed = (uint)Time.frameCount;
         foreach (var g in _groups)
-            g.HandleRespawn(playerPos);
+            g.HandleRespawn(playerPos, seed);
     }
 
     /// <summary>

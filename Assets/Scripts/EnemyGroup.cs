@@ -49,6 +49,7 @@ public class EnemyGroup
     private DrawMatrixJob _cachedMatrixJob;
     private EnemyEmissionJob _cachedEmissionJob;
     private EnemyMoveAndHashJob _cachedMoveJob;
+    private EnemyRespawnJob _cachedRespawnJob;
 
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
@@ -160,6 +161,16 @@ public class EnemyGroup
         _cachedMoveJob.positions = _positions;
         _cachedMoveJob.directions = _directions;
         _cachedMoveJob.activeFlags = _active;
+
+        _cachedRespawnJob.respawnMinRadius = _respawnMinRadius;
+        _cachedRespawnJob.respawnMaxRadius = _respawnMaxRadius;
+        _cachedRespawnJob.maxHp = _maxHp;
+        _cachedRespawnJob.positions = _positions;
+        _cachedRespawnJob.directions = _directions;
+        _cachedRespawnJob.active = _active;
+        _cachedRespawnJob.hp = _hp;
+        _cachedRespawnJob.fireTimers = _fireTimers;
+        _cachedRespawnJob.flashTimers = _flashTimers;
     }
 
     /// <summary>確保したバッファを破棄する。二重呼び出し防止は呼び出し側で行う。</summary>
@@ -184,7 +195,7 @@ public class EnemyGroup
     public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue, JobHandle dependsOn = default)
     {
         Assert.IsTrue(_spatialMap.IsCreated, "SpatialMap must be created in EnemyGroup constructor.");
-        
+
         _spatialMap.Clear();
 
         _cachedMoveJob.deltaTime = deltaTime;
@@ -219,30 +230,14 @@ public class EnemyGroup
         }
     }
 
-    /// <summary>プレイヤー位置を元にリスポーン処理を行う。</summary>
-    public void HandleRespawn(float3 playerPos)
+    /// <summary>プレイヤー位置を元にリスポーン処理を行う。seed は毎フレーム変えると配置が変わる（例: Time.frameCount）。</summary>
+    public void HandleRespawn(float3 playerPos, uint seed)
     {
-        float deleteDistSq = _respawnDistance * _respawnDistance;
-        for (int i = 0; i < _spawnCount; i++)
-        {
-            if (_active[i] == false || math.distancesq(_positions[i], playerPos) > deleteDistSq)
-            {
-                float angle = UnityEngine.Random.Range(0f, math.PI * 2f);
-                float dist = UnityEngine.Random.Range(_respawnMinRadius, _respawnMaxRadius);
-                float3 offset = new float3(math.cos(angle) * dist, 0f, math.sin(angle) * dist);
-                float3 newPos = playerPos + offset;
-                _positions[i] = newPos;
-                _directions[i] = new float3(0f, 0f, 1f);
-                _active[i] = true;
-                _hp[i] = _maxHp;
-                // 最初の発射タイミングを 0～fireInterval の間でランダムにし、敵が一斉に撃たないようにする
-                _fireTimers[i] = _bulletData != null
-                    ? UnityEngine.Random.Range(0f, _bulletData.FireInterval)
-                    : 0f;
-                if (_flashTimers.IsCreated)
-                    _flashTimers[i] = 0f;
-            }
-        }
+        _cachedRespawnJob.playerPos = playerPos;
+        _cachedRespawnJob.deleteDistSq = _respawnDistance * _respawnDistance;
+        _cachedRespawnJob.fireIntervalMax = _bulletData != null ? _bulletData.FireInterval : 0f;
+        _cachedRespawnJob.seed = seed;
+        _cachedRespawnJob.Schedule(_spawnCount, 64).Complete();
     }
 
     /// <summary>
