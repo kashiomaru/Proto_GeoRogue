@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -25,6 +26,9 @@ public class EnemyGroup
     private readonly Material _material;
     private readonly Vector3 _scale;
     private readonly BulletData _bulletData;
+
+    /// <summary>描画用。コンストラクタで一度だけ初期化。matProps は RenderManager が毎フレーム設定する。</summary>
+    private RenderParams _rpEnemy;
 
     private NativeArray<float3> _positions;
     private NativeArray<quaternion> _rotations;
@@ -117,6 +121,15 @@ public class EnemyGroup
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
         _cellSize = Mathf.Max(0.5f, _collisionRadius * 0.51f);
+
+        if (_material != null)
+        {
+            _rpEnemy = new RenderParams(_material)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
 
         _positions = new NativeArray<float3>(_maxCount, Allocator.Persistent);
         _rotations = new NativeArray<quaternion>(_maxCount, Allocator.Persistent);
@@ -298,12 +311,11 @@ public class EnemyGroup
         }
     }
 
-    /// <summary>このグループの敵を RenderManager で描画する（SetEnemyDisplay + Matrix Job + RenderEnemies）。フラッシュ減算も Job 内で行う。</summary>
+    /// <summary>このグループの敵を RenderManager で描画する（Matrix Job + RenderEnemies）。フラッシュ減算も Job 内で行う。</summary>
     /// <param name="deltaTime">フラッシュタイマー減算用。通常は Time.deltaTime を渡す。</param>
     public void Render(RenderManager renderManager, float deltaTime)
     {
         if (renderManager == null) return;
-        renderManager.SetEnemyDisplay(_mesh, _material, _scale);
         _drawCounter.Value = 0;
         var job = new EnemyDrawMatrixJob
         {
@@ -321,7 +333,7 @@ public class EnemyGroup
         job.Schedule(_spawnCount, 64).Complete();
         int drawCount = _drawCounter.Value;
         if (drawCount > 0)
-            renderManager.RenderEnemies(_matrices, _emissionColors, drawCount);
+            renderManager.RenderEnemies(_rpEnemy, _mesh, _matrices, _emissionColors, drawCount);
     }
 
     /// <summary>このグループの敵をすべて非表示（非アクティブ）にする。</summary>
