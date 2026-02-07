@@ -184,6 +184,7 @@ public class EnemyGroup
     public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue, JobHandle dependsOn = default)
     {
         Assert.IsTrue(_spatialMap.IsCreated, "SpatialMap must be created in EnemyGroup constructor.");
+        
         _spatialMap.Clear();
 
         _cachedMoveJob.deltaTime = deltaTime;
