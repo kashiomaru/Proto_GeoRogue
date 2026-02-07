@@ -151,9 +151,9 @@ public class GameManager : MonoBehaviour
     
     void InitializeStateMachine()
     {
-        player?.Initialize();
         cameraManager?.Initialize();
         bulletManager?.Initialize();
+        player?.Initialize();
         enemyManager?.Initialize();
         gemManager?.Initialize();
         renderManager?.Initialize();

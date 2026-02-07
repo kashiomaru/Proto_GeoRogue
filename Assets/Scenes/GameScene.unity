@@ -1355,6 +1355,7 @@ MonoBehaviour:
   maxLevel: 99
   bulletManager: {fileID: 420466358}
   gameManager: {fileID: 379471278}
+  _renderer: {fileID: 322285195}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

@@ -45,7 +45,7 @@ public class Player : InitializeMonobehaviour
     private float _initialFlashTimer = 0f; // 最初の点滅タイマー
     
     // レンダリング関連
-    private Renderer _renderer;
+    [SerializeField] private Renderer _renderer;
     private MaterialPropertyBlock _mpb;
     private int _propertyID_EmissionColor;
     
@@ -92,22 +92,15 @@ public class Player : InitializeMonobehaviour
     
     protected override void InitializeInternal()
     {
-        // カメラが未設定の場合、MainCameraを自動取得
-        if (playerCamera == null)
-        {
-            playerCamera = Camera.main;
-        }
+        // カメラはインスペクターで必ず指定すること
+        Debug.Assert(playerCamera != null, "[Player] playerCamera が未設定です。インスペクターでカメラを指定してください。");
         
-        // HP初期化
-        _currentHp = maxHp;
+        // レンダラーとMaterialPropertyBlockを初期化（Renderer はインスペクターで指定すること）
+        Debug.Assert(_renderer != null, "[Player] _renderer が未設定です。インスペクターで Renderer を指定してください。");
 
-        // レンダラーとMaterialPropertyBlockを初期化
-        _renderer = GetComponent<Renderer>();
-        if (_renderer != null)
-        {
-            _mpb = new MaterialPropertyBlock();
-            _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
-        }
+        _currentHp = maxHp;
+        _mpb = new MaterialPropertyBlock();
+        _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
     }
 
     protected override void FinalizeInternal()
