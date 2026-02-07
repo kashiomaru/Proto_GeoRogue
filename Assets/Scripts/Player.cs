@@ -258,6 +258,7 @@ public class Player : InitializeMonobehaviour
         {
             return;
         }
+        
         float rate = GetFireRate();
         int countPerShot = GetBulletCountPerShot();
         float speed = GetBulletSpeed();
