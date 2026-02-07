@@ -1744,6 +1744,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
   - {fileID: 11400000, guid: 82e23f7fd44e045fea0179e46e34b497, type: 2}
   - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
+  - {fileID: 11400000, guid: 90dbf098d7d1743ba972eca11fcfed72, type: 2}
   debugSettings: {fileID: 985743518}
 --- !u!4 &379471279
 Transform:

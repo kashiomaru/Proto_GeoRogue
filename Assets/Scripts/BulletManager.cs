@@ -38,6 +38,8 @@ public class BulletManager : InitializeMonobehaviour
     private RenderParams _rpEnemyBullet;
 
     private Dictionary<int, BulletGroup> _bulletGroups;
+    /// <summary>ScheduleMoveJob などで使う、グループの登録順（プレイヤー→敵）。</summary>
+    private List<int> _bulletGroupIdsInOrder;
     private int _bulletGroupIdCounter = 0;
     private int _playerBulletGroupId;
     private int _enemyBulletGroupId;
@@ -54,6 +56,7 @@ public class BulletManager : InitializeMonobehaviour
         _collectedHitDamages = new NativeList<float>(maxBullets, Allocator.Persistent);
 
         _bulletGroups = new Dictionary<int, BulletGroup>();
+        _bulletGroupIdsInOrder = new List<int>();
 
         if (playerBulletMaterial != null)
         {
@@ -91,6 +94,7 @@ public class BulletManager : InitializeMonobehaviour
         var group = new BulletGroup();
         group.Initialize(maxBullets, scale: scale);
         _bulletGroups.Add(groupId, group);
+        _bulletGroupIdsInOrder.Add(groupId);
         return groupId;
     }
 
@@ -100,6 +104,7 @@ public class BulletManager : InitializeMonobehaviour
         {
             group.Dispose();
             _bulletGroups.Remove(groupId);
+            _bulletGroupIdsInOrder.Remove(groupId);
         }
     }
 
@@ -138,14 +143,16 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 弾の移動 Job をスケジュールする。プレイヤー弾の移動 → 敵弾の移動の順に依存させる。
-    /// 敵の移動 Job 完了後に実行するため dependency を渡す。
+    /// 弾の移動 Job をスケジュールし完了まで待機する。プレイヤー弾の移動 → 敵弾の移動の順に依存させる。
     /// </summary>
-    public JobHandle ScheduleMoveJob(float deltaTime, JobHandle dependency)
+    public void ScheduleMoveJob(float deltaTime)
     {
-        JobHandle dep = _bulletGroups[_playerBulletGroupId].ScheduleMoveJob(deltaTime, dependency);
-        dep = _bulletGroups[_enemyBulletGroupId].ScheduleMoveJob(deltaTime, dep);
-        return dep;
+        JobHandle dep = default;
+        foreach (var id in _bulletGroupIdsInOrder)
+        {
+            dep = _bulletGroups[id].ScheduleMoveJob(deltaTime, dep);
+        }
+        dep.Complete();
     }
 
     /// <summary>

@@ -71,19 +71,19 @@ public class EnemyManager : InitializeMonobehaviour
         bulletManager.InitializeEnemyBullets(bulletScale);
     }
 
-    /// <summary>敵の移動Jobをスケジュール（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
-    public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
+    /// <summary>敵の移動Jobをスケジュールし完了まで待機（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
+    public void ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
     {
         if (_normalEnemiesEnabled == false || _groups == null || _groups.Count == 0)
         {
-            return default;
+            return;
         }
         JobHandle dep = default;
         foreach (var g in _groups)
         {
             dep = g.ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue, dep);
         }
-        return dep;
+        dep.Complete();
     }
 
     /// <summary>死んだ敵の位置を取得（ジェム生成用）。</summary>

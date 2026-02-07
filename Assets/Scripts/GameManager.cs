@@ -209,8 +209,7 @@ public class GameManager : MonoBehaviour
 
         // 1. プレイヤー・敵・ボスの移動
         player.ProcessMovement();
-        JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
-        enemyHandle.Complete();
+        enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
         enemyManager.ProcessBossMovement(deltaTime);
 
         // 2. 弾発射（プレイヤー・敵・ボス）
@@ -218,10 +217,10 @@ public class GameManager : MonoBehaviour
         enemyManager.ProcessBulletFiring(deltaTime, playerPos);
 
         // 3. 弾移動
-        JobHandle bulletMoveHandle = bulletManager.ScheduleMoveJob(deltaTime, default(JobHandle));
+        bulletManager.ScheduleMoveJob(deltaTime);
 
         // 4. 当たり判定（プレイヤー弾vs敵・敵弾vsプレイヤー）
-        JobHandle bulletCollideHandle = bulletManager.ScheduleCollideJob(bulletMoveHandle, enemyManager);
+        JobHandle bulletCollideHandle = bulletManager.ScheduleCollideJob(default(JobHandle), enemyManager);
         bulletCollideHandle.Complete();
         bulletManager.CheckEnemyBulletVsPlayer();
 
