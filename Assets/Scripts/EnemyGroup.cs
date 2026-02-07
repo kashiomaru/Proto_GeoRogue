@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Jobs;
@@ -45,6 +46,9 @@ public class EnemyGroup
     private NativeQueue<EnemyDamageInfo> _damageQueue;
     private NativeQueue<int> _flashQueue;
 
+    private DrawMatrixJob _cachedMatrixJob;
+    private EnemyEmissionJob _cachedEmissionJob;
+
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
     /// <summary>空間マップ（弾衝突Job用）。</summary>
@@ -84,41 +88,22 @@ public class EnemyGroup
         float respawnMinRadius,
         float respawnMaxRadius)
     {
-        if (data == null)
-        {
-            Debug.LogWarning("EnemyGroup: EnemyData is null. Using default values.");
-            _maxCount = Mathf.Max(1, maxCount);
-            _spawnCount = Mathf.Clamp(10, 1, _maxCount);
-            _speed = 4f;
-            _maxHp = 1f;
-            _flashDuration = flashDuration;
-            _damageRadius = 1f;
-            _collisionRadius = 1f;
-            _respawnDistance = respawnDistance;
-            _respawnMinRadius = respawnMinRadius;
-            _respawnMaxRadius = respawnMaxRadius;
-            _mesh = null;
-            _material = null;
-            _scale = Vector3.one;
-            _bulletData = null;
-        }
-        else
-        {
-            _maxCount = Mathf.Max(1, maxCount);
-            _spawnCount = data.SpawnCount > 0 ? Mathf.Clamp(data.SpawnCount, 1, _maxCount) : Mathf.Clamp(10, 1, _maxCount);
-            _speed = data.Speed;
-            _maxHp = data.MaxHp;
-            _flashDuration = flashDuration;
-            _damageRadius = data.DamageRadius;
-            _collisionRadius = data.CollisionRadius;
-            _respawnDistance = respawnDistance;
-            _respawnMinRadius = respawnMinRadius;
-            _respawnMaxRadius = respawnMaxRadius;
-            _mesh = data.Mesh;
-            _material = data.Material;
-            _scale = data.Scale;
-            _bulletData = data.BulletData;
-        }
+        Assert.IsNotNull(data, "EnemyData must not be null.");
+
+        _maxCount = Mathf.Max(1, maxCount);
+        _spawnCount = data.SpawnCount > 0 ? Mathf.Clamp(data.SpawnCount, 1, _maxCount) : Mathf.Clamp(10, 1, _maxCount);
+        _speed = data.Speed;
+        _maxHp = data.MaxHp;
+        _flashDuration = flashDuration;
+        _damageRadius = data.DamageRadius;
+        _collisionRadius = data.CollisionRadius;
+        _respawnDistance = respawnDistance;
+        _respawnMinRadius = respawnMinRadius;
+        _respawnMaxRadius = respawnMaxRadius;
+        _mesh = data.Mesh;
+        _material = data.Material;
+        _scale = data.Scale;
+        _bulletData = data.BulletData;
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
         _cellSize = Mathf.Max(0.5f, _collisionRadius * 0.51f);
@@ -154,6 +139,18 @@ public class EnemyGroup
         _deadPositions = new NativeQueue<float3>(Allocator.Persistent);
         _damageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
         _flashQueue = new NativeQueue<int>(Allocator.Persistent);
+
+        _cachedMatrixJob.positions = _positions;
+        _cachedMatrixJob.directions = _directions;
+        _cachedMatrixJob.activeFlags = _active;
+        _cachedMatrixJob.matrices = _matrices;
+        _cachedMatrixJob.counter = _drawCounter;
+        _cachedMatrixJob.scale = _scale;
+
+        _cachedEmissionJob.activeFlags = _active;
+        _cachedEmissionJob.flashTimers = _flashTimers;
+        _cachedEmissionJob.emissionColors = _emissionColors;
+        _cachedEmissionJob.counter = _drawCounter;
     }
 
     /// <summary>確保したバッファを破棄する。二重呼び出し防止は呼び出し側で行う。</summary>
@@ -321,28 +318,12 @@ public class EnemyGroup
         if (renderManager == null) return;
 
         _drawCounter.Value = 0;
-        var matrixJob = new DrawMatrixJob
-        {
-            positions = _positions,
-            directions = _directions,
-            activeFlags = _active,
-            matrices = _matrices,
-            counter = _drawCounter,
-            scale = _scale
-        };
-        matrixJob.Schedule(_spawnCount, 64).Complete();
+        _cachedMatrixJob.Schedule(_spawnCount, 64).Complete();
 
         _drawCounter.Value = 0;
-        var emissionJob = new EnemyEmissionJob
-        {
-            activeFlags = _active,
-            flashTimers = _flashTimers,
-            deltaTime = deltaTime,
-            emissionColors = _emissionColors,
-            counter = _drawCounter,
-            flashIntensity = renderManager.FlashIntensity
-        };
-        emissionJob.Schedule(_spawnCount, 64).Complete();
+        _cachedEmissionJob.deltaTime = deltaTime;
+        _cachedEmissionJob.flashIntensity = renderManager.FlashIntensity;
+        _cachedEmissionJob.Schedule(_spawnCount, 64).Complete();
 
         int drawCount = _drawCounter.Value;
         if (drawCount > 0)

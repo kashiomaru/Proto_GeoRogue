@@ -7,8 +7,8 @@ using System.Collections.Generic;
 public class EnemyManager : InitializeMonobehaviour
 {
     [Header("Enemy Settings")]
-    [Tooltip("管理する敵の最大数（配列・リストのサイズ）。初期化時に固定。ステージデータに含まれないためここで指定。")]
-    [SerializeField] private int maxEnemyCount = 1000;
+    [Tooltip("1グループ（1種類の敵データ）あたりの最大数。各 EnemyGroup の配列サイズとして使用。")]
+    [SerializeField] private int maxEnemyCountPerGroup = 1000;
 
     [Tooltip("ダメージ受けた際のヒットフラッシュ表示時間（全敵共通）。ステージからは上書きしない。")]
     [SerializeField] private float enemyFlashDuration = 0.1f;
@@ -42,8 +42,6 @@ public class EnemyManager : InitializeMonobehaviour
     // --- 通常敵は EnemyGroup で管理（1種類＝1グループ、複数種類の場合は複数グループ）---
     private List<EnemyGroup> _groups;
 
-    /// <summary>管理最大数（1グループあたりの配列サイズ上限）。ApplyNormalEnemyConfig でグループ作成時に渡す。</summary>
-    public int MaxEnemyCount => maxEnemyCount;
     /// <summary>通常敵グループのリスト（弾衝突などで参照）。空の場合は未適用。</summary>
     public IReadOnlyList<EnemyGroup> GetGroups() => _groups ?? (IReadOnlyList<EnemyGroup>)new List<EnemyGroup>();
     
@@ -258,22 +256,11 @@ public class EnemyManager : InitializeMonobehaviour
 
     /// <summary>
     /// ステージの通常敵設定を適用する。既存のグループを破棄し、ステージの敵データスロット（最大5種類）のうち
-    /// 非 null のものそれぞれで EnemyGroup を作成する。1グループあたりの最大数は maxEnemyCount をグループ数で割った値。
+    /// 非 null のものそれぞれで EnemyGroup を作成する。各グループの最大数は maxEnemyCountPerGroup。
     /// </summary>
     public void ApplyNormalEnemyConfig(StageData stage)
     {
         if (stage is null)
-        {
-            return;
-        }
-        // 非 null の敵データを数える
-        int dataCount = 0;
-        for (int i = 0; i < StageData.MaxEnemyDataSlots; i++)
-        {
-            if (stage.GetEnemyData(i) != null)
-                dataCount++;
-        }
-        if (dataCount == 0)
         {
             return;
         }
@@ -288,8 +275,7 @@ public class EnemyManager : InitializeMonobehaviour
         {
             _groups = new List<EnemyGroup>();
         }
-        // 1グループあたりの最大数（合計が maxEnemyCount を超えないように割り振る）
-        int maxPerGroup = Mathf.Max(1, maxEnemyCount / dataCount);
+        int maxPerGroup = Mathf.Max(1, maxEnemyCountPerGroup);
         for (int i = 0; i < StageData.MaxEnemyDataSlots; i++)
         {
             var data = stage.GetEnemyData(i);
