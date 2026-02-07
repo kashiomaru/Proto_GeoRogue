@@ -48,7 +48,8 @@ public class RenderManager : InitializeMonobehaviour
     private CopyEmissionToManagedJob _copyEmissionJob;
 
     private RenderParams _rpGem;
-    private RenderParams _rpBullet;
+    private RenderParams _rpPlayerBullet;
+    private RenderParams _rpEnemyBullet;
 
     protected override void InitializeInternal()
     {
@@ -58,6 +59,22 @@ public class RenderManager : InitializeMonobehaviour
         if (gemMaterial != null)
         {
             _rpGem = new RenderParams(gemMaterial)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
+        if (playerBulletMaterial != null)
+        {
+            _rpPlayerBullet = new RenderParams(playerBulletMaterial)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
+        if (enemyBulletMaterial != null)
+        {
+            _rpEnemyBullet = new RenderParams(enemyBulletMaterial)
             {
                 shadowCastingMode = ShadowCastingMode.On,
                 receiveShadows = true
@@ -119,7 +136,7 @@ public class RenderManager : InitializeMonobehaviour
     /// </summary>
     public void RenderPlayerBullets(NativeArray<Matrix4x4> matrices, int count)
     {
-        RenderBulletsInternal(playerBulletMesh, playerBulletMaterial, matrices, count);
+        RenderBulletsInternal(_rpPlayerBullet, playerBulletMesh, matrices, count);
     }
 
     /// <summary>
@@ -127,12 +144,12 @@ public class RenderManager : InitializeMonobehaviour
     /// </summary>
     public void RenderEnemyBullets(NativeArray<Matrix4x4> matrices, int count)
     {
-        RenderBulletsInternal(enemyBulletMesh, enemyBulletMaterial, matrices, count);
+        RenderBulletsInternal(_rpEnemyBullet, enemyBulletMesh, matrices, count);
     }
 
-    private void RenderBulletsInternal(Mesh mesh, Material mat, NativeArray<Matrix4x4> matrices, int count)
+    private void RenderBulletsInternal(RenderParams rp, Mesh mesh, NativeArray<Matrix4x4> matrices, int count)
     {
-        if (mesh == null || mat == null || count <= 0)
+        if (mesh == null || rp.material == null || count <= 0)
             return;
 
         if (count > BATCH_SIZE)
@@ -140,19 +157,6 @@ public class RenderManager : InitializeMonobehaviour
             Debug.LogWarning($"[RenderManager] 弾の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
             count = BATCH_SIZE;
         }
-
-        if (_rpBullet.material == null)
-        {
-            _rpBullet = new RenderParams(mat)
-            {
-                shadowCastingMode = ShadowCastingMode.On,
-                receiveShadows = true
-            };
-        }
-        else
-        {
-            _rpBullet.material = mat;
-        }
-        Graphics.RenderMeshInstanced(_rpBullet, mesh, 0, matrices, count);
+        Graphics.RenderMeshInstanced(rp, mesh, 0, matrices, count);
     }
 }
