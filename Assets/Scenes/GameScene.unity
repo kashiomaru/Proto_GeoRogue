@@ -1340,6 +1340,7 @@ MonoBehaviour:
   fireRate: 0.1
   bulletSpeed: 20
   bulletCountPerShot: 1
+  bulletScale: 0.5
   magnetDist: 5
   multiShotSpreadAngle: 10
   initialMoveSpeed: 5
@@ -1740,9 +1741,9 @@ MonoBehaviour:
   cameraManager: {fileID: 1642372745}
   renderManager: {fileID: 454398054}
   stages:
+  - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
   - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
   - {fileID: 11400000, guid: 82e23f7fd44e045fea0179e46e34b497, type: 2}
-  - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
   debugSettings: {fileID: 985743518}
 --- !u!4 &379471279
 Transform:
@@ -1919,8 +1920,6 @@ MonoBehaviour:
   playerTransform: {fileID: 322285197}
   playerCollisionRadius: 1
   bulletDamage: 1
-  playerBulletScale: 0.5
-  enemyBulletScale: 0.5
   playerBulletMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   playerBulletMaterial: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
   enemyBulletMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
@@ -5396,6 +5395,7 @@ MonoBehaviour:
   gemManager: {fileID: 420920856}
   gameManager: {fileID: 379471278}
   bulletManager: {fileID: 420466358}
+  bulletScale: 0.5
 --- !u!4 &1856169497
 Transform:
   m_ObjectHideFlags: 0

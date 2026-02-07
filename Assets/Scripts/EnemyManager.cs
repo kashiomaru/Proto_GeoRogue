@@ -27,6 +27,7 @@ public class EnemyManager : InitializeMonobehaviour
     [SerializeField] private GemManager gemManager; // GemManagerへの参照
     [SerializeField] private GameManager gameManager; // GameManagerへの参照
     [SerializeField] private BulletManager bulletManager;
+    [SerializeField] private float bulletScale = 0.5f;
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
@@ -75,7 +76,7 @@ public class EnemyManager : InitializeMonobehaviour
         Debug.Assert(gameManager != null, "[EnemyManager] gameManager が未設定です。インスペクターで GameManager を指定してください。");
 
         bulletManager.Initialize();
-        bulletManager.InitializeEnemyBullets();
+        bulletManager.InitializeEnemyBullets(bulletScale);
     }
 
     /// <summary>敵の移動Jobをスケジュール（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
@@ -125,7 +126,7 @@ public class EnemyManager : InitializeMonobehaviour
     public void ProcessEnemyBulletFiring(float deltaTime, float3 playerPos)
     {
         if (_groups == null || bulletManager == null) return;
-        
+
         foreach (var g in _groups)
             g.ProcessBulletFiring(deltaTime, playerPos, bulletManager);
     }

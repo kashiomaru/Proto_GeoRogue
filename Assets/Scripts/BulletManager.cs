@@ -20,8 +20,6 @@ public class BulletManager : InitializeMonobehaviour
 
     [Header("Player Shot")]
     [SerializeField] private float bulletDamage = 1.0f;
-    [SerializeField] private float playerBulletScale = 0.5f;
-    [SerializeField] private float enemyBulletScale = 0.5f;
 
     [Header("Player Bullet Settings")]
     [SerializeField] private Mesh playerBulletMesh;
@@ -39,9 +37,10 @@ public class BulletManager : InitializeMonobehaviour
     private RenderParams _rpPlayerBullet;
     private RenderParams _rpEnemyBullet;
 
-    private BulletGroup _playerBullets;
-    private BulletGroup _enemyBullets;
-    private List<BulletGroup> _bulletGroups;
+    private Dictionary<int, BulletGroup> _bulletGroups;
+    private int _bulletGroupIdCounter = 0;
+    private int _playerBulletGroupId;
+    private int _enemyBulletGroupId;
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
@@ -54,7 +53,7 @@ public class BulletManager : InitializeMonobehaviour
     {
         _collectedHitDamages = new NativeList<float>(maxBullets, Allocator.Persistent);
 
-        _bulletGroups = new List<BulletGroup>();
+        _bulletGroups = new Dictionary<int, BulletGroup>();
 
         if (playerBulletMaterial != null)
         {
@@ -78,28 +77,40 @@ public class BulletManager : InitializeMonobehaviour
     {
         foreach (var group in _bulletGroups)
         {
-            group.Dispose();
+            group.Value.Dispose();
         }
         _bulletGroups.Clear();
         _bulletGroups = null;
-        _playerBullets = null;
-        _enemyBullets = null;
 
         _collectedHitDamages.Dispose();
     }
 
-    public void InitializePlayerBullets()
+    public int AddBulletGroup(float scale)
     {
-        _playerBullets = new BulletGroup();
-        _playerBullets.Initialize(maxBullets, scale: playerBulletScale);
-        _bulletGroups.Add(_playerBullets);
+        var groupId = _bulletGroupIdCounter++;
+        var group = new BulletGroup();
+        group.Initialize(maxBullets, scale: scale);
+        _bulletGroups.Add(groupId, group);
+        return groupId;
     }
 
-    public void InitializeEnemyBullets()
+    public void RemoveBulletGroup(int groupId)
     {
-        _enemyBullets = new BulletGroup();
-        _enemyBullets.Initialize(maxBullets, scale: enemyBulletScale);
-        _bulletGroups.Add(_enemyBullets);
+        if (_bulletGroups.TryGetValue(groupId, out var group))
+        {
+            group.Dispose();
+            _bulletGroups.Remove(groupId);
+        }
+    }
+
+    public void InitializePlayerBullets(float scale)
+    {
+        _playerBulletGroupId = AddBulletGroup(scale);
+    }
+
+    public void InitializeEnemyBullets(float scale)
+    {
+        _enemyBulletGroupId = AddBulletGroup(scale);
     }
 
     /// <summary>
@@ -107,11 +118,11 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void SpawnPlayerBullet(Vector3 position, Vector3 direction, float speed, float lifeTime = 2f)
     {
-        if (IsInitialized == false || _playerBullets == null)
+        if (IsInitialized == false || !_bulletGroups.TryGetValue(_playerBulletGroupId, out var group))
         {
             return;
         }
-        _playerBullets.Spawn(position, direction, speed, lifeTime, damage: bulletDamage);
+        _bulletGroups[_playerBulletGroupId].Spawn(position, direction, speed, lifeTime, damage: bulletDamage);
     }
 
     /// <summary>
@@ -119,11 +130,11 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void SpawnEnemyBullet(Vector3 position, Vector3 direction, float speed, float damage, float lifeTime)
     {
-        if (IsInitialized == false || _enemyBullets == null)
+        if (IsInitialized == false || !_bulletGroups.TryGetValue(_enemyBulletGroupId, out var group))
         {
             return;
         }
-        _enemyBullets.Spawn(position, direction, speed, lifeTime, damage);
+        _bulletGroups[_enemyBulletGroupId].Spawn(position, direction, speed, lifeTime, damage);
     }
 
     /// <summary>
@@ -131,12 +142,12 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public JobHandle ScheduleMoveAndCollideJob(float deltaTime, JobHandle dependency, EnemyManager enemyManager)
     {
-        JobHandle dep = _playerBullets.ScheduleMoveJob(deltaTime, dependency);
+        JobHandle dep = _bulletGroups[_playerBulletGroupId].ScheduleMoveJob(deltaTime, dependency);
 
         var groups = enemyManager != null ? enemyManager.GetGroups() : null;
         if (groups != null && groups.Count > 0)
         {
-            _playerBullets.SetCollideJobBulletData(ref _cachedCollideJob);
+            _bulletGroups[_playerBulletGroupId].SetCollideJobBulletData(ref _cachedCollideJob);
             _cachedCollideJob.bulletDamage = bulletDamage;
 
             foreach (var g in groups)
@@ -150,11 +161,11 @@ public class BulletManager : InitializeMonobehaviour
                 _cachedCollideJob.deadEnemyPositions = g.GetDeadEnemyPositionsWriter();
                 _cachedCollideJob.enemyDamageQueue = g.GetEnemyDamageQueueWriter();
                 _cachedCollideJob.enemyFlashQueue = g.GetEnemyFlashQueueWriter();
-                dep = _cachedCollideJob.Schedule(_playerBullets.MaxCount, 64, dep);
+                dep = _cachedCollideJob.Schedule(_bulletGroups[_playerBulletGroupId].MaxCount, 64, dep);
             }
         }
 
-        dep = _enemyBullets.ScheduleMoveJob(deltaTime, dep);
+        dep = _bulletGroups[_enemyBulletGroupId].ScheduleMoveJob(deltaTime, dep);
         return dep;
     }
 
@@ -167,11 +178,11 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _playerBullets.RunMatrixJob();
-        renderManager.RenderBullets(_rpPlayerBullet, playerBulletMesh, _playerBullets.Matrices, _playerBullets.DrawCount);
+        _bulletGroups[_playerBulletGroupId].RunMatrixJob();
+        renderManager.RenderBullets(_rpPlayerBullet, playerBulletMesh, _bulletGroups[_playerBulletGroupId].Matrices, _bulletGroups[_playerBulletGroupId].DrawCount);
 
-        _enemyBullets.RunMatrixJob();
-        renderManager.RenderBullets(_rpEnemyBullet, enemyBulletMesh, _enemyBullets.Matrices, _enemyBullets.DrawCount);
+        _bulletGroups[_enemyBulletGroupId].RunMatrixJob();
+        renderManager.RenderBullets(_rpEnemyBullet, enemyBulletMesh, _bulletGroups[_enemyBulletGroupId].Matrices, _bulletGroups[_enemyBulletGroupId].DrawCount);
     }
 
     /// <summary>
@@ -179,8 +190,10 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void ResetBullets()
     {
-        _playerBullets?.Reset();
-        _enemyBullets?.Reset();
+        foreach (var group in _bulletGroups)
+        {
+            group.Value.Reset();
+        }
     }
 
     /// <summary>
@@ -188,11 +201,11 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void CheckEnemyBulletVsPlayer()
     {
-        if (IsInitialized == false || playerTransform == null || _enemyBullets == null)
+        if (IsInitialized == false || playerTransform == null || !_bulletGroups.TryGetValue(_enemyBulletGroupId, out var group))
         {
             return;
         }
-        _enemyBullets.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
+        group.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
         for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
             gameManager?.AddPlayerDamage(Mathf.RoundToInt(_collectedHitDamages[i]));
@@ -204,7 +217,7 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void CheckBossBulletCollision(EnemyManager enemyManager)
     {
-        if (enemyManager == null || _playerBullets == null)
+        if (enemyManager == null || !_bulletGroups.TryGetValue(_playerBulletGroupId, out var group))
         {
             return;
         }
@@ -213,7 +226,7 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _playerBullets.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
+        group.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
         for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
             float actualDamage = boss.TakeDamage(_collectedHitDamages[i]);

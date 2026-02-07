@@ -12,6 +12,7 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float fireRate = 0.1f;
     [SerializeField] private float bulletSpeed = 20f;
     [SerializeField] private int bulletCountPerShot = 1;
+    [SerializeField] private float bulletScale = 0.5f;
     [SerializeField] private float magnetDist = 5f;
     [Tooltip("マルチショット時の拡散角度（度）")]
     [SerializeField] private float multiShotSpreadAngle = 10f;
@@ -101,7 +102,7 @@ public class Player : InitializeMonobehaviour
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         bulletManager.Initialize();
-        bulletManager.InitializePlayerBullets();
+        bulletManager.InitializePlayerBullets(bulletScale);
     }
 
     protected override void FinalizeInternal()
