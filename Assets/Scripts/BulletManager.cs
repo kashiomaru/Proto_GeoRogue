@@ -21,6 +21,8 @@ public class BulletManager : InitializeMonobehaviour
     [Header("Player Shot")]
     [SerializeField] private float multiShotSpreadAngle = 10f;
     [SerializeField] private float bulletDamage = 1.0f;
+    [SerializeField] private float playerBulletScale = 0.5f;
+    [SerializeField] private float enemyBulletScale = 0.5f;
 
     [Header("References")]
     [SerializeField] private Player player;
@@ -37,10 +39,10 @@ public class BulletManager : InitializeMonobehaviour
     protected override void InitializeInternal()
     {
         _playerBullets = new BulletGroup();
-        _playerBullets.Initialize(maxPlayerBullets, useDamageArray: false);
+        _playerBullets.Initialize(maxPlayerBullets, useDamageArray: false, scale: playerBulletScale);
 
         _enemyBullets = new BulletGroup();
-        _enemyBullets.Initialize(maxEnemyBullets, useDamageArray: true);
+        _enemyBullets.Initialize(maxEnemyBullets, useDamageArray: true, scale: enemyBulletScale);
     }
 
     protected override void FinalizeInternal()
@@ -145,11 +147,11 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _playerBullets.CopyToRenderLists();
-        renderManager.RenderPlayerBullets(_playerBullets.PositionList, _playerBullets.RotationList, _playerBullets.ActiveList);
+        _playerBullets.RunMatrixJob();
+        renderManager.RenderPlayerBullets(_playerBullets.Matrices, _playerBullets.DrawCount);
 
-        _enemyBullets.CopyToRenderLists();
-        renderManager.RenderEnemyBullets(_enemyBullets.PositionList, _enemyBullets.RotationList, _enemyBullets.ActiveList);
+        _enemyBullets.RunMatrixJob();
+        renderManager.RenderEnemyBullets(_enemyBullets.Matrices, _enemyBullets.DrawCount);
     }
 
     /// <summary>

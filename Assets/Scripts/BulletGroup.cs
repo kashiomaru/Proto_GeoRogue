@@ -1,52 +1,64 @@
 using UnityEngine;
-using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Jobs;
 
 /// <summary>
-/// 弾 1 種類分の BulletPool と描画用リストをまとめる。
-/// プレイヤー弾用・敵弾用の共通処理を吸収し、BulletManager から利用する。
+/// 弾 1 種類分の BulletPool と描画用 Matrix4x4 バッファをまとめる。
+/// Job で詰めた Matrix4x4 を RenderManager に直接渡す。
 /// </summary>
 public class BulletGroup
 {
     private BulletPool _pool;
-    private List<Vector3> _positionList;
-    private List<Quaternion> _rotationList;
-    private List<bool> _activeList;
+    private NativeArray<Matrix4x4> _matrices;
+    private NativeArray<int> _drawCount;
+    private float _scale;
+    private BulletMatrixJob _matrixJob;
 
     /// <summary>内部の BulletPool。Spawn / ScheduleMoveJob / Positions / Active 等はここから参照する。</summary>
     public BulletPool Pool => _pool;
 
-    /// <summary>描画用。CopyToRenderLists 後に RenderManager に渡す。</summary>
-    public IList<Vector3> PositionList => _positionList;
-    /// <summary>描画用。CopyToRenderLists 後に RenderManager に渡す。</summary>
-    public IList<Quaternion> RotationList => _rotationList;
-    /// <summary>描画用。CopyToRenderLists 後に RenderManager に渡す。</summary>
-    public IList<bool> ActiveList => _activeList;
+    /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
+    public NativeArray<Matrix4x4> Matrices => _matrices;
+    /// <summary>描画数。RunMatrixJob 後に _drawCount[0] を参照する。</summary>
+    public int DrawCount => _drawCount.IsCreated ? _drawCount[0] : 0;
 
     /// <summary>
-    /// 初期化。最大弾数とダメージ配列の有無を指定する。
+    /// 初期化。最大弾数・ダメージ配列の有無・描画スケールを指定する。
     /// </summary>
-    public void Initialize(int maxCount, bool useDamageArray = false)
+    public void Initialize(int maxCount, bool useDamageArray = false, float scale = 0.5f)
     {
         _pool = new BulletPool();
         _pool.Initialize(maxCount, useDamageArray);
 
-        _positionList = new List<Vector3>(maxCount);
-        _rotationList = new List<Quaternion>(maxCount);
-        _activeList = new List<bool>(maxCount);
-        for (int i = 0; i < maxCount; i++)
+        _matrices = new NativeArray<Matrix4x4>(maxCount, Allocator.Persistent);
+        _drawCount = new NativeArray<int>(1, Allocator.Persistent);
+        _scale = scale;
+
+        _matrixJob = new BulletMatrixJob
         {
-            _positionList.Add(default);
-            _rotationList.Add(default);
-            _activeList.Add(false);
-        }
+            positions = _pool.Positions,
+            directions = _pool.Directions,
+            activeFlags = _pool.Active,
+            matrices = _matrices,
+            drawCount = _drawCount,
+            scale = _scale
+        };
     }
 
     /// <summary>
-    /// 描画用に座標・回転・アクティブをリストへコピーする。RenderManager に渡す前に呼ぶ。
+    /// 描画用にアクティブな弾を Matrix4x4 に詰める。RenderManager に渡す前に呼ぶ。
     /// </summary>
-    public void CopyToRenderLists()
+    public void RunMatrixJob()
     {
-        _pool?.CopyToRenderLists(_positionList, _rotationList, _activeList);
+        if (_pool == null || !_matrices.IsCreated)
+            return;
+        _matrixJob.positions = _pool.Positions;
+        _matrixJob.directions = _pool.Directions;
+        _matrixJob.activeFlags = _pool.Active;
+        _matrixJob.matrices = _matrices;
+        _matrixJob.drawCount = _drawCount;
+        _matrixJob.scale = _scale;
+        _matrixJob.Schedule().Complete();
     }
 
     /// <summary>
@@ -64,5 +76,9 @@ public class BulletGroup
     {
         _pool?.Dispose();
         _pool = null;
+        if (_matrices.IsCreated)
+            _matrices.Dispose();
+        if (_drawCount.IsCreated)
+            _drawCount.Dispose();
     }
 }

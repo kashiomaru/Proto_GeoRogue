@@ -21,12 +21,10 @@ public class RenderManager : InitializeMonobehaviour
     [Header("Player Bullet Settings")]
     [SerializeField] private Mesh playerBulletMesh;
     [SerializeField] private Material playerBulletMaterial;
-    [SerializeField] private float playerBulletScale = 0.5f;
 
     [Header("Enemy Bullet Settings")]
     [SerializeField] private Mesh enemyBulletMesh;
     [SerializeField] private Material enemyBulletMaterial;
-    [SerializeField] private float enemyBulletScale = 0.5f;
 
     private const int BATCH_SIZE = 1023;
 
@@ -167,64 +165,32 @@ public class RenderManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾を座標・回転・アクティブリストで描画。
+    /// プレイヤー弾を Job で詰めた Matrix4x4 配列で描画する。count が BATCH_SIZE（1023）を超える場合は警告し、先頭 1023 件のみ描画する。
     /// </summary>
-    public void RenderPlayerBullets(IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
+    public void RenderPlayerBullets(NativeArray<Matrix4x4> matrices, int count)
     {
-        RenderBulletsInternal(playerBulletMesh, playerBulletMaterial, playerBulletScale, positions, rotations, activeFlags);
+        RenderBulletsInternal(playerBulletMesh, playerBulletMaterial, matrices, count);
     }
 
     /// <summary>
-    /// 敵弾を座標・回転・アクティブリストで描画。
+    /// 敵弾を Job で詰めた Matrix4x4 配列で描画する。count が BATCH_SIZE（1023）を超える場合は警告し、先頭 1023 件のみ描画する。
     /// </summary>
-    public void RenderEnemyBullets(IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
+    public void RenderEnemyBullets(NativeArray<Matrix4x4> matrices, int count)
     {
-        RenderBulletsInternal(enemyBulletMesh, enemyBulletMaterial, enemyBulletScale, positions, rotations, activeFlags);
+        RenderBulletsInternal(enemyBulletMesh, enemyBulletMaterial, matrices, count);
     }
 
-    /// <summary>
-    /// 弾を座標・回転・アクティブリストで描画。描画数が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
-    /// </summary>
-    private void RenderBulletsInternal(Mesh mesh, Material mat, float scale, IList<Vector3> positions, IList<Quaternion> rotations, IList<bool> activeFlags)
+    private void RenderBulletsInternal(Mesh mesh, Material mat, NativeArray<Matrix4x4> matrices, int count)
     {
-        if (mesh == null || mat == null)
-        {
+        if (mesh == null || mat == null || count <= 0)
             return;
-        }
 
-        int count = positions.Count;
-        int writeIndex = 0;
-        Vector3 scaleVec = Vector3.one * scale;
-
-        for (int i = 0; i < count; i++)
+        if (count > BATCH_SIZE)
         {
-            if (activeFlags[i] == false)
-            {
-                continue;
-            }
-
-            if (writeIndex >= BATCH_SIZE)
-            {
-                Debug.LogWarning($"[RenderManager] 弾の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
-                break;
-            }
-
-            _matrices[writeIndex] = Matrix4x4.TRS(
-                positions[i],
-                rotations[i],
-                scaleVec
-            );
-            writeIndex++;
+            Debug.LogWarning($"[RenderManager] 弾の描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
+            count = BATCH_SIZE;
         }
 
-        if (writeIndex > 0)
-        {
-            ExecuteDrawBullets(mesh, mat, writeIndex);
-        }
-    }
-
-    private void ExecuteDrawBullets(Mesh mesh, Material mat, int count)
-    {
         if (_rpBullet.material == null)
         {
             _rpBullet = new RenderParams(mat)
@@ -237,6 +203,6 @@ public class RenderManager : InitializeMonobehaviour
         {
             _rpBullet.material = mat;
         }
-        Graphics.RenderMeshInstanced(_rpBullet, mesh, 0, _matrices, count);
+        Graphics.RenderMeshInstanced(_rpBullet, mesh, 0, matrices, count);
     }
 }
