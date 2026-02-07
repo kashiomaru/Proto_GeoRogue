@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour
+public class Player : InitializeMonobehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
@@ -73,7 +73,7 @@ public class Player : MonoBehaviour
     public int CurrentLevel => _currentLevel;
     public bool CanLevelUp => _canLevelUp;
     
-    private void Start()
+    protected override void InitializeInternal()
     {
         // カメラが未設定の場合、MainCameraを自動取得
         if (playerCamera == null)
@@ -92,9 +92,18 @@ public class Player : MonoBehaviour
             _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
         }
     }
+
+    protected override void FinalizeInternal()
+    {
+        // 特になし（Native 等の解放は行っていない）
+    }
     
     private void Update()
     {
+        if (IsInitialized == false)
+        {
+            return;
+        }
         // 無敵時間の更新
         if (_isInvincible)
         {

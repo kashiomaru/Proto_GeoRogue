@@ -158,7 +158,7 @@ public class EnemyManager : InitializeMonobehaviour
         
         // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
         GameObject prefabToUse = _bossPrefabOverride != null ? _bossPrefabOverride : bossPrefab;
-        float distanceToUse = respawnMaxRadius;
+        float distanceToUse = respawnMinRadius;
         Vector3 playerBackward = -playerForward; // プレイヤーの後ろ方向
         Vector3 bossPosition = playerPosition + playerBackward * distanceToUse; // 指定距離の位置
         bossPosition.y = 0f; // Y座標を0に固定
