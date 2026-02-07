@@ -26,7 +26,10 @@ public struct DrawMatrixJob : IJobParallelFor
     [NativeDisableParallelForRestriction]
     public NativeReference<int> counter;
 
+    /// <summary>均一スケール。scale3 が (0,0,0) のときのみ使用。</summary>
     public float scale;
+    /// <summary>XYZ 別スケール（敵用）。0 でないときは scale より優先。</summary>
+    public float3 scale3;
 
     public unsafe void Execute(int index)
     {
@@ -34,7 +37,7 @@ public struct DrawMatrixJob : IJobParallelFor
             return;
 
         int writeIndex = Interlocked.Increment(ref UnsafeUtility.AsRef<int>(NativeReferenceUnsafeUtility.GetUnsafePtr(counter))) - 1;
-        Vector3 scaleVec = new Vector3(scale, scale, scale);
+        Vector3 scaleVec = math.any(scale3 != 0f) ? (Vector3)scale3 : new Vector3(scale, scale, scale);
         Vector3 dir = (Vector3)directions[index];
         Quaternion rot = dir.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(dir) : Quaternion.identity;
         matrices[writeIndex] = Matrix4x4.TRS((Vector3)positions[index], rot, scaleVec);

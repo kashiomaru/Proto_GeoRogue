@@ -314,26 +314,37 @@ public class EnemyGroup
         }
     }
 
-    /// <summary>このグループの敵を RenderManager で描画する（Matrix Job + RenderEnemies）。フラッシュ減算も Job 内で行う。</summary>
+    /// <summary>このグループの敵を RenderManager で描画する（DrawMatrixJob + EnemyEmissionJob + RenderEnemies）。</summary>
     /// <param name="deltaTime">フラッシュタイマー減算用。通常は Time.deltaTime を渡す。</param>
     public void Render(RenderManager renderManager, float deltaTime)
     {
         if (renderManager == null) return;
+
         _drawCounter.Value = 0;
-        var job = new EnemyDrawMatrixJob
+        var matrixJob = new DrawMatrixJob
         {
             positions = _positions,
             directions = _directions,
             activeFlags = _active,
+            matrices = _matrices,
+            counter = _drawCounter,
+            scale = 0f,
+            scale3 = (float3)_scale
+        };
+        matrixJob.Schedule(_spawnCount, 64).Complete();
+
+        _drawCounter.Value = 0;
+        var emissionJob = new EnemyEmissionJob
+        {
+            activeFlags = _active,
             flashTimers = _flashTimers,
             deltaTime = deltaTime,
-            matrices = _matrices,
             emissionColors = _emissionColors,
             counter = _drawCounter,
-            scale = (float3)_scale,
             flashIntensity = renderManager.FlashIntensity
         };
-        job.Schedule(_spawnCount, 64).Complete();
+        emissionJob.Schedule(_spawnCount, 64).Complete();
+
         int drawCount = _drawCounter.Value;
         if (drawCount > 0)
             renderManager.RenderEnemies(_rpEnemy, _mesh, _matrices, _emissionColors, drawCount);
