@@ -35,6 +35,8 @@ public class GemManager : InitializeMonobehaviour
     /// <summary>描画用。Job で詰めた Matrix4x4 を RenderManager に直接渡す。</summary>
     private NativeArray<Matrix4x4> _gemMatrices;
     private NativeArray<int> _gemDrawCount;
+    /// <summary>GemMatrixJob の書き込みインデックス用。毎フレーム 0 にリセット。</summary>
+    private NativeReference<int> _gemMatrixCounter;
 
     // 毎フレーム new を避けるため Job をキャッシュ
     private GemMagnetJob _gemMagnetJob;
@@ -67,6 +69,7 @@ public class GemManager : InitializeMonobehaviour
         _gemIsFlying = new NativeArray<bool>(maxGems, Allocator.Persistent);
         _gemMatrices = new NativeArray<Matrix4x4>(maxGems, Allocator.Persistent);
         _gemDrawCount = new NativeArray<int>(1, Allocator.Persistent);
+        _gemMatrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
         var initJob = new GemInitFlagsJob { active = _gemActive, flying = _gemIsFlying };
@@ -81,7 +84,7 @@ public class GemManager : InitializeMonobehaviour
         _gemMatrixJob.positions = _gemPositions;
         _gemMatrixJob.activeFlags = _gemActive;
         _gemMatrixJob.matrices = _gemMatrices;
-        _gemMatrixJob.drawCount = _gemDrawCount;
+        _gemMatrixJob.counter = _gemMatrixCounter;
         _gemMatrixJob.scale = gemScale;
     }
 
@@ -99,7 +102,9 @@ public class GemManager : InitializeMonobehaviour
         _gemMagnetJob.collectedGemQueue = _collectedGemQueue.AsParallelWriter();
         _gemMagnetJob.Schedule(maxGems, 64).Complete();
 
-        _gemMatrixJob.Schedule().Complete();
+        _gemMatrixCounter.Value = 0;
+        _gemMatrixJob.Schedule(maxGems, 64).Complete();
+        _gemDrawCount[0] = _gemMatrixCounter.Value;
         renderManager?.RenderGems(_gemMatrices, _gemDrawCount[0]);
     }
 
@@ -115,6 +120,8 @@ public class GemManager : InitializeMonobehaviour
             _gemMatrices.Dispose();
         if (_gemDrawCount.IsCreated)
             _gemDrawCount.Dispose();
+        if (_gemMatrixCounter.IsCreated)
+            _gemMatrixCounter.Dispose();
         if (_collectedGemQueue.IsCreated)
             _collectedGemQueue.Dispose();
     }
