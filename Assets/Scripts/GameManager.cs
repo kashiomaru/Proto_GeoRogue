@@ -214,7 +214,6 @@ public class GameManager : MonoBehaviour
         bulletHandle.Complete();
         enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos);
         bulletManager.CheckEnemyBulletVsPlayer();
-        bulletManager.RenderBullets();
 
         // 3. プレイヤーへのダメージ処理
         HandlePlayerDamage();

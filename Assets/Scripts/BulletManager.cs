@@ -169,8 +169,20 @@ public class BulletManager : InitializeMonobehaviour
         return dep;
     }
 
+    void LateUpdate()
+    {
+        // 参照はインスペクターで必ず指定すること
+        Debug.Assert(renderManager != null, "[BulletManager] renderManager が未設定です。インスペクターで指定してください。");
+        Debug.Assert(gameManager != null, "[BulletManager] gameManager が未設定です。インスペクターで指定してください。");
+
+        // 描画は LateUpdate で行う（Update で完了した Job の結果を描画）
+        if (IsInitialized == false) return;
+        if (gameManager.IsPlaying == false) return;
+        RenderBullets();
+    }
+
     /// <summary>
-    /// 弾の座標を Matrix に詰め、RenderManager で描画する。Job 完了後に GameManager から呼ぶ。
+    /// 弾の座標を Matrix に詰め、RenderManager で描画する。LateUpdate から呼ぶ。
     /// </summary>
     public void RenderBullets()
     {

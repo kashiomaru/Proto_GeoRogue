@@ -57,14 +57,23 @@ public class EnemyManager : InitializeMonobehaviour
             CheckBossDeath();
         }
 
-        // 通常敵が有効なときは移動・ジェム・ダメージ表示・リスポーン・描画
+        // 通常敵が有効なときは移動・ジェム・ダメージ表示・リスポーン（描画は LateUpdate）
         if (_normalEnemiesEnabled && _groups != null)
         {
             ProcessDeadEnemies(gemManager);
             ProcessEnemyDamage();
             HandleRespawn();
-            RenderEnemies();
         }
+    }
+
+    void LateUpdate()
+    {
+        // 参照はインスペクターで必ず指定すること
+        Debug.Assert(gameManager != null, "[EnemyManager] gameManager が未設定です。インスペクターで指定してください。");
+
+        // 描画は LateUpdate で行う（Update で完了した Job の結果を描画）
+        if (_normalEnemiesEnabled && _groups != null)
+            RenderEnemies();
     }
 
     protected override void InitializeInternal()
