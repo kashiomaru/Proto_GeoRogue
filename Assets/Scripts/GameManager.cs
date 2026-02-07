@@ -209,8 +209,7 @@ public class GameManager : MonoBehaviour
 
         // 1. プレイヤー・敵・ボスの移動
         player.ProcessMovement();
-        enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
-        enemyManager.ProcessBossMovement(deltaTime);
+        enemyManager.ProcessMovement(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
 
         // 2. 弾発射（プレイヤー・敵・ボス）
         player.HandlePlayerShooting();

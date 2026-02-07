@@ -86,6 +86,13 @@ public class EnemyManager : InitializeMonobehaviour
         dep.Complete();
     }
 
+    /// <summary>通常敵の移動 Job とボスの移動処理をまとめて実行する。GameManager から呼ぶ。</summary>
+    public void ProcessMovement(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
+    {
+        ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue);
+        ProcessBossMovement(deltaTime);
+    }
+
     /// <summary>死んだ敵の位置を取得（ジェム生成用）。</summary>
     public void ProcessDeadEnemies(GemManager gemManager)
     {
