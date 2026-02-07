@@ -50,6 +50,7 @@ public class EnemyGroup
     private EnemyEmissionJob _cachedEmissionJob;
     private EnemyMoveAndHashJob _cachedMoveJob;
     private EnemyRespawnJob _cachedRespawnJob;
+    private EnemyGroupInitJob _cachedGroupInitJob;
 
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
@@ -129,14 +130,11 @@ public class EnemyGroup
         _emissionColors = new NativeArray<Vector4>(_maxCount, Allocator.Persistent);
         _drawCounter = new NativeReference<int>(0, Allocator.Persistent);
 
-        var initJob = new EnemyGroupInitJob
-        {
-            active = _active,
-            directions = _directions,
-            fireTimers = _fireTimers,
-            flashTimers = _flashTimers
-        };
-        initJob.Schedule(_maxCount, 64).Complete();
+        _cachedGroupInitJob.active = _active;
+        _cachedGroupInitJob.directions = _directions;
+        _cachedGroupInitJob.fireTimers = _fireTimers;
+        _cachedGroupInitJob.flashTimers = _flashTimers;
+        _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
 
         _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
         _deadPositions = new NativeQueue<float3>(Allocator.Persistent);
@@ -327,26 +325,14 @@ public class EnemyGroup
     /// <summary>このグループの敵をすべて非表示（非アクティブ）にする。</summary>
     public void ClearAllEnemies()
     {
-        for (int i = 0; i < _spawnCount; i++)
-            _active[i] = false;
+        _cachedGroupInitJob.Schedule(_spawnCount, 64).Complete();
     }
 
     /// <summary>このグループの敵をすべて非アクティブにし、キューとフラッシュをクリアする。配置は次フレーム以降の HandleRespawn に任せる。</summary>
     public void ResetEnemies()
     {
-        for (int i = 0; i < _maxCount; i++)
-        {
-            _active[i] = false;
-            if (_fireTimers.IsCreated)
-            {
-                _fireTimers[i] = 0f;
-            }
-        }
-        if (_flashTimers.IsCreated)
-        {
-            for (int i = 0; i < _maxCount; i++)
-                _flashTimers[i] = 0f;
-        }
+        _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
+
         while (_deadPositions.TryDequeue(out _)) { }
         while (_damageQueue.TryDequeue(out _)) { }
         while (_flashQueue.TryDequeue(out _)) { }
