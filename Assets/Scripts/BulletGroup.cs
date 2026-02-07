@@ -13,6 +13,8 @@ public class BulletGroup
     private NativeArray<Matrix4x4> _matrices;
     private NativeReference<int> _matrixCounter;
     private float _scale;
+    /// <summary>毎フレームの new を避けるため RunMatrixJob で再利用するスケール。</summary>
+    private Vector3 _cachedScale;
     private DrawMatrixJob _matrixJob;
 
     /// <summary>最大弾数</summary>
@@ -34,6 +36,7 @@ public class BulletGroup
         _matrices = new NativeArray<Matrix4x4>(maxCount, Allocator.Persistent);
         _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _scale = scale;
+        _cachedScale = new Vector3(_scale, _scale, _scale);
 
         _matrixJob = new DrawMatrixJob
         {
@@ -42,7 +45,7 @@ public class BulletGroup
             activeFlags = _pool.Active,
             matrices = _matrices,
             counter = _matrixCounter,
-            scale = new Vector3(_scale, _scale, _scale)
+            scale = _cachedScale
         };
     }
 
@@ -84,7 +87,7 @@ public class BulletGroup
         _matrixJob.activeFlags = _pool.Active;
         _matrixJob.matrices = _matrices;
         _matrixJob.counter = _matrixCounter;
-        _matrixJob.scale = new Vector3(_scale, _scale, _scale);
+        _matrixJob.scale = _cachedScale;
         _matrixCounter.Value = 0;
         _matrixJob.Schedule(_matrices.Length, 64).Complete();
     }

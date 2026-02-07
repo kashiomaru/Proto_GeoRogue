@@ -62,6 +62,11 @@ public class Player : InitializeMonobehaviour
     private int _lastBulletCountPerShot = -1;
     private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
 
+    // 毎フレームの new を避けるためのキャッシュ
+    private Color _cachedFlashColor;
+    private Vector2 _cachedMoveInput;
+    private Vector3 _cachedDirection;
+
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
     public bool IsInvincible => _isInvincible;
@@ -258,7 +263,7 @@ public class Player : InitializeMonobehaviour
         {
             return;
         }
-        
+
         float rate = GetFireRate();
         int countPerShot = GetBulletCountPerShot();
         float speed = GetBulletSpeed();
@@ -332,7 +337,11 @@ public class Player : InitializeMonobehaviour
                 if (isFlashing)
                 {
                     // 強烈な白（HDR）
-                    _mpb.SetColor(_propertyID_EmissionColor, new Color(flashIntensity, flashIntensity, flashIntensity, 1f));
+                    _cachedFlashColor.r = flashIntensity;
+                    _cachedFlashColor.g = flashIntensity;
+                    _cachedFlashColor.b = flashIntensity;
+                    _cachedFlashColor.a = 1f;
+                    _mpb.SetColor(_propertyID_EmissionColor, _cachedFlashColor);
                 }
                 else
                 {
@@ -357,7 +366,11 @@ public class Player : InitializeMonobehaviour
                     float currentIntensity = flashIntensity * fadeRatio;
                     
                     // エミッション色を設定（時間が経つほど暗くなる）
-                    _mpb.SetColor(_propertyID_EmissionColor, new Color(currentIntensity, currentIntensity, currentIntensity, 1f));
+                    _cachedFlashColor.r = currentIntensity;
+                    _cachedFlashColor.g = currentIntensity;
+                    _cachedFlashColor.b = currentIntensity;
+                    _cachedFlashColor.a = 1f;
+                    _mpb.SetColor(_propertyID_EmissionColor, _cachedFlashColor);
                 }
                 else
                 {
@@ -407,10 +420,14 @@ public class Player : InitializeMonobehaviour
             vertical -= 1f;
         }
         
-        // 入力方向を計算
-        Vector2 moveInput = new Vector2(horizontal, vertical);
-        Vector3 direction = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
-        bool hasInput = direction.magnitude >= 0.1f;
+        // 入力方向を計算（毎フレームの new を避けるためキャッシュを再利用）
+        _cachedMoveInput.x = horizontal;
+        _cachedMoveInput.y = vertical;
+        _cachedDirection.x = _cachedMoveInput.x;
+        _cachedDirection.y = 0f;
+        _cachedDirection.z = _cachedMoveInput.y;
+        _cachedDirection.Normalize();
+        bool hasInput = _cachedDirection.sqrMagnitude >= 0.01f;
         
         // スペースキーが押されているかチェック
         bool isSpacePressed = keyboard.spaceKey.isPressed;
@@ -421,7 +438,7 @@ public class Player : InitializeMonobehaviour
         if (hasInput)
         {
             // カメラの向きを基準に移動方向を計算
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
+            float targetAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
             
             // 回転：スペースが押されていないときのみ
             if (isSpacePressed == false)
