@@ -46,14 +46,13 @@ public class BulletManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
+        _collectedHitDamages = new NativeList<float>(maxBullets, Allocator.Persistent);
+
         _playerBullets = new BulletGroup();
         _playerBullets.Initialize(maxBullets, scale: playerBulletScale);
 
         _enemyBullets = new BulletGroup();
         _enemyBullets.Initialize(maxBullets, scale: enemyBulletScale);
-
-        int maxHitCapacity = maxBullets;
-        _collectedHitDamages = new NativeList<float>(maxHitCapacity, Allocator.Persistent);
     }
 
     protected override void FinalizeInternal()
