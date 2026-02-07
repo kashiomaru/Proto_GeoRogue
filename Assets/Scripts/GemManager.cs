@@ -1,21 +1,7 @@
 using UnityEngine;
 using Unity.Collections;
-using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
-
-[BurstCompile]
-struct GemInitFlagsJob : IJobParallelFor
-{
-    public NativeArray<bool> active;
-    public NativeArray<bool> flying;
-
-    public void Execute(int index)
-    {
-        active[index] = false;
-        flying[index] = false;
-    }
-}
 
 public class GemManager : InitializeMonobehaviour
 {

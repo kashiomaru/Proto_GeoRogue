@@ -1,20 +1,7 @@
 using UnityEngine;
 using Unity.Collections;
-using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
-using System.Collections.Generic;
-
-[BurstCompile]
-struct BulletInitActiveJob : IJobParallelFor
-{
-    public NativeArray<bool> active;
-
-    public void Execute(int index)
-    {
-        active[index] = false;
-    }
-}
 
 /// <summary>
 /// 弾 1 種類分のバッファと移動を担当する共通クラス。
