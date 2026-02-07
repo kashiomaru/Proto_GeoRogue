@@ -2,7 +2,6 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using System.Collections.Generic;
 
 /// <summary>
 /// 弾 1 種類分のバッファと移動を担当する共通クラス。
@@ -18,6 +17,10 @@ public class BulletPool
     private NativeArray<float> _damage;
     private int _indexHead;
     private bool _disposed;
+
+    private BulletInitActiveJob _cachedInitActiveJob;
+    private BulletMoveJob _cachedMoveJob;
+    private BulletCollectHitsCircleJob _cachedCollectHitsJob;
 
     /// <summary>最大弾数</summary>
     public int MaxCount { get; private set; }
@@ -49,8 +52,14 @@ public class BulletPool
         _lifeTime = new NativeArray<float>(maxCount, Allocator.Persistent);
         _damage = new NativeArray<float>(maxCount, Allocator.Persistent);
 
-        var initJob = new BulletInitActiveJob { active = _active };
-        initJob.Schedule(maxCount, 64).Complete();
+        _cachedInitActiveJob.active = _active;
+        _cachedInitActiveJob.Schedule(maxCount, 64).Complete();
+
+        _cachedMoveJob.bulletPositions = _positions;
+        _cachedMoveJob.bulletVelocities = _velocities;
+        _cachedMoveJob.bulletActive = _active;
+        _cachedMoveJob.bulletLifeTime = _lifeTime;
+
         _indexHead = 0;
         _disposed = false;
     }
@@ -95,29 +104,27 @@ public class BulletPool
 
     /// <summary>
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。
-    /// ヒットした弾のダメージを damagesOut に追加する。
+    /// ヒットした弾のダメージを damagesOut に追加する。呼び出し側で NativeList を用意し、Capacity は当該プールの MaxCount 以上にすること。
     /// </summary>
-    public void CollectHitsAgainstCircle(float3 center, float radius, List<float> damagesOut)
+    public void CollectHitsAgainstCircle(float3 center, float radius, NativeList<float> damagesOut)
     {
-        if (_disposed || !_positions.IsCreated || damagesOut == null)
+        if (_disposed || !_positions.IsCreated || !damagesOut.IsCreated)
         {
             return;
         }
-        float radiusSq = radius * radius;
-        for (int i = 0; i < MaxCount; i++)
+        damagesOut.Clear();
+        if (damagesOut.Capacity < MaxCount)
         {
-            if (_active[i] == false)
-            {
-                continue;
-            }
-            float distSq = math.distancesq(_positions[i], center);
-            if (distSq >= radiusSq)
-            {
-                continue;
-            }
-            damagesOut.Add(_damage[i]);
-            _active[i] = false;
+            damagesOut.Capacity = MaxCount;
         }
+
+        _cachedCollectHitsJob.center = center;
+        _cachedCollectHitsJob.radiusSq = radius * radius;
+        _cachedCollectHitsJob.positions = _positions;
+        _cachedCollectHitsJob.damage = _damage;
+        _cachedCollectHitsJob.active = _active;
+        _cachedCollectHitsJob.damageOut = damagesOut.AsParallelWriter();
+        _cachedCollectHitsJob.Schedule(MaxCount, 64).Complete();
     }
 
     /// <summary>
@@ -129,15 +136,8 @@ public class BulletPool
         {
             return dependency;
         }
-        var moveJob = new BulletMoveJob
-        {
-            deltaTime = deltaTime,
-            bulletPositions = _positions,
-            bulletVelocities = _velocities,
-            bulletActive = _active,
-            bulletLifeTime = _lifeTime
-        };
-        return moveJob.Schedule(MaxCount, 64, dependency);
+        _cachedMoveJob.deltaTime = deltaTime;
+        return _cachedMoveJob.Schedule(MaxCount, 64, dependency);
     }
 
     /// <summary>
@@ -149,8 +149,7 @@ public class BulletPool
         {
             return;
         }
-        var initJob = new BulletInitActiveJob { active = _active };
-        initJob.Schedule(MaxCount, 64).Complete();
+        _cachedInitActiveJob.Schedule(MaxCount, 64).Complete();
         _indexHead = 0;
     }
 

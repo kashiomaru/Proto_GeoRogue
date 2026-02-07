@@ -40,8 +40,8 @@ public class BulletManager : InitializeMonobehaviour
     private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
-    /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるリスト。敵弾vsプレイヤー・プレイヤー弾vsボスで共用。</summary>
-    private readonly List<float> _collectedHitDamages = new List<float>();
+    /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるバッファ。敵弾vsプレイヤー・プレイヤー弾vsボスで共用。</summary>
+    private NativeList<float> _collectedHitDamages;
 
     public float BulletDamage => bulletDamage;
 
@@ -52,10 +52,17 @@ public class BulletManager : InitializeMonobehaviour
 
         _enemyBullets = new BulletGroup();
         _enemyBullets.Initialize(maxEnemyBullets, scale: enemyBulletScale);
+
+        int maxHitCapacity = Mathf.Max(maxPlayerBullets, maxEnemyBullets);
+        _collectedHitDamages = new NativeList<float>(maxHitCapacity, Allocator.Persistent);
     }
 
     protected override void FinalizeInternal()
     {
+        if (_collectedHitDamages.IsCreated)
+        {
+            _collectedHitDamages.Dispose();
+        }
         _playerBullets?.Dispose();
         _enemyBullets?.Dispose();
     }
@@ -188,11 +195,10 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _collectedHitDamages.Clear();
         _enemyBullets.Pool.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
-        foreach (var damage in _collectedHitDamages)
+        for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
-            gameManager?.AddPlayerDamage(Mathf.RoundToInt(damage));
+            gameManager?.AddPlayerDamage(Mathf.RoundToInt(_collectedHitDamages[i]));
         }
     }
 
@@ -210,11 +216,10 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _collectedHitDamages.Clear();
         _playerBullets.Pool.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
-        foreach (var damage in _collectedHitDamages)
+        for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
-            float actualDamage = boss.TakeDamage(damage);
+            float actualDamage = boss.TakeDamage(_collectedHitDamages[i]);
             if (actualDamage > 0)
             {
                 damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage, boss.CollisionRadius);
