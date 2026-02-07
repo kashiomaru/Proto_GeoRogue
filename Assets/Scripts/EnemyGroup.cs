@@ -48,6 +48,7 @@ public class EnemyGroup
 
     private DrawMatrixJob _cachedMatrixJob;
     private EnemyEmissionJob _cachedEmissionJob;
+    private EnemyMoveAndHashJob _cachedMoveJob;
 
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
@@ -127,13 +128,14 @@ public class EnemyGroup
         _emissionColors = new NativeArray<Vector4>(_maxCount, Allocator.Persistent);
         _drawCounter = new NativeReference<int>(0, Allocator.Persistent);
 
-        for (int i = 0; i < _maxCount; i++)
+        var initJob = new EnemyGroupInitJob
         {
-            _active[i] = false;
-            _directions[i] = new float3(0f, 0f, 1f);
-            _fireTimers[i] = 0f;
-            _flashTimers[i] = 0f;
-        }
+            active = _active,
+            directions = _directions,
+            fireTimers = _fireTimers,
+            flashTimers = _flashTimers
+        };
+        initJob.Schedule(_maxCount, 64).Complete();
 
         _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
         _deadPositions = new NativeQueue<float3>(Allocator.Persistent);
@@ -151,6 +153,13 @@ public class EnemyGroup
         _cachedEmissionJob.flashTimers = _flashTimers;
         _cachedEmissionJob.emissionColors = _emissionColors;
         _cachedEmissionJob.counter = _drawCounter;
+
+        _cachedMoveJob.speed = _speed;
+        _cachedMoveJob.cellSize = _cellSize;
+        _cachedMoveJob.damageRadius = _damageRadius;
+        _cachedMoveJob.positions = _positions;
+        _cachedMoveJob.directions = _directions;
+        _cachedMoveJob.activeFlags = _active;
     }
 
     /// <summary>確保したバッファを破棄する。二重呼び出し防止は呼び出し側で行う。</summary>
@@ -174,25 +183,14 @@ public class EnemyGroup
     /// <summary>このグループの敵移動Jobをスケジュールする。複数グループ時は前のグループの Job を dependsOn に渡すこと（同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
     public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue, JobHandle dependsOn = default)
     {
-        if (_spatialMap.IsCreated)
-            _spatialMap.Clear();
-        else
-            _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
+        Assert.IsTrue(_spatialMap.IsCreated, "SpatialMap must be created in EnemyGroup constructor.");
+        _spatialMap.Clear();
 
-        var job = new EnemyMoveAndHashJob
-        {
-            deltaTime = deltaTime,
-            target = playerPos,
-            speed = _speed,
-            cellSize = _cellSize,
-            damageRadius = _damageRadius,
-            spatialMap = _spatialMap.AsParallelWriter(),
-            positions = _positions,
-            directions = _directions,
-            activeFlags = _active,
-            damageQueue = playerDamageQueue
-        };
-        return job.Schedule(_spawnCount, 64, dependsOn);
+        _cachedMoveJob.deltaTime = deltaTime;
+        _cachedMoveJob.target = playerPos;
+        _cachedMoveJob.spatialMap = _spatialMap.AsParallelWriter();
+        _cachedMoveJob.damageQueue = playerDamageQueue;
+        return _cachedMoveJob.Schedule(_spawnCount, 64, dependsOn);
     }
 
     /// <summary>死んだ敵の位置をキューから取り出しジェム生成に渡す。</summary>
