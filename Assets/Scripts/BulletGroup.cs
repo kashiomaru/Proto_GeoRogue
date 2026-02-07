@@ -11,6 +11,7 @@ public class BulletGroup
     private BulletPool _pool;
     private NativeArray<Matrix4x4> _matrices;
     private NativeArray<int> _drawCount;
+    private NativeReference<int> _matrixCounter;
     private float _scale;
     private BulletMatrixJob _matrixJob;
 
@@ -32,6 +33,7 @@ public class BulletGroup
 
         _matrices = new NativeArray<Matrix4x4>(maxCount, Allocator.Persistent);
         _drawCount = new NativeArray<int>(1, Allocator.Persistent);
+        _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _scale = scale;
 
         _matrixJob = new BulletMatrixJob
@@ -40,7 +42,7 @@ public class BulletGroup
             directions = _pool.Directions,
             activeFlags = _pool.Active,
             matrices = _matrices,
-            drawCount = _drawCount,
+            counter = _matrixCounter,
             scale = _scale
         };
     }
@@ -56,9 +58,11 @@ public class BulletGroup
         _matrixJob.directions = _pool.Directions;
         _matrixJob.activeFlags = _pool.Active;
         _matrixJob.matrices = _matrices;
-        _matrixJob.drawCount = _drawCount;
+        _matrixJob.counter = _matrixCounter;
         _matrixJob.scale = _scale;
-        _matrixJob.Schedule().Complete();
+        _matrixCounter.Value = 0;
+        _matrixJob.Schedule(_matrices.Length, 64).Complete();
+        _drawCount[0] = _matrixCounter.Value;
     }
 
     /// <summary>
@@ -80,5 +84,7 @@ public class BulletGroup
             _matrices.Dispose();
         if (_drawCount.IsCreated)
             _drawCount.Dispose();
+        if (_matrixCounter.IsCreated)
+            _matrixCounter.Dispose();
     }
 }
