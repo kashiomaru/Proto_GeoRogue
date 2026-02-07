@@ -91,18 +91,6 @@ public class BulletPool
     }
 
     /// <summary>
-    /// 指定インデックスの弾のアクティブ状態を設定する。当たり判定で弾を無効化するときに使用。
-    /// </summary>
-    public void SetActive(int index, bool value)
-    {
-        if (_disposed || !_active.IsCreated || index < 0 || index >= MaxCount)
-        {
-            return;
-        }
-        _active[index] = value;
-    }
-
-    /// <summary>
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。
     /// ヒットした弾のダメージを damagesOut に追加する。呼び出し側で NativeList を用意し、Capacity は当該プールの MaxCount 以上にすること。
     /// </summary>
