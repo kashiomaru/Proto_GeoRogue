@@ -127,13 +127,6 @@ public class EnemyGroup
                 _bulletSpreadRotations[j] = quaternion.RotateY(math.radians(angleDeg));
             }
             _bulletSpawnQueue = new NativeQueue<EnemyBulletSpawnRequest>(Allocator.Persistent);
-
-            _cachedBulletFireJob.towardPlayer = _bulletData.DirectionType == BulletDirectionType.TowardPlayer;
-            _cachedBulletFireJob.interval = _bulletData.FireInterval;
-            _cachedBulletFireJob.speed = _bulletData.Speed;
-            _cachedBulletFireJob.damage = _bulletData.Damage;
-            _cachedBulletFireJob.lifeTime = _bulletData.LifeTime;
-            _cachedBulletFireJob.countPerShot = _bulletData.CountPerShot;
         }
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
@@ -158,16 +151,22 @@ public class EnemyGroup
         _emissionColors = new NativeArray<Vector4>(_maxCount, Allocator.Persistent);
         _drawCounter = new NativeReference<int>(0, Allocator.Persistent);
 
-        _cachedGroupInitJob.active = _active;
-        _cachedGroupInitJob.directions = _directions;
-        _cachedGroupInitJob.fireTimers = _fireTimers;
-        _cachedGroupInitJob.flashTimers = _flashTimers;
-        _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
-
         _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
         _deadPositions = new NativeQueue<float3>(Allocator.Persistent);
         _damageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
         _flashQueue = new NativeQueue<int>(Allocator.Persistent);
+
+        SetupCachedJobs();
+        _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
+    }
+
+    /// <summary>キャッシュした Job に Native コンテナなどを紐づける。コンストラクタの後半で一度だけ呼ぶ。</summary>
+    private void SetupCachedJobs()
+    {
+        _cachedGroupInitJob.active = _active;
+        _cachedGroupInitJob.directions = _directions;
+        _cachedGroupInitJob.fireTimers = _fireTimers;
+        _cachedGroupInitJob.flashTimers = _flashTimers;
 
         _cachedMatrixJob.positions = _positions;
         _cachedMatrixJob.directions = _directions;
@@ -200,6 +199,12 @@ public class EnemyGroup
 
         if (_bulletData != null)
         {
+            _cachedBulletFireJob.towardPlayer = _bulletData.DirectionType == BulletDirectionType.TowardPlayer;
+            _cachedBulletFireJob.interval = _bulletData.FireInterval;
+            _cachedBulletFireJob.speed = _bulletData.Speed;
+            _cachedBulletFireJob.damage = _bulletData.Damage;
+            _cachedBulletFireJob.lifeTime = _bulletData.LifeTime;
+            _cachedBulletFireJob.countPerShot = _bulletData.CountPerShot;
             _cachedBulletFireJob.positions = _positions;
             _cachedBulletFireJob.directions = _directions;
             _cachedBulletFireJob.active = _active;
