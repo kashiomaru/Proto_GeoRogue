@@ -138,34 +138,42 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾の移動・敵との衝突 Job と敵弾の移動 Job をスケジュール。敵の移動 Job 完了後に実行するため dependency を渡す。
+    /// 弾の移動 Job をスケジュールする。プレイヤー弾の移動 → 敵弾の移動の順に依存させる。
+    /// 敵の移動 Job 完了後に実行するため dependency を渡す。
     /// </summary>
-    public JobHandle ScheduleMoveAndCollideJob(float deltaTime, JobHandle dependency, EnemyManager enemyManager)
+    public JobHandle ScheduleMoveJob(float deltaTime, JobHandle dependency)
     {
         JobHandle dep = _bulletGroups[_playerBulletGroupId].ScheduleMoveJob(deltaTime, dependency);
-
-        var groups = enemyManager != null ? enemyManager.GetGroups() : null;
-        if (groups != null && groups.Count > 0)
-        {
-            _bulletGroups[_playerBulletGroupId].SetCollideJobBulletData(ref _cachedCollideJob);
-            _cachedCollideJob.bulletDamage = bulletDamage;
-
-            foreach (var g in groups)
-            {
-                _cachedCollideJob.cellSize = g.CellSize;
-                _cachedCollideJob.enemyCollisionRadius = g.CollisionRadius;
-                _cachedCollideJob.spatialMap = g.SpatialMap;
-                _cachedCollideJob.enemyPositions = g.EnemyPositions;
-                _cachedCollideJob.enemyActive = g.EnemyActive;
-                _cachedCollideJob.enemyHp = g.EnemyHp;
-                _cachedCollideJob.deadEnemyPositions = g.GetDeadEnemyPositionsWriter();
-                _cachedCollideJob.enemyDamageQueue = g.GetEnemyDamageQueueWriter();
-                _cachedCollideJob.enemyFlashQueue = g.GetEnemyFlashQueueWriter();
-                dep = _cachedCollideJob.Schedule(_bulletGroups[_playerBulletGroupId].MaxCount, 64, dep);
-            }
-        }
-
         dep = _bulletGroups[_enemyBulletGroupId].ScheduleMoveJob(deltaTime, dep);
+        return dep;
+    }
+
+    /// <summary>
+    /// プレイヤー弾と敵の当たり判定 Job をスケジュールする。弾の移動 Job 完了後に実行するため dependency に移動 Job のハンドルを渡す。
+    /// </summary>
+    public JobHandle ScheduleCollideJob(JobHandle dependency, EnemyManager enemyManager)
+    {
+        var groups = enemyManager != null ? enemyManager.GetGroups() : null;
+        if (groups == null || groups.Count == 0)
+            return dependency;
+
+        JobHandle dep = dependency;
+        _bulletGroups[_playerBulletGroupId].SetCollideJobBulletData(ref _cachedCollideJob);
+        _cachedCollideJob.bulletDamage = bulletDamage;
+
+        foreach (var g in groups)
+        {
+            _cachedCollideJob.cellSize = g.CellSize;
+            _cachedCollideJob.enemyCollisionRadius = g.CollisionRadius;
+            _cachedCollideJob.spatialMap = g.SpatialMap;
+            _cachedCollideJob.enemyPositions = g.EnemyPositions;
+            _cachedCollideJob.enemyActive = g.EnemyActive;
+            _cachedCollideJob.enemyHp = g.EnemyHp;
+            _cachedCollideJob.deadEnemyPositions = g.GetDeadEnemyPositionsWriter();
+            _cachedCollideJob.enemyDamageQueue = g.GetEnemyDamageQueueWriter();
+            _cachedCollideJob.enemyFlashQueue = g.GetEnemyFlashQueueWriter();
+            dep = _cachedCollideJob.Schedule(_bulletGroups[_playerBulletGroupId].MaxCount, 64, dep);
+        }
         return dep;
     }
 
