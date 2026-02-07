@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 /// <summary>
 /// 弾 1 種類分の BulletPool と描画用 Matrix4x4 バッファをまとめる。
@@ -15,8 +16,8 @@ public class BulletGroup
     private float _scale;
     private DrawMatrixJob _matrixJob;
 
-    /// <summary>内部の BulletPool。Spawn / ScheduleMoveJob / Positions / Active 等はここから参照する。</summary>
-    public BulletPool Pool => _pool;
+    /// <summary>最大弾数</summary>
+    public int MaxCount => _pool != null ? _pool.MaxCount : 0;
 
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
@@ -45,6 +46,32 @@ public class BulletGroup
             counter = _matrixCounter,
             scale = _scale
         };
+    }
+
+    /// <summary>弾を 1 発生成する。</summary>
+    public void Spawn(Vector3 position, Vector3 direction, float speed, float lifeTime, float damage = 0f)
+    {
+        _pool?.Spawn(position, direction, speed, lifeTime, damage);
+    }
+
+    /// <summary>弾の移動 Job をスケジュールする。</summary>
+    public JobHandle ScheduleMoveJob(float deltaTime, JobHandle dependency)
+    {
+        return _pool != null ? _pool.ScheduleMoveJob(deltaTime, dependency) : dependency;
+    }
+
+    /// <summary>指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。ヒットした弾のダメージを damagesOut に追加する。</summary>
+    public void CollectHitsAgainstCircle(float3 center, float radius, NativeList<float> damagesOut)
+    {
+        _pool?.CollectHitsAgainstCircle(center, radius, damagesOut);
+    }
+
+    /// <summary>BulletCollideJob にこのグループの弾データ（Positions / Active）を設定する。</summary>
+    public void SetCollideJobBulletData(ref BulletCollideJob job)
+    {
+        if (_pool == null) return;
+        job.bulletPositions = _pool.Positions;
+        job.bulletActive = _pool.Active;
     }
 
     /// <summary>

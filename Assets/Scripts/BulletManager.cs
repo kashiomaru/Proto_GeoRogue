@@ -104,7 +104,7 @@ public class BulletManager : InitializeMonobehaviour
             for (int i = 0; i < bulletCountPerShot; i++)
             {
                 Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                _playerBullets.Pool.Spawn(
+                _playerBullets.Spawn(
                     playerTransform.position,
                     finalDir,
                     bulletSpeed,
@@ -124,7 +124,7 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _enemyBullets.Pool.Spawn(position, direction, speed, lifeTime, damage);
+        _enemyBullets.Spawn(position, direction, speed, lifeTime, damage);
     }
 
     /// <summary>
@@ -132,13 +132,12 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public JobHandle ScheduleMoveAndCollideJob(float deltaTime, JobHandle dependency, EnemyManager enemyManager)
     {
-        JobHandle dep = _playerBullets.Pool.ScheduleMoveJob(deltaTime, dependency);
+        JobHandle dep = _playerBullets.ScheduleMoveJob(deltaTime, dependency);
 
         var groups = enemyManager != null ? enemyManager.GetGroups() : null;
         if (groups != null && groups.Count > 0)
         {
-            _cachedCollideJob.bulletPositions = _playerBullets.Pool.Positions;
-            _cachedCollideJob.bulletActive = _playerBullets.Pool.Active;
+            _playerBullets.SetCollideJobBulletData(ref _cachedCollideJob);
             _cachedCollideJob.bulletDamage = bulletDamage;
 
             foreach (var g in groups)
@@ -152,11 +151,11 @@ public class BulletManager : InitializeMonobehaviour
                 _cachedCollideJob.deadEnemyPositions = g.GetDeadEnemyPositionsWriter();
                 _cachedCollideJob.enemyDamageQueue = g.GetEnemyDamageQueueWriter();
                 _cachedCollideJob.enemyFlashQueue = g.GetEnemyFlashQueueWriter();
-                dep = _cachedCollideJob.Schedule(_playerBullets.Pool.MaxCount, 64, dep);
+                dep = _cachedCollideJob.Schedule(_playerBullets.MaxCount, 64, dep);
             }
         }
 
-        dep = _enemyBullets.Pool.ScheduleMoveJob(deltaTime, dep);
+        dep = _enemyBullets.ScheduleMoveJob(deltaTime, dep);
         return dep;
     }
 
@@ -195,7 +194,7 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _enemyBullets.Pool.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
+        _enemyBullets.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
         for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
             gameManager?.AddPlayerDamage(Mathf.RoundToInt(_collectedHitDamages[i]));
@@ -216,7 +215,7 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _playerBullets.Pool.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
+        _playerBullets.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
         for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
             float actualDamage = boss.TakeDamage(_collectedHitDamages[i]);
