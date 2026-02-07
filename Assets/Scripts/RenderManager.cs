@@ -12,14 +12,6 @@ public class RenderManager : InitializeMonobehaviour
     [SerializeField] private Mesh gemMesh;
     [SerializeField] private Material gemMaterial;
 
-    [Header("Player Bullet Settings")]
-    [SerializeField] private Mesh playerBulletMesh;
-    [SerializeField] private Material playerBulletMaterial;
-
-    [Header("Enemy Bullet Settings")]
-    [SerializeField] private Mesh enemyBulletMesh;
-    [SerializeField] private Material enemyBulletMaterial;
-
     private const int BATCH_SIZE = 1023;
 
     private Vector4[] _emissionColors = new Vector4[BATCH_SIZE];
@@ -30,8 +22,6 @@ public class RenderManager : InitializeMonobehaviour
     private CopyEmissionToManagedJob _copyEmissionJob;
 
     private RenderParams _rpGem;
-    private RenderParams _rpPlayerBullet;
-    private RenderParams _rpEnemyBullet;
 
     protected override void InitializeInternal()
     {
@@ -41,22 +31,6 @@ public class RenderManager : InitializeMonobehaviour
         if (gemMaterial != null)
         {
             _rpGem = new RenderParams(gemMaterial)
-            {
-                shadowCastingMode = ShadowCastingMode.On,
-                receiveShadows = true
-            };
-        }
-        if (playerBulletMaterial != null)
-        {
-            _rpPlayerBullet = new RenderParams(playerBulletMaterial)
-            {
-                shadowCastingMode = ShadowCastingMode.On,
-                receiveShadows = true
-            };
-        }
-        if (enemyBulletMaterial != null)
-        {
-            _rpEnemyBullet = new RenderParams(enemyBulletMaterial)
             {
                 shadowCastingMode = ShadowCastingMode.On,
                 receiveShadows = true
@@ -114,22 +88,10 @@ public class RenderManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾を Job で詰めた Matrix4x4 配列で描画する。count が BATCH_SIZE（1023）を超える場合は警告し、先頭 1023 件のみ描画する。
+    /// 弾を Job で詰めた Matrix4x4 配列で描画する。呼び出し元（BulletManager）が RenderParams と Mesh を渡す。
+    /// count が BATCH_SIZE（1023）を超える場合は警告し、先頭 1023 件のみ描画する。
     /// </summary>
-    public void RenderPlayerBullets(NativeArray<Matrix4x4> matrices, int count)
-    {
-        RenderBulletsInternal(_rpPlayerBullet, playerBulletMesh, matrices, count);
-    }
-
-    /// <summary>
-    /// 敵弾を Job で詰めた Matrix4x4 配列で描画する。count が BATCH_SIZE（1023）を超える場合は警告し、先頭 1023 件のみ描画する。
-    /// </summary>
-    public void RenderEnemyBullets(NativeArray<Matrix4x4> matrices, int count)
-    {
-        RenderBulletsInternal(_rpEnemyBullet, enemyBulletMesh, matrices, count);
-    }
-
-    private void RenderBulletsInternal(RenderParams rp, Mesh mesh, NativeArray<Matrix4x4> matrices, int count)
+    public void RenderBullets(RenderParams rp, Mesh mesh, NativeArray<Matrix4x4> matrices, int count)
     {
         if (mesh == null || rp.material == null || count <= 0)
             return;

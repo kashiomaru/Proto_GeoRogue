@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -22,10 +23,21 @@ public class BulletManager : InitializeMonobehaviour
     [SerializeField] private float playerBulletScale = 0.5f;
     [SerializeField] private float enemyBulletScale = 0.5f;
 
+    [Header("Player Bullet Settings")]
+    [SerializeField] private Mesh playerBulletMesh;
+    [SerializeField] private Material playerBulletMaterial;
+
+    [Header("Enemy Bullet Settings")]
+    [SerializeField] private Mesh enemyBulletMesh;
+    [SerializeField] private Material enemyBulletMaterial;
+
     [Header("References")]
     [SerializeField] private GameManager gameManager;
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private RenderManager renderManager;
+
+    private RenderParams _rpPlayerBullet;
+    private RenderParams _rpEnemyBullet;
 
     private BulletGroup _playerBullets;
     private BulletGroup _enemyBullets;
@@ -43,6 +55,23 @@ public class BulletManager : InitializeMonobehaviour
         _collectedHitDamages = new NativeList<float>(maxBullets, Allocator.Persistent);
 
         _bulletGroups = new List<BulletGroup>();
+
+        if (playerBulletMaterial != null)
+        {
+            _rpPlayerBullet = new RenderParams(playerBulletMaterial)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
+        if (enemyBulletMaterial != null)
+        {
+            _rpEnemyBullet = new RenderParams(enemyBulletMaterial)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
     }
 
     protected override void FinalizeInternal()
@@ -130,7 +159,7 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 弾の座標をリストにコピーし、RenderManager で描画する。Job 完了後に GameManager から呼ぶ。
+    /// 弾の座標を Matrix に詰め、RenderManager で描画する。Job 完了後に GameManager から呼ぶ。
     /// </summary>
     public void RenderBullets()
     {
@@ -139,10 +168,10 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
         _playerBullets.RunMatrixJob();
-        renderManager.RenderPlayerBullets(_playerBullets.Matrices, _playerBullets.DrawCount);
+        renderManager.RenderBullets(_rpPlayerBullet, playerBulletMesh, _playerBullets.Matrices, _playerBullets.DrawCount);
 
         _enemyBullets.RunMatrixJob();
-        renderManager.RenderEnemyBullets(_enemyBullets.Matrices, _enemyBullets.DrawCount);
+        renderManager.RenderBullets(_rpEnemyBullet, enemyBulletMesh, _enemyBullets.Matrices, _enemyBullets.DrawCount);
     }
 
     /// <summary>
