@@ -5395,6 +5395,7 @@ MonoBehaviour:
   damageTextManager: {fileID: 614781148}
   gemManager: {fileID: 420920856}
   gameManager: {fileID: 379471278}
+  bulletManager: {fileID: 420466358}
 --- !u!4 &1856169497
 Transform:
   m_ObjectHideFlags: 0

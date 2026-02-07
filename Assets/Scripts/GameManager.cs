@@ -204,12 +204,14 @@ public class GameManager : MonoBehaviour
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 
+        player.HandlePlayerShooting();
+
         if (enemyManager != null && bulletManager != null)
         {
             JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
             JobHandle bulletHandle = bulletManager.ScheduleMoveAndCollideJob(deltaTime, enemyHandle, enemyManager);
             bulletHandle.Complete();
-            enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos, bulletManager);
+            enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos);
             bulletManager.CheckEnemyBulletVsPlayer();
             bulletManager.RenderBullets();
         }

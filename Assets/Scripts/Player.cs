@@ -92,15 +92,16 @@ public class Player : InitializeMonobehaviour
     
     protected override void InitializeInternal()
     {
-        // カメラはインスペクターで必ず指定すること
         Debug.Assert(playerCamera != null, "[Player] playerCamera が未設定です。インスペクターでカメラを指定してください。");
-        
-        // レンダラーとMaterialPropertyBlockを初期化（Renderer はインスペクターで指定すること）
         Debug.Assert(_renderer != null, "[Player] _renderer が未設定です。インスペクターで Renderer を指定してください。");
+        Debug.Assert(bulletManager != null, "[Player] bulletManager が未設定です。インスペクターで BulletManager を指定してください。");
 
         _currentHp = maxHp;
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+
+        bulletManager.Initialize();
+        bulletManager.InitializePlayerBullets();
     }
 
     protected override void FinalizeInternal()
@@ -138,12 +139,6 @@ public class Player : InitializeMonobehaviour
         UpdateFlashColor();
         
         HandleMovement();
-
-        // プレイ中のみ発射処理
-        if (gameManager != null && gameManager.IsPlaying)
-        {
-            HandlePlayerShooting();
-        }
     }
     
     // ダメージを受ける（実際に与えたダメージを返す）

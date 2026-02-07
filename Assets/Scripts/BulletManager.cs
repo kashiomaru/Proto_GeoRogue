@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
 /// <summary>
 /// プレイヤー弾と敵弾の 2 つの BulletPool を保持し、発射・移動スケジュール・当たり判定・描画をまとめて行う。
@@ -28,6 +29,7 @@ public class BulletManager : InitializeMonobehaviour
 
     private BulletGroup _playerBullets;
     private BulletGroup _enemyBullets;
+    private List<BulletGroup> _bulletGroups;
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
@@ -40,21 +42,35 @@ public class BulletManager : InitializeMonobehaviour
     {
         _collectedHitDamages = new NativeList<float>(maxBullets, Allocator.Persistent);
 
-        _playerBullets = new BulletGroup();
-        _playerBullets.Initialize(maxBullets, scale: playerBulletScale);
-
-        _enemyBullets = new BulletGroup();
-        _enemyBullets.Initialize(maxBullets, scale: enemyBulletScale);
+        _bulletGroups = new List<BulletGroup>();
     }
 
     protected override void FinalizeInternal()
     {
-        if (_collectedHitDamages.IsCreated)
+        foreach (var group in _bulletGroups)
         {
-            _collectedHitDamages.Dispose();
+            group.Dispose();
         }
-        _playerBullets?.Dispose();
-        _enemyBullets?.Dispose();
+        _bulletGroups.Clear();
+        _bulletGroups = null;
+        _playerBullets = null;
+        _enemyBullets = null;
+
+        _collectedHitDamages.Dispose();
+    }
+
+    public void InitializePlayerBullets()
+    {
+        _playerBullets = new BulletGroup();
+        _playerBullets.Initialize(maxBullets, scale: playerBulletScale);
+        _bulletGroups.Add(_playerBullets);
+    }
+
+    public void InitializeEnemyBullets()
+    {
+        _enemyBullets = new BulletGroup();
+        _enemyBullets.Initialize(maxBullets, scale: enemyBulletScale);
+        _bulletGroups.Add(_enemyBullets);
     }
 
     /// <summary>

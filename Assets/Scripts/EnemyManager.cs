@@ -26,6 +26,7 @@ public class EnemyManager : InitializeMonobehaviour
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private GemManager gemManager; // GemManagerへの参照
     [SerializeField] private GameManager gameManager; // GameManagerへの参照
+    [SerializeField] private BulletManager bulletManager;
     
     // ボス関連
     private GameObject _currentBoss; // 現在のボスインスタンス
@@ -67,7 +68,14 @@ public class EnemyManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
-        // _groups はフィールド初期化で new 済み
+        Debug.Assert(bulletManager != null, "[EnemyManager] bulletManager が未設定です。インスペクターで BulletManager を指定してください。");
+        Debug.Assert(renderManager != null, "[EnemyManager] renderManager が未設定です。インスペクターで RenderManager を指定してください。");
+        Debug.Assert(damageTextManager != null, "[EnemyManager] damageTextManager が未設定です。インスペクターで DamageTextManager を指定してください。");
+        Debug.Assert(gemManager != null, "[EnemyManager] gemManager が未設定です。インスペクターで GemManager を指定してください。");
+        Debug.Assert(gameManager != null, "[EnemyManager] gameManager が未設定です。インスペクターで GameManager を指定してください。");
+
+        bulletManager.Initialize();
+        bulletManager.InitializeEnemyBullets();
     }
 
     /// <summary>敵の移動Jobをスケジュール（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
@@ -114,9 +122,10 @@ public class EnemyManager : InitializeMonobehaviour
     /// <summary>
     /// 弾を撃つ敵の発射処理。各グループの ProcessBulletFiring を呼ぶ。BulletManager の Job 完了後に GameManager から呼ぶ。
     /// </summary>
-    public void ProcessEnemyBulletFiring(float deltaTime, float3 playerPos, BulletManager bulletManager)
+    public void ProcessEnemyBulletFiring(float deltaTime, float3 playerPos)
     {
         if (_groups == null || bulletManager == null) return;
+        
         foreach (var g in _groups)
             g.ProcessBulletFiring(deltaTime, playerPos, bulletManager);
     }
