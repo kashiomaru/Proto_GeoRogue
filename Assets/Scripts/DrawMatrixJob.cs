@@ -7,18 +7,18 @@ using Unity.Mathematics;
 using UnityEngine;
 
 /// <summary>
-/// アクティブな弾の座標・方向を詰めた Matrix4x4 配列と描画数を出力する。
-/// 描画用に RenderManager へ直接渡すためのバッファを埋める。
+/// アクティブな要素の座標（と任意の方向）を詰めた Matrix4x4 配列を出力する。
+/// ジェム・弾など描画用に RenderManager へ渡すバッファを埋める。
+/// directions がゼロベクトルの場合は identity 回転、それ以外は LookRotation を使用。
 /// IJobParallelFor + NativeReference + Interlocked で並列に詰める。
 /// </summary>
 [BurstCompile]
-public struct BulletMatrixJob : IJobParallelFor
+public struct DrawMatrixJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> positions;
     [ReadOnly] public NativeArray<float3> directions;
     [ReadOnly] public NativeArray<bool> activeFlags;
 
-    // 書き込み用（最大サイズで確保済みであること）
     [NativeDisableParallelForRestriction]
     public NativeArray<Matrix4x4> matrices;
 

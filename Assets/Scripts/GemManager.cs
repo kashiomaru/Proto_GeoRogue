@@ -35,12 +35,14 @@ public class GemManager : InitializeMonobehaviour
     /// <summary>描画用。Job で詰めた Matrix4x4 を RenderManager に直接渡す。</summary>
     private NativeArray<Matrix4x4> _gemMatrices;
     private NativeArray<int> _gemDrawCount;
-    /// <summary>GemMatrixJob の書き込みインデックス用。毎フレーム 0 にリセット。</summary>
+    /// <summary>DrawMatrixJob 用。ジェムは回転不要のためゼロ配列（identity になる）。</summary>
+    private NativeArray<float3> _gemDirections;
+    /// <summary>DrawMatrixJob の書き込みインデックス用。毎フレーム 0 にリセット。</summary>
     private NativeReference<int> _gemMatrixCounter;
 
     // 毎フレーム new を避けるため Job をキャッシュ
     private GemMagnetJob _gemMagnetJob;
-    private GemMatrixJob _gemMatrixJob;
+    private DrawMatrixJob _gemMatrixJob;
 
     // 経験値加算用（Job内からメインスレッドへ通知）
     private NativeQueue<int> _collectedGemQueue;
@@ -69,6 +71,7 @@ public class GemManager : InitializeMonobehaviour
         _gemIsFlying = new NativeArray<bool>(maxGems, Allocator.Persistent);
         _gemMatrices = new NativeArray<Matrix4x4>(maxGems, Allocator.Persistent);
         _gemDrawCount = new NativeArray<int>(1, Allocator.Persistent);
+        _gemDirections = new NativeArray<float3>(maxGems, Allocator.Persistent);
         _gemMatrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
@@ -82,6 +85,7 @@ public class GemManager : InitializeMonobehaviour
         _gemMagnetJob.flyingFlags = _gemIsFlying;
 
         _gemMatrixJob.positions = _gemPositions;
+        _gemMatrixJob.directions = _gemDirections;
         _gemMatrixJob.activeFlags = _gemActive;
         _gemMatrixJob.matrices = _gemMatrices;
         _gemMatrixJob.counter = _gemMatrixCounter;
@@ -120,6 +124,8 @@ public class GemManager : InitializeMonobehaviour
             _gemMatrices.Dispose();
         if (_gemDrawCount.IsCreated)
             _gemDrawCount.Dispose();
+        if (_gemDirections.IsCreated)
+            _gemDirections.Dispose();
         if (_gemMatrixCounter.IsCreated)
             _gemMatrixCounter.Dispose();
         if (_collectedGemQueue.IsCreated)

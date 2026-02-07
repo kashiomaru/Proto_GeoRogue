@@ -13,7 +13,7 @@ public class BulletGroup
     private NativeArray<int> _drawCount;
     private NativeReference<int> _matrixCounter;
     private float _scale;
-    private BulletMatrixJob _matrixJob;
+    private DrawMatrixJob _matrixJob;
 
     /// <summary>内部の BulletPool。Spawn / ScheduleMoveJob / Positions / Active 等はここから参照する。</summary>
     public BulletPool Pool => _pool;
@@ -36,7 +36,7 @@ public class BulletGroup
         _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _scale = scale;
 
-        _matrixJob = new BulletMatrixJob
+        _matrixJob = new DrawMatrixJob
         {
             positions = _pool.Positions,
             directions = _pool.Directions,
