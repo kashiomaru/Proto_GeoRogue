@@ -27,8 +27,10 @@ public class EnemyGroup
     private readonly Material _material;
     private readonly Vector3 _scale;
     private readonly BulletData _bulletData;
-    /// <summary>1発あたりの拡散用 Y 軸回転（CountPerShot 分）。初期化時に計算。</summary>
-    private readonly quaternion[] _bulletSpreadRotations;
+    /// <summary>1発あたりの拡散用 Y 軸回転（CountPerShot 分）。初期化時に計算。Job に渡すため NativeArray。</summary>
+    private NativeArray<quaternion> _bulletSpreadRotations;
+    /// <summary>発射リクエストを Job から溜め、メインスレッドでドレインして SpawnEnemyBullet に渡す。</summary>
+    private NativeQueue<EnemyBulletSpawnRequest> _bulletSpawnQueue;
 
     /// <summary>描画用。コンストラクタで一度だけ初期化。matProps は RenderManager が毎フレーム設定する。</summary>
     private RenderParams _rpEnemy;
@@ -53,6 +55,7 @@ public class EnemyGroup
     private EnemyMoveAndHashJob _cachedMoveJob;
     private EnemyRespawnJob _cachedRespawnJob;
     private EnemyGroupInitJob _cachedGroupInitJob;
+    private EnemyBulletFireJob _cachedBulletFireJob;
 
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
@@ -110,11 +113,11 @@ public class EnemyGroup
         _scale = data.Scale;
         _bulletData = data.BulletData;
 
-        // 弾の拡散方向用 Y 軸回転を事前計算（countPerShot / spreadAngle はグループ固定のため）
+        // 弾の拡散方向用 Y 軸回転を事前計算（countPerShot / spreadAngle はグループ固定のため）。Job に渡すため NativeArray。
         if (_bulletData != null)
         {
             int n = _bulletData.CountPerShot;
-            _bulletSpreadRotations = new quaternion[n];
+            _bulletSpreadRotations = new NativeArray<quaternion>(n, Allocator.Persistent);
             float spreadAngle = _bulletData.SpreadAngle;
             for (int j = 0; j < n; j++)
             {
@@ -123,10 +126,14 @@ public class EnemyGroup
                     : 0f;
                 _bulletSpreadRotations[j] = quaternion.RotateY(math.radians(angleDeg));
             }
-        }
-        else
-        {
-            _bulletSpreadRotations = null;
+            _bulletSpawnQueue = new NativeQueue<EnemyBulletSpawnRequest>(Allocator.Persistent);
+
+            _cachedBulletFireJob.towardPlayer = _bulletData.DirectionType == BulletDirectionType.TowardPlayer;
+            _cachedBulletFireJob.interval = _bulletData.FireInterval;
+            _cachedBulletFireJob.speed = _bulletData.Speed;
+            _cachedBulletFireJob.damage = _bulletData.Damage;
+            _cachedBulletFireJob.lifeTime = _bulletData.LifeTime;
+            _cachedBulletFireJob.countPerShot = _bulletData.CountPerShot;
         }
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
@@ -190,6 +197,15 @@ public class EnemyGroup
         _cachedRespawnJob.hp = _hp;
         _cachedRespawnJob.fireTimers = _fireTimers;
         _cachedRespawnJob.flashTimers = _flashTimers;
+
+        if (_bulletData != null)
+        {
+            _cachedBulletFireJob.positions = _positions;
+            _cachedBulletFireJob.directions = _directions;
+            _cachedBulletFireJob.active = _active;
+            _cachedBulletFireJob.fireTimers = _fireTimers;
+            _cachedBulletFireJob.spreadRotations = _bulletSpreadRotations;
+        }
     }
 
     /// <summary>確保したバッファを破棄する。二重呼び出し防止は呼び出し側で行う。</summary>
@@ -208,6 +224,8 @@ public class EnemyGroup
         if (_deadPositions.IsCreated) _deadPositions.Dispose();
         if (_damageQueue.IsCreated) _damageQueue.Dispose();
         if (_flashQueue.IsCreated) _flashQueue.Dispose();
+        if (_bulletSpreadRotations.IsCreated) _bulletSpreadRotations.Dispose();
+        if (_bulletSpawnQueue.IsCreated) _bulletSpawnQueue.Dispose();
     }
 
     /// <summary>このグループの敵移動Jobをスケジュールする。複数グループ時は前のグループの Job を dependsOn に渡すこと（同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
@@ -261,61 +279,24 @@ public class EnemyGroup
 
     /// <summary>
     /// 弾を撃つ敵について発射タイマーを進め、間隔が来たら BulletManager に弾を生成させる。BulletManager の Job 完了後に GameManager から呼ぶ。
+    /// 発射判定とリクエスト出力は Job で行い、メインスレッドでキューをドレインして SpawnEnemyBullet を呼ぶ。
     /// </summary>
     public void ProcessBulletFiring(float deltaTime, float3 playerPos, BulletManager bulletManager)
     {
-        if (_bulletData == null || bulletManager == null)
+        if (_bulletData == null || bulletManager == null || !_bulletSpawnQueue.IsCreated)
         {
             return;
         }
-        float interval = _bulletData.FireInterval;
-        float speed = _bulletData.Speed;
-        float damage = _bulletData.Damage;
-        float lifeTime = _bulletData.LifeTime;
-        int countPerShot = _bulletData.CountPerShot;
-        bool towardPlayer = _bulletData.DirectionType == BulletDirectionType.TowardPlayer;
 
-        for (int i = 0; i < _spawnCount; i++)
+        _cachedBulletFireJob.playerPos = playerPos;
+        _cachedBulletFireJob.deltaTime = deltaTime;
+        _cachedBulletFireJob.spawnQueue = _bulletSpawnQueue.AsParallelWriter();
+
+        _cachedBulletFireJob.Schedule(_spawnCount, 64).Complete();
+
+        while (_bulletSpawnQueue.TryDequeue(out EnemyBulletSpawnRequest req))
         {
-            if (_active[i] == false)
-            {
-                continue;
-            }
-            _fireTimers[i] += deltaTime;
-            if (_fireTimers[i] < interval)
-            {
-                continue;
-            }
-            _fireTimers[i] = 0f;
-
-            float3 pos = _positions[i];
-            float3 baseDir;
-            if (towardPlayer)
-            {
-                baseDir = math.normalize(playerPos - pos);
-                if (math.lengthsq(baseDir) < 0.0001f)
-                {
-                    baseDir = _directions[i];
-                }
-            }
-            else
-            {
-                baseDir = _directions[i];
-                if (math.lengthsq(baseDir) < 0.0001f)
-                {
-                    baseDir = new float3(0f, 0f, 1f);
-                }
-            }
-
-            for (int j = 0; j < countPerShot; j++)
-            {
-                float3 dir = math.rotate(_bulletSpreadRotations[j], baseDir);
-                if (math.lengthsq(dir) > 0.0001f)
-                {
-                    dir = math.normalize(dir);
-                }
-                bulletManager.SpawnEnemyBullet(pos, dir, speed, damage, lifeTime);
-            }
+            bulletManager.SpawnEnemyBullet((Vector3)req.position, (Vector3)req.direction, req.speed, req.damage, req.lifeTime);
         }
     }
 
