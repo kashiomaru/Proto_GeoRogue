@@ -46,24 +46,7 @@ public class EnemyManager : InitializeMonobehaviour
     
     void Update()
     {
-        if (gameManager == null)
-        {
-            return;
-        }
-        
-        // ボスが有効なときはボス死亡チェック（通常敵と共存可能）
-        if (_bossActive)
-        {
-            CheckBossDeath();
-        }
-
-        // 通常敵が有効なときは移動・ジェム・ダメージ表示・リスポーン（描画は LateUpdate）
-        if (_normalEnemiesEnabled && _groups != null)
-        {
-            ProcessDeadEnemies(gemManager);
-            ProcessEnemyDamage();
-            HandleRespawn();
-        }
+        // 処理順は GameManager.Update で制御するため、ここでは何もしない
     }
 
     void LateUpdate()
@@ -134,7 +117,8 @@ public class EnemyManager : InitializeMonobehaviour
     /// </summary>
     public void ProcessEnemyBulletFiring(float deltaTime, float3 playerPos)
     {
-        if (_groups == null || bulletManager == null) return;
+        // ボスステート時は通常敵を無効化しているため、通常敵の弾発射は行わない
+        if (_normalEnemiesEnabled == false || _groups == null || bulletManager == null) return;
 
         foreach (var g in _groups)
             g.ProcessBulletFiring(deltaTime, playerPos, bulletManager);
@@ -230,7 +214,8 @@ public class EnemyManager : InitializeMonobehaviour
     }
 
     // ボスの死亡チェックと削除処理
-    private void CheckBossDeath()
+    /// <summary>ボス死亡チェック。GameManager から順序制御のため呼ばれる。</summary>
+    public void CheckBossDeath()
     {
         if (_currentBossComponent == null)
         {

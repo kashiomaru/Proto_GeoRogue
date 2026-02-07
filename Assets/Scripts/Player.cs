@@ -138,7 +138,12 @@ public class Player : InitializeMonobehaviour
         
         // エミッション色の更新
         UpdateFlashColor();
-        
+    }
+
+    /// <summary>プレイヤーの移動処理。GameManager から順序制御のため呼ばれる。</summary>
+    public void ProcessMovement()
+    {
+        if (IsInitialized == false) return;
         HandleMovement();
     }
     

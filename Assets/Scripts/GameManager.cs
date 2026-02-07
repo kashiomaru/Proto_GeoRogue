@@ -207,19 +207,33 @@ public class GameManager : MonoBehaviour
         float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 
-        player.HandlePlayerShooting();
-
+        // 1. プレイヤー・敵の移動
+        player.ProcessMovement();
         JobHandle enemyHandle = enemyManager.ScheduleEnemyMoveJob(deltaTime, playerPos, _playerDamageQueue.AsParallelWriter());
-        JobHandle bulletMoveHandle = bulletManager.ScheduleMoveJob(deltaTime, enemyHandle);
+        enemyHandle.Complete();
+
+        // 2. 弾発射（プレイヤー・敵）
+        player.HandlePlayerShooting();
+        enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos);
+
+        // 3. 弾移動
+        JobHandle bulletMoveHandle = bulletManager.ScheduleMoveJob(deltaTime, default(JobHandle));
+
+        // 4. 当たり判定（プレイヤー弾vs敵・敵弾vsプレイヤー）
         JobHandle bulletCollideHandle = bulletManager.ScheduleCollideJob(bulletMoveHandle, enemyManager);
         bulletCollideHandle.Complete();
-        enemyManager.ProcessEnemyBulletFiring(deltaTime, playerPos);
         bulletManager.CheckEnemyBulletVsPlayer();
 
-        // 3. プレイヤーへのダメージ処理
+        // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン
+        enemyManager.CheckBossDeath();
+        enemyManager.ProcessDeadEnemies(gemManager);
+        enemyManager.ProcessEnemyDamage();
+        enemyManager.HandleRespawn();
+
+        // 6. プレイヤーへのダメージ処理
         HandlePlayerDamage();
-        
-        // 4. 経験値の取得と加算
+
+        // 7. 経験値の取得と加算
         HandleExperience();
     }
 
