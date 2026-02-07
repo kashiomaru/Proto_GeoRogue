@@ -4,6 +4,19 @@ using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
 
+[BurstCompile]
+struct GemInitFlagsJob : IJobParallelFor
+{
+    public NativeArray<bool> active;
+    public NativeArray<bool> flying;
+
+    public void Execute(int index)
+    {
+        active[index] = false;
+        flying[index] = false;
+    }
+}
+
 public class GemManager : InitializeMonobehaviour
 {
     [SerializeField] private int maxGems = 1000;
@@ -22,6 +35,10 @@ public class GemManager : InitializeMonobehaviour
     /// <summary>描画用。Job で詰めた Matrix4x4 を RenderManager に直接渡す。</summary>
     private NativeArray<Matrix4x4> _gemMatrices;
     private NativeArray<int> _gemDrawCount;
+
+    // 毎フレーム new を避けるため Job をキャッシュ
+    private GemMagnetJob _gemMagnetJob;
+    private GemMatrixJob _gemMatrixJob;
 
     // 経験値加算用（Job内からメインスレッドへ通知）
     private NativeQueue<int> _collectedGemQueue;
@@ -52,11 +69,20 @@ public class GemManager : InitializeMonobehaviour
         _gemDrawCount = new NativeArray<int>(1, Allocator.Persistent);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
-        for (int i = 0; i < maxGems; i++)
-        {
-            _gemActive[i] = false;
-            _gemIsFlying[i] = false;
-        }
+        var initJob = new GemInitFlagsJob { active = _gemActive, flying = _gemIsFlying };
+        initJob.Schedule(maxGems, 64).Complete();
+
+        // フレーム共通の Job フィールドを一度だけ設定
+        _gemMagnetJob.moveSpeed = gemSpeed;
+        _gemMagnetJob.positions = _gemPositions;
+        _gemMagnetJob.activeFlags = _gemActive;
+        _gemMagnetJob.flyingFlags = _gemIsFlying;
+
+        _gemMatrixJob.positions = _gemPositions;
+        _gemMatrixJob.activeFlags = _gemActive;
+        _gemMatrixJob.matrices = _gemMatrices;
+        _gemMatrixJob.drawCount = _gemDrawCount;
+        _gemMatrixJob.scale = gemScale;
     }
 
     void Update()
@@ -67,29 +93,13 @@ public class GemManager : InitializeMonobehaviour
         }
 
         float magnetDist = player != null ? player.GetMagnetDist() : 5f;
-        var gemJob = new GemMagnetJob
-        {
-            deltaTime = Time.deltaTime,
-            playerPos = (float3)playerTransform.position,
-            magnetDistSq = magnetDist * magnetDist,
-            moveSpeed = gemSpeed,
-            positions = _gemPositions,
-            activeFlags = _gemActive,
-            flyingFlags = _gemIsFlying,
-            collectedGemQueue = _collectedGemQueue.AsParallelWriter()
-        };
-        gemJob.Schedule(maxGems, 64).Complete();
+        _gemMagnetJob.deltaTime = Time.deltaTime;
+        _gemMagnetJob.playerPos = (float3)playerTransform.position;
+        _gemMagnetJob.magnetDistSq = magnetDist * magnetDist;
+        _gemMagnetJob.collectedGemQueue = _collectedGemQueue.AsParallelWriter();
+        _gemMagnetJob.Schedule(maxGems, 64).Complete();
 
-        // Job で Matrix4x4 を詰め、RenderManager に直接渡す
-        var matrixJob = new GemMatrixJob
-        {
-            positions = _gemPositions,
-            activeFlags = _gemActive,
-            matrices = _gemMatrices,
-            drawCount = _gemDrawCount,
-            scale = gemScale
-        };
-        matrixJob.Schedule().Complete();
+        _gemMatrixJob.Schedule().Complete();
         renderManager?.RenderGems(_gemMatrices, _gemDrawCount[0]);
     }
 
