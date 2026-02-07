@@ -36,10 +36,9 @@ public struct DrawMatrixJob : IJobParallelFor
             return;
 
         Assert.IsFalse(scale == Vector3.zero, "DrawMatrixJob.scale must not be zero.");
-        Assert.IsTrue(dir.sqrMagnitude > 0.0001f, "Direction must not be zero.");
-
-        int writeIndex = Interlocked.Increment(ref UnsafeUtility.AsRef<int>(NativeReferenceUnsafeUtility.GetUnsafePtr(counter))) - 1;
         Vector3 dir = (Vector3)directions[index];
+        Assert.IsTrue(dir.sqrMagnitude > 0.0001f, "Direction must not be zero.");
+        int writeIndex = Interlocked.Increment(ref UnsafeUtility.AsRef<int>(NativeReferenceUnsafeUtility.GetUnsafePtr(counter))) - 1;
         Quaternion rot = Quaternion.LookRotation(dir);
         matrices[writeIndex] = Matrix4x4.TRS((Vector3)positions[index], rot, scale);
     }
