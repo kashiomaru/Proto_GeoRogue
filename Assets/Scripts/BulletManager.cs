@@ -34,6 +34,11 @@ public class BulletManager : InitializeMonobehaviour
     private BulletGroup _enemyBullets;
     private float _playerShotTimer;
 
+    /// <summary>前回の弾数。変わったときだけ拡散方向を再計算する。</summary>
+    private int _lastBulletCountPerShot = -1;
+    /// <summary>拡散方向（forward 基準）。bulletCountPerShot が変わったときだけ更新。</summary>
+    private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
+
     public float BulletDamage => bulletDamage;
 
     protected override void InitializeInternal()
@@ -70,16 +75,24 @@ public class BulletManager : InitializeMonobehaviour
             _playerShotTimer = 0f;
             Vector3 baseDir = playerTransform.forward;
 
+            if (bulletCountPerShot != _lastBulletCountPerShot)
+            {
+                _cachedShotDirections.Clear();
+                for (int i = 0; i < bulletCountPerShot; i++)
+                {
+                    float angle = bulletCountPerShot > 1
+                        ? -multiShotSpreadAngle * (bulletCountPerShot - 1) * 0.5f + (multiShotSpreadAngle * i)
+                        : 0f;
+                    Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
+                    _cachedShotDirections.Add(dir);
+                }
+                _lastBulletCountPerShot = bulletCountPerShot;
+            }
+
+            Quaternion baseRot = Quaternion.LookRotation(baseDir);
             for (int i = 0; i < bulletCountPerShot; i++)
             {
-                float angle = 0f;
-                if (bulletCountPerShot > 1)
-                {
-                    angle = -multiShotSpreadAngle * (bulletCountPerShot - 1) * 0.5f + (multiShotSpreadAngle * i);
-                }
-                Quaternion rot = Quaternion.AngleAxis(angle, Vector3.up);
-                Vector3 finalDir = rot * baseDir;
-
+                Vector3 finalDir = baseRot * _cachedShotDirections[i];
                 _playerBullets.Pool.Spawn(
                     playerTransform.position,
                     finalDir,
