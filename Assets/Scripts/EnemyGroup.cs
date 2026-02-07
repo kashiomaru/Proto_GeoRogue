@@ -31,7 +31,8 @@ public class EnemyGroup
     private RenderParams _rpEnemy;
 
     private NativeArray<float3> _positions;
-    private NativeArray<quaternion> _rotations;
+    /// <summary>敵の向き（前方ベクトル、正規化）。描画・発射方向に使用。</summary>
+    private NativeArray<float3> _directions;
     private NativeArray<bool> _active;
     private NativeArray<float> _hp;
     private NativeArray<float> _fireTimers;
@@ -132,7 +133,7 @@ public class EnemyGroup
         }
 
         _positions = new NativeArray<float3>(_maxCount, Allocator.Persistent);
-        _rotations = new NativeArray<quaternion>(_maxCount, Allocator.Persistent);
+        _directions = new NativeArray<float3>(_maxCount, Allocator.Persistent);
         _active = new NativeArray<bool>(_maxCount, Allocator.Persistent);
         _hp = new NativeArray<float>(_maxCount, Allocator.Persistent);
         _fireTimers = new NativeArray<float>(_maxCount, Allocator.Persistent);
@@ -144,6 +145,7 @@ public class EnemyGroup
         for (int i = 0; i < _maxCount; i++)
         {
             _active[i] = false;
+            _directions[i] = new float3(0f, 0f, 1f);
             _fireTimers[i] = 0f;
             _flashTimers[i] = 0f;
         }
@@ -158,7 +160,7 @@ public class EnemyGroup
     public void Dispose()
     {
         if (_positions.IsCreated) _positions.Dispose();
-        if (_rotations.IsCreated) _rotations.Dispose();
+        if (_directions.IsCreated) _directions.Dispose();
         if (_active.IsCreated) _active.Dispose();
         if (_hp.IsCreated) _hp.Dispose();
         if (_fireTimers.IsCreated) _fireTimers.Dispose();
@@ -189,7 +191,7 @@ public class EnemyGroup
             damageRadius = _damageRadius,
             spatialMap = _spatialMap.AsParallelWriter(),
             positions = _positions,
-            rotations = _rotations,
+            directions = _directions,
             activeFlags = _active,
             damageQueue = playerDamageQueue
         };
@@ -234,6 +236,7 @@ public class EnemyGroup
                 float3 offset = new float3(math.cos(angle) * dist, 0f, math.sin(angle) * dist);
                 float3 newPos = playerPos + offset;
                 _positions[i] = newPos;
+                _directions[i] = new float3(0f, 0f, 1f);
                 _active[i] = true;
                 _hp[i] = _maxHp;
                 // 最初の発射タイミングを 0～fireInterval の間でランダムにし、敵が一斉に撃たないようにする
@@ -283,12 +286,12 @@ public class EnemyGroup
                 baseDir = math.normalize(playerPos - pos);
                 if (math.lengthsq(baseDir) < 0.0001f)
                 {
-                    baseDir = math.forward(_rotations[i]);
+                    baseDir = _directions[i];
                 }
             }
             else
             {
-                baseDir = math.forward(_rotations[i]);
+                baseDir = _directions[i];
                 if (math.lengthsq(baseDir) < 0.0001f)
                 {
                     baseDir = new float3(0f, 0f, 1f);
@@ -320,7 +323,7 @@ public class EnemyGroup
         var job = new EnemyDrawMatrixJob
         {
             positions = _positions,
-            rotations = _rotations,
+            directions = _directions,
             activeFlags = _active,
             flashTimers = _flashTimers,
             deltaTime = deltaTime,

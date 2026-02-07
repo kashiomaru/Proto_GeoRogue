@@ -15,7 +15,7 @@ using UnityEngine;
 public struct EnemyDrawMatrixJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> positions;
-    [ReadOnly] public NativeArray<quaternion> rotations;
+    [ReadOnly] public NativeArray<float3> directions;
     [ReadOnly] public NativeArray<bool> activeFlags;
 
     public NativeArray<float> flashTimers;
@@ -41,7 +41,10 @@ public struct EnemyDrawMatrixJob : IJobParallelFor
             flashTimers[index] -= deltaTime;
 
         int w = Interlocked.Increment(ref UnsafeUtility.AsRef<int>(NativeReferenceUnsafeUtility.GetUnsafePtr(counter))) - 1;
-        matrices[w] = Matrix4x4.TRS((Vector3)positions[index], (Quaternion)rotations[index], (Vector3)scale);
+        quaternion rot = math.lengthsq(directions[index]) > 0.0001f
+            ? quaternion.LookRotationSafe(directions[index], math.up())
+            : quaternion.identity;
+        matrices[w] = Matrix4x4.TRS((Vector3)positions[index], (Quaternion)rot, (Vector3)scale);
         emissionColors[w] = flashTimers[index] > 0f
             ? new Vector4(flashIntensity, flashIntensity, flashIntensity, 1f)
             : Vector4.zero;

@@ -14,7 +14,8 @@ public struct EnemyMoveAndHashJob : IJobParallelFor
 
     [WriteOnly] public NativeParallelMultiHashMap<int, int>.ParallelWriter spatialMap;
     public NativeArray<float3> positions;
-    public NativeArray<quaternion> rotations; // プレイヤー方向を向く回転（描画用）
+    /// <summary>敵の向き（前方ベクトル、正規化）。プレイヤー方向を向く。</summary>
+    public NativeArray<float3> directions;
     public NativeArray<bool> activeFlags;
 
     public NativeQueue<int>.ParallelWriter damageQueue;
@@ -24,7 +25,7 @@ public struct EnemyMoveAndHashJob : IJobParallelFor
         if (activeFlags[index] == false)
         {
             positions[index] = new float3(0, -1000, 0);
-            rotations[index] = quaternion.identity;
+            directions[index] = new float3(0f, 0f, 1f);
             return;
         }
 
@@ -34,12 +35,12 @@ public struct EnemyMoveAndHashJob : IJobParallelFor
 
         positions[index] = pos;
 
-        // プレイヤー方向を向く回転（XZ 平面のみ）
+        // プレイヤー方向を向く（XZ 平面のみ）
         float3 toPlayer = target - pos;
         toPlayer.y = 0f;
-        rotations[index] = math.lengthsq(toPlayer) > 0.0001f
-            ? quaternion.LookRotationSafe(math.normalize(toPlayer), math.up())
-            : quaternion.identity;
+        directions[index] = math.lengthsq(toPlayer) > 0.0001f
+            ? math.normalize(toPlayer)
+            : new float3(0f, 0f, 1f);
 
         float distSq = math.distancesq(pos, target);
         if (distSq < damageRadius * damageRadius)
