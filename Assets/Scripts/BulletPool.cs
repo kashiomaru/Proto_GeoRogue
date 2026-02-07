@@ -17,46 +17,37 @@ public class BulletPool
     private NativeArray<float> _lifeTime;
     private NativeArray<float> _damage;
     private int _indexHead;
-    private bool _hasDamageArray;
     private bool _disposed;
 
     /// <summary>最大弾数</summary>
     public int MaxCount { get; private set; }
-
-    /// <summary>弾ごとのダメージ配列を持つか（敵弾用は true）</summary>
-    public bool HasDamageArray => _hasDamageArray;
 
     public NativeArray<float3> Positions => _positions;
     public NativeArray<float3> Directions => _directions;
     public NativeArray<float3> Velocities => _velocities;
     public NativeArray<bool> Active => _active;
     public NativeArray<float> LifeTime => _lifeTime;
-    /// <summary>HasDamageArray が true のときのみ有効</summary>
+    /// <summary>弾ごとのダメージ配列</summary>
     public NativeArray<float> Damage => _damage;
 
     /// <summary>
     /// 初期化。Dispose 後は再初期化しないこと。
     /// </summary>
     /// <param name="maxCount">最大弾数</param>
-    /// <param name="useDamageArray">true のとき弾ごとのダメージを保持（敵弾用）</param>
-    public void Initialize(int maxCount, bool useDamageArray = false)
+    public void Initialize(int maxCount)
     {
         if (_positions.IsCreated)
         {
             Dispose();
         }
         MaxCount = maxCount;
-        _hasDamageArray = useDamageArray;
 
         _positions = new NativeArray<float3>(maxCount, Allocator.Persistent);
         _directions = new NativeArray<float3>(maxCount, Allocator.Persistent);
         _velocities = new NativeArray<float3>(maxCount, Allocator.Persistent);
         _active = new NativeArray<bool>(maxCount, Allocator.Persistent);
         _lifeTime = new NativeArray<float>(maxCount, Allocator.Persistent);
-        if (useDamageArray)
-        {
-            _damage = new NativeArray<float>(maxCount, Allocator.Persistent);
-        }
+        _damage = new NativeArray<float>(maxCount, Allocator.Persistent);
 
         var initJob = new BulletInitActiveJob { active = _active };
         initJob.Schedule(maxCount, 64).Complete();
@@ -71,7 +62,7 @@ public class BulletPool
     /// <param name="direction">飛ばす方向（正規化されていなくても内部で正規化する）</param>
     /// <param name="speed">速度</param>
     /// <param name="lifeTime">生存時間（秒）</param>
-    /// <param name="damage">ダメージ（HasDamageArray が true のときのみ使用）</param>
+    /// <param name="damage">弾ごとのダメージ</param>
     public void Spawn(Vector3 position, Vector3 direction, float speed, float lifeTime, float damage = 0f)
     {
         if (_disposed || !_positions.IsCreated)
@@ -87,10 +78,7 @@ public class BulletPool
         _directions[id] = (float3)dir;
         _velocities[id] = (float3)(dir * speed);
         _lifeTime[id] = lifeTime;
-        if (_hasDamageArray && _damage.IsCreated)
-        {
-            _damage[id] = damage;
-        }
+        _damage[id] = damage;
     }
 
     /// <summary>
@@ -106,15 +94,16 @@ public class BulletPool
     }
 
     /// <summary>
-    /// 指定円（中心・半径の2乗）と当たった弾を収集し、該当弾を無効化する。
-    /// ヒットした弾のダメージを damagesOut に追加する（敵弾用は弾ごと、プレイヤー弾用は damageWhenNoArray）。
+    /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。
+    /// ヒットした弾のダメージを damagesOut に追加する。
     /// </summary>
-    public void CollectHitsAgainstCircle(float3 center, float radiusSq, List<float> damagesOut, float damageWhenNoArray = 0f)
+    public void CollectHitsAgainstCircle(float3 center, float radius, List<float> damagesOut)
     {
         if (_disposed || !_positions.IsCreated || damagesOut == null)
         {
             return;
         }
+        float radiusSq = radius * radius;
         for (int i = 0; i < MaxCount; i++)
         {
             if (_active[i] == false)
@@ -126,8 +115,7 @@ public class BulletPool
             {
                 continue;
             }
-            float damage = _hasDamageArray && _damage.IsCreated ? _damage[i] : damageWhenNoArray;
-            damagesOut.Add(damage);
+            damagesOut.Add(_damage[i]);
             _active[i] = false;
         }
     }

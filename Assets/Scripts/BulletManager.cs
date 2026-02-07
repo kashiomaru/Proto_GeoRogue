@@ -48,10 +48,10 @@ public class BulletManager : InitializeMonobehaviour
     protected override void InitializeInternal()
     {
         _playerBullets = new BulletGroup();
-        _playerBullets.Initialize(maxPlayerBullets, useDamageArray: false, scale: playerBulletScale);
+        _playerBullets.Initialize(maxPlayerBullets, scale: playerBulletScale);
 
         _enemyBullets = new BulletGroup();
-        _enemyBullets.Initialize(maxEnemyBullets, useDamageArray: true, scale: enemyBulletScale);
+        _enemyBullets.Initialize(maxEnemyBullets, scale: enemyBulletScale);
     }
 
     protected override void FinalizeInternal()
@@ -102,7 +102,7 @@ public class BulletManager : InitializeMonobehaviour
                     finalDir,
                     bulletSpeed,
                     2.0f,
-                    damage: 0f
+                    damage: bulletDamage
                 );
             }
         }
@@ -189,7 +189,7 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
         _collectedHitDamages.Clear();
-        _enemyBullets.Pool.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius * playerCollisionRadius, _collectedHitDamages);
+        _enemyBullets.Pool.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
         foreach (var damage in _collectedHitDamages)
         {
             gameManager?.AddPlayerDamage(Mathf.RoundToInt(damage));
@@ -211,10 +211,10 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
         _collectedHitDamages.Clear();
-        _playerBullets.Pool.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius * boss.CollisionRadius, _collectedHitDamages, damageWhenNoArray: bulletDamage);
-        foreach (var _ in _collectedHitDamages)
+        _playerBullets.Pool.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
+        foreach (var damage in _collectedHitDamages)
         {
-            float actualDamage = boss.TakeDamage(bulletDamage);
+            float actualDamage = boss.TakeDamage(damage);
             if (actualDamage > 0)
             {
                 damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage, boss.CollisionRadius);

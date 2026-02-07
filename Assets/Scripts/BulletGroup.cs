@@ -24,12 +24,12 @@ public class BulletGroup
     public int DrawCount => _drawCount.IsCreated ? _drawCount[0] : 0;
 
     /// <summary>
-    /// 初期化。最大弾数・ダメージ配列の有無・描画スケールを指定する。
+    /// 初期化。最大弾数・描画スケールを指定する。
     /// </summary>
-    public void Initialize(int maxCount, bool useDamageArray = false, float scale = 0.5f)
+    public void Initialize(int maxCount, float scale = 0.5f)
     {
         _pool = new BulletPool();
-        _pool.Initialize(maxCount, useDamageArray);
+        _pool.Initialize(maxCount);
 
         _matrices = new NativeArray<Matrix4x4>(maxCount, Allocator.Persistent);
         _drawCount = new NativeArray<int>(1, Allocator.Persistent);
