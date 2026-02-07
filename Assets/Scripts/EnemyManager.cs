@@ -21,8 +21,6 @@ public class EnemyManager : InitializeMonobehaviour
     [Tooltip("リスポーン位置のプレイヤーからの最大半径")]
     [SerializeField] private float respawnMaxRadius = 30f;
     private GameObject bossPrefab;
-    private float bossSpawnDistance = 20f;
-
     [Header("References")]
     [SerializeField] private RenderManager renderManager;
     [SerializeField] private DamageTextManager damageTextManager;
@@ -33,7 +31,6 @@ public class EnemyManager : InitializeMonobehaviour
     private GameObject _currentBoss; // 現在のボスインスタンス
     private BossBase _currentBossComponent; // 毎フレーム GetComponent しないようキャッシュ
     private GameObject _bossPrefabOverride; // ステージ適用時のボス Prefab（null なら上記 bossPrefab を使用）
-    private float _bossSpawnDistanceOverride = -1f; // ステージ適用時の距離（< 0 なら上記 bossSpawnDistance を使用）
 
     // 通常敵・ボスの有効フラグ（GameManager が SetNormalEnemiesEnabled / SetBossActive で設定）
     private bool _normalEnemiesEnabled;
@@ -161,7 +158,7 @@ public class EnemyManager : InitializeMonobehaviour
         
         // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
         GameObject prefabToUse = _bossPrefabOverride != null ? _bossPrefabOverride : bossPrefab;
-        float distanceToUse = _bossSpawnDistanceOverride >= 0f ? _bossSpawnDistanceOverride : bossSpawnDistance;
+        float distanceToUse = respawnMaxRadius;
         Vector3 playerBackward = -playerForward; // プレイヤーの後ろ方向
         Vector3 bossPosition = playerPosition + playerBackward * distanceToUse; // 指定距離の位置
         bossPosition.y = 0f; // Y座標を0に固定
@@ -294,7 +291,6 @@ public class EnemyManager : InitializeMonobehaviour
     {
         if (stage == null) return;
         _bossPrefabOverride = stage.BossPrefab;
-        _bossSpawnDistanceOverride = stage.BossSpawnDistance;
     }
 
     protected override void FinalizeInternal()

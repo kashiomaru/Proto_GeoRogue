@@ -26,7 +26,6 @@ public class StageData : ScriptableObject
 
     [Header("Boss")]
     [SerializeField] private GameObject bossPrefab;
-    [SerializeField] private float bossSpawnDistance = 20f;
 
     // --- プロパティ（読み取り専用、他スクリプトから参照用）---
 
@@ -72,5 +71,4 @@ public class StageData : ScriptableObject
     public int SpawnCount => FirstEnemyData?.SpawnCount ?? 0;
 
     public GameObject BossPrefab => bossPrefab;
-    public float BossSpawnDistance => bossSpawnDistance;
 }
