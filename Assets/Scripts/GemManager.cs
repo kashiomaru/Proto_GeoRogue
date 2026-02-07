@@ -3,13 +3,13 @@ using Unity.Collections;
 using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
-using System.Collections.Generic;
 
 public class GemManager : InitializeMonobehaviour
 {
     [SerializeField] private int maxGems = 1000;
     [SerializeField] private Transform playerTransform;
     [SerializeField] private float gemSpeed = 15.0f;  // 吸い寄せ速度
+    [SerializeField] private float gemScale = 0.4f;  // 描画スケール（Matrix4x4 用）
 
     [Header("References")]
     [SerializeField] private Player player; // 吸い寄せ距離は Player.GetMagnetDist() から取得
@@ -19,8 +19,9 @@ public class GemManager : InitializeMonobehaviour
     private NativeArray<float3> _gemPositions;
     private NativeArray<bool> _gemActive;
     private NativeArray<bool> _gemIsFlying;
-    private List<Vector3> _gemPositionList;
-    private List<bool> _gemActiveList;
+    /// <summary>描画用。Job で詰めた Matrix4x4 を RenderManager に直接渡す。</summary>
+    private NativeArray<Matrix4x4> _gemMatrices;
+    private NativeArray<int> _gemDrawCount;
 
     // 経験値加算用（Job内からメインスレッドへ通知）
     private NativeQueue<int> _collectedGemQueue;
@@ -47,16 +48,14 @@ public class GemManager : InitializeMonobehaviour
         _gemPositions = new NativeArray<float3>(maxGems, Allocator.Persistent);
         _gemActive = new NativeArray<bool>(maxGems, Allocator.Persistent);
         _gemIsFlying = new NativeArray<bool>(maxGems, Allocator.Persistent);
-        _gemPositionList = new List<Vector3>(maxGems);
-        _gemActiveList = new List<bool>(maxGems);
+        _gemMatrices = new NativeArray<Matrix4x4>(maxGems, Allocator.Persistent);
+        _gemDrawCount = new NativeArray<int>(1, Allocator.Persistent);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
 
         for (int i = 0; i < maxGems; i++)
         {
             _gemActive[i] = false;
             _gemIsFlying[i] = false;
-            _gemPositionList.Add(default);
-            _gemActiveList.Add(false);
         }
     }
 
@@ -81,33 +80,33 @@ public class GemManager : InitializeMonobehaviour
         };
         gemJob.Schedule(maxGems, 64).Complete();
 
-        // NativeArray → List にコピーして描画（敵と同様）
-        for (int i = 0; i < maxGems; i++)
+        // Job で Matrix4x4 を詰め、RenderManager に直接渡す
+        var matrixJob = new GemMatrixJob
         {
-            _gemPositionList[i] = _gemPositions[i];
-            _gemActiveList[i] = _gemActive[i];
-        }
-        renderManager?.RenderGems(_gemPositionList, _gemActiveList);
+            positions = _gemPositions,
+            activeFlags = _gemActive,
+            matrices = _gemMatrices,
+            drawCount = _gemDrawCount,
+            scale = gemScale
+        };
+        matrixJob.Schedule().Complete();
+        renderManager?.RenderGems(_gemMatrices, _gemDrawCount[0]);
     }
 
     protected override void FinalizeInternal()
     {
         if (_gemPositions.IsCreated)
-        {
             _gemPositions.Dispose();
-        }
         if (_gemActive.IsCreated)
-        {
             _gemActive.Dispose();
-        }
         if (_gemIsFlying.IsCreated)
-        {
             _gemIsFlying.Dispose();
-        }
+        if (_gemMatrices.IsCreated)
+            _gemMatrices.Dispose();
+        if (_gemDrawCount.IsCreated)
+            _gemDrawCount.Dispose();
         if (_collectedGemQueue.IsCreated)
-        {
             _collectedGemQueue.Dispose();
-        }
     }
     
     /// <summary>

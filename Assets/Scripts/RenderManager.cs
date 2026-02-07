@@ -17,7 +17,6 @@ public class RenderManager : InitializeMonobehaviour
     [Header("Gem Settings")]
     [SerializeField] private Mesh gemMesh;
     [SerializeField] private Material gemMaterial;
-    [SerializeField] private float gemScale = 0.4f;
 
     [Header("Player Bullet Settings")]
     [SerializeField] private Mesh playerBulletMesh;
@@ -151,44 +150,20 @@ public class RenderManager : InitializeMonobehaviour
 
 
     /// <summary>
-    /// ジェムを座標・アクティブリストで描画（敵と同様に RenderMeshInstanced、Instantiate なし）。
-    /// 描画数が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
+    /// ジェムを Job で詰めた Matrix4x4 配列で描画する。配列は詰まっており、先頭 count 件を描画する。
+    /// count が BATCH_SIZE（1023）を超える場合は警告を出し、先頭 1023 件のみ描画する。
     /// </summary>
-    public void RenderGems(IList<Vector3> positions, IList<bool> activeFlags)
+    public void RenderGems(NativeArray<Matrix4x4> matrices, int count)
     {
-        if (gemMesh == null || gemMaterial == null)
-        {
+        if (gemMesh == null || gemMaterial == null || count <= 0)
             return;
-        }
 
-        int count = positions.Count;
-        int writeIndex = 0;
-
-        for (int i = 0; i < count; i++)
+        if (count > BATCH_SIZE)
         {
-            if (activeFlags[i] == false)
-            {
-                continue;
-            }
-
-            if (writeIndex >= BATCH_SIZE)
-            {
-                Debug.LogWarning($"[RenderManager] ジェムの描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
-                break;
-            }
-
-            _matrices[writeIndex] = Matrix4x4.TRS(
-                positions[i],
-                Quaternion.identity,
-                Vector3.one * gemScale
-            );
-            writeIndex++;
+            Debug.LogWarning($"[RenderManager] ジェムの描画数が {BATCH_SIZE} を超えています。先頭 {BATCH_SIZE} 件のみ描画します。");
+            count = BATCH_SIZE;
         }
-
-        if (writeIndex > 0)
-        {
-            ExecuteDrawGems(writeIndex);
-        }
+        Graphics.RenderMeshInstanced(_rpGem, gemMesh, 0, matrices, count);
     }
 
     /// <summary>
@@ -263,10 +238,5 @@ public class RenderManager : InitializeMonobehaviour
             _rpBullet.material = mat;
         }
         Graphics.RenderMeshInstanced(_rpBullet, mesh, 0, _matrices, count);
-    }
-
-    private void ExecuteDrawGems(int count)
-    {
-        Graphics.RenderMeshInstanced(_rpGem, gemMesh, 0, _matrices, count);
     }
 }
