@@ -11,7 +11,6 @@ public class BulletGroup
 {
     private BulletPool _pool;
     private NativeArray<Matrix4x4> _matrices;
-    private NativeArray<int> _drawCount;
     private NativeReference<int> _matrixCounter;
     private float _scale;
     private DrawMatrixJob _matrixJob;
@@ -21,8 +20,8 @@ public class BulletGroup
 
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
-    /// <summary>描画数。RunMatrixJob 後に _drawCount[0] を参照する。</summary>
-    public int DrawCount => _drawCount.IsCreated ? _drawCount[0] : 0;
+    /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>
+    public int DrawCount => _matrixCounter.IsCreated ? _matrixCounter.Value : 0;
 
     /// <summary>
     /// 初期化。最大弾数・描画スケールを指定する。
@@ -33,7 +32,6 @@ public class BulletGroup
         _pool.Initialize(maxCount);
 
         _matrices = new NativeArray<Matrix4x4>(maxCount, Allocator.Persistent);
-        _drawCount = new NativeArray<int>(1, Allocator.Persistent);
         _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _scale = scale;
 
@@ -89,7 +87,6 @@ public class BulletGroup
         _matrixJob.scale = new Vector3(_scale, _scale, _scale);
         _matrixCounter.Value = 0;
         _matrixJob.Schedule(_matrices.Length, 64).Complete();
-        _drawCount[0] = _matrixCounter.Value;
     }
 
     /// <summary>
@@ -109,8 +106,6 @@ public class BulletGroup
         _pool = null;
         if (_matrices.IsCreated)
             _matrices.Dispose();
-        if (_drawCount.IsCreated)
-            _drawCount.Dispose();
         if (_matrixCounter.IsCreated)
             _matrixCounter.Dispose();
     }
