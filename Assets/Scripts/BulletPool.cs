@@ -4,13 +4,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
-/// <summary>弾と円の当たり判定で、ヒットした弾のインデックスとダメージ（敵弾用は弾ごと、プレイヤー弾用は 0 で呼び出し側で定数を使用）。</summary>
-public struct BulletHitResult
-{
-    public int Index;
-    public float Damage;
-}
-
 /// <summary>
 /// 弾 1 種類分のバッファと移動を担当する共通クラス。
 /// プレイヤー弾用・敵弾用の 2 つを BulletManager が持ち、当たり判定や描画は BulletManager 側で行う。
@@ -114,12 +107,11 @@ public class BulletPool
 
     /// <summary>
     /// 指定円（中心・半径の2乗）と当たった弾を収集し、該当弾を無効化する。
-    /// 結果は hitsOut に追加する（呼び出し側でリストをクリアする必要はない）。
-    /// HasDamageArray が true のときは弾ごとのダメージを、false のときは damageWhenNoArray を Damage に詰める。
+    /// ヒットした弾のダメージを damagesOut に追加する（敵弾用は弾ごと、プレイヤー弾用は damageWhenNoArray）。
     /// </summary>
-    public void CollectHitsAgainstCircle(float3 center, float radiusSq, List<BulletHitResult> hitsOut, float damageWhenNoArray = 0f)
+    public void CollectHitsAgainstCircle(float3 center, float radiusSq, List<float> damagesOut, float damageWhenNoArray = 0f)
     {
-        if (_disposed || !_positions.IsCreated || hitsOut == null)
+        if (_disposed || !_positions.IsCreated || damagesOut == null)
         {
             return;
         }
@@ -135,7 +127,7 @@ public class BulletPool
                 continue;
             }
             float damage = _hasDamageArray && _damage.IsCreated ? _damage[i] : damageWhenNoArray;
-            hitsOut.Add(new BulletHitResult { Index = i, Damage = damage });
+            damagesOut.Add(damage);
             _active[i] = false;
         }
     }

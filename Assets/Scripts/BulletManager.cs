@@ -40,8 +40,8 @@ public class BulletManager : InitializeMonobehaviour
     private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
-    /// <summary>CollectHitsAgainstCircle の結果を入れるリスト（敵弾vsプレイヤー・プレイヤー弾vsボスで共用）。</summary>
-    private readonly List<BulletHitResult> _collectedHits = new List<BulletHitResult>();
+    /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるリスト。敵弾vsプレイヤー・プレイヤー弾vsボスで共用。</summary>
+    private readonly List<float> _collectedHitDamages = new List<float>();
 
     public float BulletDamage => bulletDamage;
 
@@ -188,11 +188,11 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _collectedHits.Clear();
-        _enemyBullets.Pool.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius * playerCollisionRadius, _collectedHits);
-        foreach (var h in _collectedHits)
+        _collectedHitDamages.Clear();
+        _enemyBullets.Pool.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius * playerCollisionRadius, _collectedHitDamages);
+        foreach (var damage in _collectedHitDamages)
         {
-            gameManager?.AddPlayerDamage(Mathf.RoundToInt(h.Damage));
+            gameManager?.AddPlayerDamage(Mathf.RoundToInt(damage));
         }
     }
 
@@ -210,9 +210,9 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _collectedHits.Clear();
-        _playerBullets.Pool.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius * boss.CollisionRadius, _collectedHits, damageWhenNoArray: bulletDamage);
-        foreach (var h in _collectedHits)
+        _collectedHitDamages.Clear();
+        _playerBullets.Pool.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius * boss.CollisionRadius, _collectedHitDamages, damageWhenNoArray: bulletDamage);
+        foreach (var _ in _collectedHitDamages)
         {
             float actualDamage = boss.TakeDamage(bulletDamage);
             if (actualDamage > 0)
