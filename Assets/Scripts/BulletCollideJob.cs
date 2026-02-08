@@ -12,7 +12,7 @@ public struct BulletCollideJob : IJobParallelFor
 {
     public float cellSize;
     /// <summary>弾との当たり判定に使う敵の半径（このグループ共通）。</summary>
-    public float enemyCollisionRadius;
+    public float collisionRadius;
 
     [ReadOnly] public NativeParallelMultiHashMap<int, int> spatialMap;
     [ReadOnly] public NativeArray<float3> enemyPositions;
@@ -28,7 +28,7 @@ public struct BulletCollideJob : IJobParallelFor
     public float bulletDamage;
 
     public NativeQueue<float3>.ParallelWriter deadEnemyPositions;
-    public NativeQueue<EnemyDamageInfo>.ParallelWriter enemyDamageQueue;
+    public NativeQueue<EnemyDamageInfo>.ParallelWriter damageQueue;
     public NativeQueue<int>.ParallelWriter enemyFlashQueue;
 
     public void Execute(int index)
@@ -60,7 +60,7 @@ public struct BulletCollideJob : IJobParallelFor
 
                         float3 enemyPos = enemyPositions[enemyIndex];
                         float distSq = math.distancesq(pos, enemyPos);
-                        float radiusSq = enemyCollisionRadius * enemyCollisionRadius;
+                        float radiusSq = collisionRadius * collisionRadius;
 
                         if (distSq < radiusSq)
                         {
@@ -70,7 +70,7 @@ public struct BulletCollideJob : IJobParallelFor
                                 currentHp -= bulletDamage;
                                 enemyHp[enemyIndex] = currentHp;
 
-                                enemyDamageQueue.Enqueue(new EnemyDamageInfo(enemyPos, bulletDamage));
+                                damageQueue.Enqueue(new EnemyDamageInfo(enemyPos, bulletDamage, enemyIndex));
                                 enemyFlashQueue.Enqueue(enemyIndex);
 
                                 if (currentHp <= 0f)

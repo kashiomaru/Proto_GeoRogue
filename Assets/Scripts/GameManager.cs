@@ -12,11 +12,13 @@ public struct EnemyDamageInfo
 {
     public float3 position;
     public float damage;
-    
-    public EnemyDamageInfo(float3 pos, float dmg)
+    public int index;
+
+    public EnemyDamageInfo(float3 pos, float dmg, int idx)
     {
         position = pos;
         damage = dmg;
+        index = idx;
     }
 }
 
