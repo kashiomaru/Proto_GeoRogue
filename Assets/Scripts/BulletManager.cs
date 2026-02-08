@@ -46,7 +46,6 @@ public class BulletManager : InitializeMonobehaviour
 
     [Header("References")]
     [SerializeField] private GameManager gameManager;
-    [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private RenderManager renderManager;
 
     private RenderParams _rpPlayerBullet;
@@ -60,14 +59,14 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
-    /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるバッファ。敵弾vsプレイヤー・プレイヤー弾vsボスで共用。</summary>
-    private NativeList<float> _collectedHitDamages;
+    /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるキュー。敵弾vsプレイヤー用。</summary>
+    private NativeQueue<float> _collectedHitDamages;
 
     public float BulletDamage => bulletDamage;
 
     protected override void InitializeInternal()
     {
-        _collectedHitDamages = new NativeList<float>(maxBullets, Allocator.Persistent);
+        _collectedHitDamages = new NativeQueue<float>(Allocator.Persistent);
 
         _bulletGroups = new Dictionary<int, BulletGroup>();
         _bulletGroupIdsInOrder = new List<int>();
@@ -263,53 +262,26 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
         group.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
-        for (int i = 0; i < _collectedHitDamages.Length; i++)
+        while (_collectedHitDamages.TryDequeue(out float damage))
         {
-            gameManager?.AddPlayerDamage(Mathf.RoundToInt(_collectedHitDamages[i]));
+            gameManager?.AddPlayerDamage(Mathf.RoundToInt(damage));
         }
     }
 
     /// <summary>
-    /// ボスとプレイヤー弾の当たり判定。ヒットした弾は無効化する。
+    /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。ヒットした弾のダメージを damageQueueOut に Enqueue する。
+    /// プレイヤー弾vsボスなど、呼び出し側でダメージ適用する場合に使用する。
     /// </summary>
-    public void CheckBossBulletCollision(EnemyManager enemyManager, int bulletGroupId)
-    {
-        Debug.Assert(enemyManager != null, "[BulletManager] enemyManager が未設定です。インスペクターで指定してください。");
-
-        if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
-        {
-            return;
-        }
-
-        BossBase boss = enemyManager.GetCurrentBossComponent();
-        if (boss == null || boss.IsDead)
-        {
-            return;
-        }
-
-        group.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
-
-        for (int i = 0; i < _collectedHitDamages.Length; i++)
-        {
-            float actualDamage = boss.TakeDamage(_collectedHitDamages[i]);
-            if (actualDamage > 0)
-            {
-                damageTextManager?.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage, boss.CollisionRadius);
-            }
-            if (boss.IsDead)
-            {
-                break;
-            }
-        }
-    }
-
-    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadiusSq, NativeList<float> damagesOut)
+    /// <param name="bulletGroupId">弾グループ ID</param>
+    /// <param name="targetPosition">当たり判定の中心</param>
+    /// <param name="targetCollisionRadius">当たり判定の半径</param>
+    /// <param name="damageQueueOut">ヒットした弾のダメージを格納するキュー（呼び出し側で用意）</param>
+    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<float> damageQueueOut)
     {
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
         {
             return;
         }
-
-        group.CollectHitsAgainstCircle((float3)targetPosition, targetCollisionRadiusSq, damagesOut);
+        group.CollectHitsAgainstCircle((float3)targetPosition, targetCollisionRadius, damageQueueOut);
     }
 }

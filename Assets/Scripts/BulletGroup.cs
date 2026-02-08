@@ -132,19 +132,13 @@ public class BulletGroup
 
     /// <summary>
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。
-    /// ヒットした弾のダメージを damagesOut に追加する。呼び出し側で NativeList を用意し、Capacity は当該プールの MaxCount 以上にすること。
+    /// ヒットした弾のダメージを damageQueueOut に Enqueue する。呼び出し側で NativeQueue を用意すること。
     /// </summary>
-    public void CollectHitsAgainstCircle(float3 center, float radius, NativeList<float> damagesOut)
+    public void CollectHitsAgainstCircle(float3 center, float radius, NativeQueue<float> damageQueueOut)
     {
-        if (_disposed || !_positions.IsCreated || !damagesOut.IsCreated)
+        if (_disposed || !_positions.IsCreated || !damageQueueOut.IsCreated)
         {
             return;
-        }
-
-        damagesOut.Clear();
-        if (damagesOut.Capacity < _maxCount)
-        {
-            damagesOut.Capacity = _maxCount;
         }
 
         _cachedCollectHitsJob.center = center;
@@ -152,7 +146,7 @@ public class BulletGroup
         _cachedCollectHitsJob.positions = _positions;
         _cachedCollectHitsJob.damage = _damage;
         _cachedCollectHitsJob.active = _active;
-        _cachedCollectHitsJob.damageOut = damagesOut.AsParallelWriter();
+        _cachedCollectHitsJob.damageOut = damageQueueOut.AsParallelWriter();
         _cachedCollectHitsJob.Schedule(_maxCount, 64).Complete();
     }
 

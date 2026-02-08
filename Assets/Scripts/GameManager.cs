@@ -49,6 +49,8 @@ public class GameManager : MonoBehaviour
 
     // プレイヤーへのダメージを記録するキュー（敵移動 Job 内からメインスレッドへ通知）
     private NativeQueue<int> _playerDamageQueue;
+    /// <summary>プレイヤー弾vsボスの当たり判定でヒットした弾のダメージを格納するキュー。</summary>
+    private NativeQueue<float> _bossDamageQueue;
 
     private float _countdownTimer;
 
@@ -108,6 +110,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
+        _bossDamageQueue = new NativeQueue<float>(Allocator.Persistent);
 
         // カウントダウンタイマーを初期化
         _countdownTimer = GetEffectiveCountdownDuration();
@@ -146,6 +149,7 @@ public class GameManager : MonoBehaviour
     {
         // 参照はインスペクターで必ず指定すること
         Debug.Assert(enemyManager != null && bulletManager != null, "[GameManager] enemyManager または bulletManager が未設定です。インスペクターで指定してください。");
+        Debug.Assert(damageTextManager != null, "[GameManager] damageTextManager が未設定です。インスペクターで指定してください。");
 
         // ステートマシンを更新（現在ステートの OnUpdate）
         _stateMachine?.Update();
@@ -185,7 +189,7 @@ public class GameManager : MonoBehaviour
         // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン
         enemyManager.ProcessDamage(gemManager);
         enemyManager.ProcessRespawn(playerPos);
-        bulletManager?.CheckBossBulletCollision(enemyManager, player.BulletGroupId);
+        CheckPlayerBulletVsBoss();
 
         // 6. プレイヤーへのダメージ処理
         HandlePlayerDamage();
@@ -223,8 +227,29 @@ public class GameManager : MonoBehaviour
         }
         dep.Complete();
     }
-    
-    // --- 初期化 & ユーティリティ ---
+
+    /// <summary>
+    /// ボスとプレイヤー弾の当たり判定。ヒットした弾は無効化し、ボスにダメージを適用する。
+    /// </summary>
+    void CheckPlayerBulletVsBoss()
+    {
+        BossBase boss = enemyManager.GetCurrentBossComponent();
+        if (boss == null || boss.IsDead)
+            return;
+
+        bulletManager.ProcessDamage(player.BulletGroupId, boss.Position, boss.CollisionRadius, _bossDamageQueue);
+
+        while (_bossDamageQueue.TryDequeue(out float damage))
+        {
+            float actualDamage = boss.TakeDamage(damage);
+            if (actualDamage > 0)
+            {
+                damageTextManager.ShowDamage(boss.GetDamageTextPosition(), (int)actualDamage, boss.CollisionRadius);
+            }
+            if (boss.IsDead)
+                break;
+        }
+    }
 
     void HandlePlayerDamage()
     {
@@ -273,9 +298,9 @@ public class GameManager : MonoBehaviour
     void OnDestroy()
     {
         if (_playerDamageQueue.IsCreated)
-        {
             _playerDamageQueue.Dispose();
-        }
+        if (_bossDamageQueue.IsCreated)
+            _bossDamageQueue.Dispose();
     }
     
     /// <summary>
