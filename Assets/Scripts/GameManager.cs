@@ -204,7 +204,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     void CheckPlayerBulletVsEnemy()
     {
-        var groups = enemyManager != null ? enemyManager.GetGroups() : null;
+        var groups = enemyManager.GetGroups();
         if (groups == null || groups.Count == 0)
             return;
 

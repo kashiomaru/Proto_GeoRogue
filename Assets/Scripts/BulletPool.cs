@@ -100,6 +100,7 @@ public class BulletPool
         {
             return;
         }
+        
         damagesOut.Clear();
         if (damagesOut.Capacity < MaxCount)
         {

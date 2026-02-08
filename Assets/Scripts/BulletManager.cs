@@ -274,16 +274,21 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void CheckBossBulletCollision(EnemyManager enemyManager, int bulletGroupId)
     {
-        if (enemyManager == null || !_bulletGroups.TryGetValue(bulletGroupId, out var group))
+        Debug.Assert(enemyManager != null, "[BulletManager] enemyManager が未設定です。インスペクターで指定してください。");
+
+        if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
         {
             return;
         }
+
         BossBase boss = enemyManager.GetCurrentBossComponent();
         if (boss == null || boss.IsDead)
         {
             return;
         }
+
         group.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
+        
         for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
             float actualDamage = boss.TakeDamage(_collectedHitDamages[i]);
