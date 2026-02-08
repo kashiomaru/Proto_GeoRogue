@@ -302,4 +302,14 @@ public class BulletManager : InitializeMonobehaviour
             }
         }
     }
+
+    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadiusSq, NativeList<float> damagesOut)
+    {
+        if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
+        {
+            return;
+        }
+
+        group.CollectHitsAgainstCircle((float3)targetPosition, targetCollisionRadiusSq, damagesOut);
+    }
 }
