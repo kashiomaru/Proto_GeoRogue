@@ -90,7 +90,7 @@ public class EnemyManager : InitializeMonobehaviour
     public void ProcessMovement(float deltaTime, float3 playerPos, NativeQueue<int> playerDamageQueue)
     {
         ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue.AsParallelWriter());
-        ProcessBossMovement(deltaTime, playerDamageQueue);
+        ProcessBossMovement(deltaTime, playerPos, playerDamageQueue);
     }
 
     /// <summary>死んだ敵の位置を取得（ジェム生成用）。</summary>
@@ -188,11 +188,9 @@ public class EnemyManager : InitializeMonobehaviour
             _currentBossComponent = _currentBoss.GetComponent<BossBase>();
             if (_currentBossComponent != null && gameManager != null)
             {
-                float? bossHpOverride = gameManager.GetDebugBossHpOverride();
                 _currentBossComponent.Initialize(
                     () => gameManager.GetPlayerPosition(),
-                    bulletManager,
-                    bossHpOverride
+                    bulletManager
                 );
             }
             else
@@ -220,10 +218,10 @@ public class EnemyManager : InitializeMonobehaviour
     }
 
     /// <summary>ボスの移動処理。プレイヤーへの接触ダメージは playerDamageQueue に登録する。</summary>
-    public void ProcessBossMovement(float deltaTime, NativeQueue<int> playerDamageQueue)
+    public void ProcessBossMovement(float deltaTime, float3 playerPos, NativeQueue<int> playerDamageQueue)
     {
         if (_bossActive == false || _currentBossComponent == null) return;
-        _currentBossComponent.ProcessMovement(deltaTime, playerDamageQueue);
+        _currentBossComponent.ProcessMovement(deltaTime, playerPos, playerDamageQueue);
     }
 
     /// <summary>ボスの弾発射処理。GameManager から順序制御のため呼ばれる。</summary>

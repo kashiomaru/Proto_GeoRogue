@@ -72,17 +72,6 @@ public class Player : InitializeMonobehaviour
     public int MaxHp => maxHp;
     public bool IsInvincible => _isInvincible;
 
-#if UNITY_EDITOR
-    /// <summary>
-    /// デバッグ用に最大HPと現在HPを指定値に設定する。エディタ専用。
-    /// </summary>
-    public void SetHpForDebug(int hp)
-    {
-        maxHp = Mathf.Max(1, hp);
-        _currentHp = maxHp;
-    }
-#endif
-    
     public bool IsDead => _currentHp <= 0;
     
     // 経験値・レベル情報のプロパティ

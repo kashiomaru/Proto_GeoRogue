@@ -39,11 +39,11 @@ public abstract class BossBase : MonoBehaviour
     /// <summary>
     /// ボスの初期化（生成時に呼び出す）
     /// </summary>
-    public virtual void Initialize(Func<Vector3> getPlayerPosition, BulletManager bulletManager = null, float? maxHpOverride = null)
+    public virtual void Initialize(Func<Vector3> getPlayerPosition, BulletManager bulletManager = null)
     {
         this.getPlayerPosition = getPlayerPosition;
         _bulletManager = bulletManager;
-        _effectiveMaxHp = maxHpOverride ?? maxHp;
+        _effectiveMaxHp = maxHp;
         _currentHp = _effectiveMaxHp;
 
         if (bossRenderer != null)
@@ -79,11 +79,11 @@ public abstract class BossBase : MonoBehaviour
     /// <summary>
     /// ボスの移動・挙動処理。プレイヤーへの接触ダメージは playerDamageQueue に登録する。
     /// </summary>
-    public void ProcessMovement(float deltaTime, NativeQueue<int> playerDamageQueue)
+    public void ProcessMovement(float deltaTime, float3 targetPos, NativeQueue<int> playerDamageQueue)
     {
-        if (getPlayerPosition == null || !playerDamageQueue.IsCreated) return;
+        if (!playerDamageQueue.IsCreated) return;
         UpdateFlashColor();
-        UpdateBehavior(deltaTime, playerDamageQueue);
+        UpdateBehavior(deltaTime, targetPos, playerDamageQueue);
     }
 
     /// <summary>
@@ -96,16 +96,15 @@ public abstract class BossBase : MonoBehaviour
     /// <summary>
     /// サブクラスで実装。移動・攻撃・接触ダメージなどの挙動を記述する。弾発射は ProcessFiring で行う。プレイヤーへのダメージは playerDamageQueue に Enqueue する。
     /// </summary>
-    protected abstract void UpdateBehavior(float deltaTime, NativeQueue<int> playerDamageQueue);
+    protected abstract void UpdateBehavior(float deltaTime, float3 targetPos, NativeQueue<int> playerDamageQueue);
 
     /// <summary>
-    /// プレイヤー方向を向く（Y軸のみ）。サブクラスから利用可能。
+    /// ターゲット方向を向く（Y軸のみ）。サブクラスから利用可能。
     /// </summary>
-    protected void LookAtPlayer()
+    protected void LookAtPlayer(float3 targetPos)
     {
         float3 pos = transform.position;
-        float3 target = (float3)getPlayerPosition();
-        float3 direction = target - pos;
+        float3 direction = targetPos - pos;
         direction.y = 0f;
         if (math.lengthsq(direction) > 0.0001f)
         {

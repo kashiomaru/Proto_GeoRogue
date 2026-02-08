@@ -7,14 +7,13 @@ using Unity.Collections;
 /// </summary>
 public class Boss : BossBase
 {
-    protected override void UpdateBehavior(float deltaTime, NativeQueue<int> playerDamageQueue)
+    protected override void UpdateBehavior(float deltaTime, float3 targetPos, NativeQueue<int> playerDamageQueue)
     {
         float3 pos = transform.position;
-        float3 target = (float3)getPlayerPosition();
-        float distSq = math.distancesq(pos, target);
+        float distSq = math.distancesq(pos, targetPos);
         float damageRadiusSq = damageRadius * damageRadius;
 
-        LookAtPlayer();
+        LookAtPlayer(targetPos);
 
         if (distSq <= damageRadiusSq)
         {
@@ -23,7 +22,7 @@ public class Boss : BossBase
         }
         else
         {
-            float3 dir = math.normalize(target - pos);
+            float3 dir = math.normalize(targetPos - pos);
             transform.position = pos + dir * speed * deltaTime;
         }
     }

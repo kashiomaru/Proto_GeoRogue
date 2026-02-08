@@ -59,12 +59,6 @@ public class GameManager : MonoBehaviour
 
     private int _currentStageIndex;
 
-#if UNITY_EDITOR
-    [Header("Debug")]
-    [Tooltip("デバッグ設定。空の場合はデバッグ無効。GameDebugSettings コンポーネントを付けた GameObject を割り当てると、そのインスペクタで一括 On/Off 可能。")]
-    [SerializeField] private GameDebugSettings debugSettings;
-#endif
-
     // プレイヤーへのダメージを記録するキュー（敵移動 Job 内からメインスレッドへ通知）
     private NativeQueue<int> _playerDamageQueue;
 
@@ -132,22 +126,8 @@ public class GameManager : MonoBehaviour
 
         // ステートマシンを初期化
         InitializeStateMachine();
-
-#if UNITY_EDITOR
-        ApplyDebugPlayerHp();
-#endif
     }
 
-#if UNITY_EDITOR
-    private void ApplyDebugPlayerHp()
-    {
-        if (debugSettings != null && debugSettings.EnableDebug && debugSettings.EnableDebugPlayerHp)
-        {
-            player?.SetHpForDebug(debugSettings.DebugPlayerHp);
-        }
-    }
-#endif
-    
     void InitializeStateMachine()
     {
         cameraManager?.Initialize();
@@ -157,13 +137,7 @@ public class GameManager : MonoBehaviour
         gemManager?.Initialize();
         renderManager?.Initialize();
 
-#if UNITY_EDITOR
-        GameMode startMode = (debugSettings != null && debugSettings.EnableDebug)
-            ? debugSettings.InitialGameMode
-            : GameMode.Title;
-#else
         GameMode startMode = GameMode.Title;
-#endif
         ApplyEnemyManagerFlags(startMode);
 
         _stateMachine = new StateMachine<GameMode, GameManager>(this);
@@ -315,36 +289,16 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ノーマルステートで使用するカウントダウン時間を取得。デバッグ上書き → 現在ステージの値 → DefaultCountdownDuration の順で採用。
+    /// ノーマルステートで使用するカウントダウン時間を取得。現在ステージの値 → DefaultCountdownDuration の順で採用。
     /// </summary>
     private float GetEffectiveCountdownDuration()
     {
-#if UNITY_EDITOR
-        if (debugSettings != null && debugSettings.EnableDebug && debugSettings.EnableDebugCountdown)
-        {
-            return debugSettings.DebugCountdownTime;
-        }
-#endif
         StageData stage = GetCurrentStageData();
         if (stage != null && stage.CountdownDuration > 0f)
         {
             return stage.CountdownDuration;
         }
         return DefaultCountdownDuration;
-    }
-
-    /// <summary>
-    /// ボス生成時に使用するHPのデバッグ用上書き値。デバッグ有効かつボスHP上書き時のみ値が入る（エディタのみ）。
-    /// </summary>
-    public float? GetDebugBossHpOverride()
-    {
-#if UNITY_EDITOR
-        if (debugSettings != null && debugSettings.EnableDebug && debugSettings.EnableDebugBossHp)
-        {
-            return debugSettings.DebugBossHp;
-        }
-#endif
-        return null;
     }
 
     // カウントダウンタイマー取得用メソッド
