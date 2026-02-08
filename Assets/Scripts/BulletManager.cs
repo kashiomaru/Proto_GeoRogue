@@ -59,6 +59,9 @@ public class BulletManager : InitializeMonobehaviour
     private int _playerBulletGroupId;
     private int _enemyBulletGroupId;
 
+    /// <summary>プレイヤー弾グループの ID。CheckPlayerBulletVsEnemy などで使用。</summary>
+    public int PlayerBulletGroupId => _playerBulletGroupId;
+
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
     /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるバッファ。敵弾vsプレイヤー・プレイヤー弾vsボスで共用。</summary>
@@ -171,31 +174,8 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾と敵の当たり判定 Job をスケジュールし完了まで待機する。
+    /// 指定した弾グループとターゲットグループの当たり判定 Job をスケジュールする。GameManager.CheckPlayerBulletVsEnemy から呼ばれる。
     /// </summary>
-    public void ScheduleCollideJob(EnemyManager enemyManager)
-    {
-        var groups = enemyManager != null ? enemyManager.GetGroups() : null;
-        if (groups == null || groups.Count == 0)
-            return;
-
-        JobHandle dep = default;
-
-        foreach (var g in groups)
-        {
-            dep = ProcessDamage(
-                _playerBulletGroupId,
-                g.CellSize,
-                g.CollisionRadius * g.CollisionRadius,
-                g.SpatialMap,
-                g.Positions,
-                g.Active,
-                g.GetEnemyDamageQueueWriter(),
-                dep);
-        }
-        dep.Complete();
-    }
-
     public JobHandle ProcessDamage(
         int bulletGroupId,
         float targetCellSize,

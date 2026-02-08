@@ -3,6 +3,7 @@ using UnityEngine.Jobs;
 using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Burst;
 using Unity.Mathematics;
 using System.Collections.Generic;
@@ -178,7 +179,7 @@ public class GameManager : MonoBehaviour
         bulletManager.ProcessMovement();
 
         // 4. 当たり判定（プレイヤー弾vs敵・敵弾vsプレイヤー）
-        bulletManager.ScheduleCollideJob(enemyManager);
+        CheckPlayerBulletVsEnemy();
         bulletManager.CheckEnemyBulletVsPlayer();
 
         // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン
@@ -195,6 +196,31 @@ public class GameManager : MonoBehaviour
     void LateUpdate()
     {
         // LateUpdateでの処理は不要（ステートマシンが自動的に処理する）
+    }
+
+    /// <summary>
+    /// プレイヤー弾と敵の当たり判定 Job をスケジュールし完了まで待機する。
+    /// </summary>
+    void CheckPlayerBulletVsEnemy()
+    {
+        var groups = enemyManager != null ? enemyManager.GetGroups() : null;
+        if (groups == null || groups.Count == 0)
+            return;
+
+        JobHandle dep = default;
+        foreach (var g in groups)
+        {
+            dep = bulletManager.ProcessDamage(
+                bulletManager.PlayerBulletGroupId,
+                g.CellSize,
+                g.CollisionRadius * g.CollisionRadius,
+                g.SpatialMap,
+                g.Positions,
+                g.Active,
+                g.GetEnemyDamageQueueWriter(),
+                dep);
+        }
+        dep.Complete();
     }
     
     // --- 初期化 & ユーティリティ ---
