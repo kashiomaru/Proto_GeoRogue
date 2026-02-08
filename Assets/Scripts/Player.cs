@@ -9,20 +9,11 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float rotationSpeed = 10f; // 回転速度
 
     [Header("Upgrade Params (LevelUp で変化)")]
-    [SerializeField] private float fireRate = 0.1f;
-    [SerializeField] private float bulletSpeed = 20f;
-    [SerializeField] private int bulletCountPerShot = 1;
     [SerializeField] private float bulletScale = 0.5f;
-    [SerializeField] private float bulletLifeTime = 2f;
     [SerializeField] private float magnetDist = 5f;
-    [Tooltip("マルチショット時の拡散角度（度）")]
-    [SerializeField] private float multiShotSpreadAngle = 10f;
 
     [Header("Reset 時の復元値（上記の初期値。インスペクターで編集可）")]
     [SerializeField] private float initialMoveSpeed = 5f;
-    [SerializeField] private float initialFireRate = 0.1f;
-    [SerializeField] private float initialBulletSpeed = 20f;
-    [SerializeField] private int initialBulletCountPerShot = 1;
     [SerializeField] private float initialMagnetDist = 5f;
 
     [Header("Camera Reference")]
@@ -40,6 +31,8 @@ public class Player : InitializeMonobehaviour
     [Header("References")]
     [SerializeField] private BulletManager bulletManager;
     [SerializeField] private GameManager gameManager;
+    [Tooltip("プレイヤー弾の設定（メッシュ・マテリアルなど）。未設定の場合は BulletManager のデフォルトを使用。")]
+    [SerializeField] private BulletData bulletData;
 
     private int _currentHp;
     private float _invincibleTimer = 0f;
@@ -72,6 +65,11 @@ public class Player : InitializeMonobehaviour
     /// <summary>transform のキャッシュ。InitializeInternal で設定。</summary>
     private Transform _cachedTransform;
 
+    /// <summary>BulletData から初期化し、LevelUp で変更可能な弾パラメータ。</summary>
+    private float _fireRate;
+    private float _bulletSpeed;
+    private int _bulletCountPerShot;
+
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
     public bool IsInvincible => _isInvincible;
@@ -87,17 +85,24 @@ public class Player : InitializeMonobehaviour
     public int BulletGroupId => _cachedBulletGroupId;
     /// <summary>キャッシュした Transform。GameManager など外部から参照する。</summary>
     public Transform CachedTransform => _cachedTransform;
+    /// <summary>プレイヤー弾の設定（未設定の場合は null）。</summary>
+    public BulletData BulletData => bulletData;
 
     protected override void InitializeInternal()
     {
         Debug.Assert(playerCamera != null, "[Player] playerCamera が未設定です。インスペクターでカメラを指定してください。");
         Debug.Assert(_renderer != null, "[Player] _renderer が未設定です。インスペクターで Renderer を指定してください。");
         Debug.Assert(bulletManager != null, "[Player] bulletManager が未設定です。インスペクターで BulletManager を指定してください。");
+        Debug.Assert(bulletData != null, "[Player] bulletData が未設定です。インスペクターで Bullet Data を指定してください。");
 
         _cachedTransform = transform;
         _currentHp = maxHp;
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+
+        _fireRate = bulletData.FireInterval;
+        _bulletSpeed = bulletData.Speed;
+        _bulletCountPerShot = bulletData.CountPerShot;
 
         bulletManager.Initialize();
         _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletScale);
@@ -236,10 +241,12 @@ public class Player : InitializeMonobehaviour
         _canLevelUp = false;
 
         moveSpeed = initialMoveSpeed;
-        fireRate = initialFireRate;
-        bulletSpeed = initialBulletSpeed;
-        bulletCountPerShot = initialBulletCountPerShot;
         magnetDist = initialMagnetDist;
+
+        Debug.Assert(bulletData != null, "[Player] Reset: bulletData が未設定です。インスペクターで Bullet Data を指定してください。");
+        _fireRate = bulletData.FireInterval;
+        _bulletSpeed = bulletData.Speed;
+        _bulletCountPerShot = bulletData.CountPerShot;
 
         _playerShotTimer = 0f;
         _lastBulletCountPerShot = -1;
@@ -271,10 +278,11 @@ public class Player : InitializeMonobehaviour
             if (countPerShot != _lastBulletCountPerShot)
             {
                 _cachedShotDirections.Clear();
+                float spreadAngle = bulletData.SpreadAngle;
                 for (int i = 0; i < countPerShot; i++)
                 {
                     float angle = countPerShot > 1
-                        ? -multiShotSpreadAngle * (countPerShot - 1) * 0.5f + (multiShotSpreadAngle * i)
+                        ? -spreadAngle * (countPerShot - 1) * 0.5f + (spreadAngle * i)
                         : 0f;
                     Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
                     _cachedShotDirections.Add(dir);
@@ -286,20 +294,20 @@ public class Player : InitializeMonobehaviour
             for (int i = 0; i < countPerShot; i++)
             {
                 Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, 1.0f, bulletLifeTime);
+                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, 1.0f, bulletData.LifeTime);
             }
         }
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
-    public float GetFireRate() => fireRate * Mathf.Max(1, bulletCountPerShot);
+    public float GetFireRate() => _fireRate * Mathf.Max(1, _bulletCountPerShot);
     /// <summary>基準の発射間隔（マルチショット補正前）。FireRateUp などで変更する値。</summary>
-    public float GetBaseFireRate() => fireRate;
-    public void SetFireRate(float value) { fireRate = value; }
-    public float GetBulletSpeed() => bulletSpeed;
-    public void SetBulletSpeed(float value) { bulletSpeed = value; }
-    public int GetBulletCountPerShot() => bulletCountPerShot;
-    public void SetBulletCountPerShot(int value) { bulletCountPerShot = value; }
+    public float GetBaseFireRate() => _fireRate;
+    public void SetFireRate(float value) { _fireRate = value; }
+    public float GetBulletSpeed() => _bulletSpeed;
+    public void SetBulletSpeed(float value) { _bulletSpeed = value; }
+    public int GetBulletCountPerShot() => _bulletCountPerShot;
+    public void SetBulletCountPerShot(int value) { _bulletCountPerShot = value; }
     public float GetMagnetDist() => magnetDist;
     public void SetMagnetDist(float value) { magnetDist = value; }
     

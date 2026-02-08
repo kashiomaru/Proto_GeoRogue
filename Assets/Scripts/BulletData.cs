@@ -30,6 +30,12 @@ public class BulletData : ScriptableObject
     [Tooltip("弾の生存時間（秒）。この時間経過で弾は消える")]
     [SerializeField] private float lifeTime = 3f;
 
+    [Header("Rendering")]
+    [Tooltip("描画に使うメッシュ")]
+    [SerializeField] private Mesh mesh;
+    [Tooltip("描画に使うマテリアル")]
+    [SerializeField] private Material material;
+
     [Header("Shot Pattern")]
     [Tooltip("発射間隔（秒）。この間隔で弾を撃つ")]
     [SerializeField] private float fireInterval = 1f;
@@ -39,6 +45,8 @@ public class BulletData : ScriptableObject
     [SerializeField] private float spreadAngle = 10f;
 
     public BulletDirectionType DirectionType => directionType;
+    public Mesh Mesh => mesh;
+    public Material Material => material;
     public float Speed => speed;
     public float Damage => damage;
     public float LifeTime => lifeTime;

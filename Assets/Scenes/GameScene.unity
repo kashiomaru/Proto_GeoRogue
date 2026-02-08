@@ -1337,16 +1337,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Player
   moveSpeed: 5
   rotationSpeed: 10
-  fireRate: 0.1
-  bulletSpeed: 20
-  bulletCountPerShot: 1
   bulletScale: 0.5
   magnetDist: 5
-  multiShotSpreadAngle: 10
   initialMoveSpeed: 5
-  initialFireRate: 0.1
-  initialBulletSpeed: 20
-  initialBulletCountPerShot: 1
   initialMagnetDist: 5
   playerCamera: {fileID: 330585545}
   maxHp: 10
@@ -1356,6 +1349,7 @@ MonoBehaviour:
   maxLevel: 99
   bulletManager: {fileID: 420466358}
   gameManager: {fileID: 379471278}
+  bulletData: {fileID: 11400000, guid: e7ea6195fa84e460a8c976f25f0d1030, type: 2}
   _renderer: {fileID: 322285195}
 --- !u!1 &330585543
 GameObject:
@@ -1729,7 +1723,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d25cdc25a68345369d8f9b5dd12bcb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  playerTransform: {fileID: 322285197}
   titlePlayerPosition: {x: 0, y: 0, z: 0}
   bulletManager: {fileID: 420466358}
   enemyManager: {fileID: 1856169496}
@@ -1741,11 +1734,10 @@ MonoBehaviour:
   cameraManager: {fileID: 1642372745}
   renderManager: {fileID: 454398054}
   stages:
+  - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
   - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
   - {fileID: 11400000, guid: 82e23f7fd44e045fea0179e46e34b497, type: 2}
-  - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
   - {fileID: 11400000, guid: 90dbf098d7d1743ba972eca11fcfed72, type: 2}
-  debugSettings: {fileID: 0}
 --- !u!4 &379471279
 Transform:
   m_ObjectHideFlags: 0
@@ -1926,7 +1918,6 @@ MonoBehaviour:
   enemyBulletMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   enemyBulletMaterial: {fileID: 2100000, guid: 556a1e60458b64ed3979020300f4c0dd, type: 2}
   gameManager: {fileID: 379471278}
-  damageTextManager: {fileID: 614781148}
   renderManager: {fileID: 454398054}
 --- !u!4 &420466359
 Transform:
