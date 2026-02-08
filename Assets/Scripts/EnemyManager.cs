@@ -72,7 +72,7 @@ public class EnemyManager : InitializeMonobehaviour
     }
 
     /// <summary>敵の移動Jobをスケジュールし完了まで待機（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
-    public void ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
+    public void ScheduleEnemyMoveJob(float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue)
     {
         if (_normalEnemiesEnabled == false || _groups == null || _groups.Count == 0)
         {
@@ -81,16 +81,16 @@ public class EnemyManager : InitializeMonobehaviour
         JobHandle dep = default;
         foreach (var g in _groups)
         {
-            dep = g.ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue, dep);
+            dep = g.ScheduleEnemyMoveJob(playerPos, playerDamageQueue, dep);
         }
         dep.Complete();
     }
 
     /// <summary>通常敵の移動 Job とボスの移動処理をまとめて実行する。GameManager から呼ぶ。プレイヤーへのダメージは playerDamageQueue に登録する。</summary>
-    public void ProcessMovement(float deltaTime, float3 playerPos, NativeQueue<int> playerDamageQueue)
+    public void ProcessMovement(float3 playerPos, NativeQueue<int> playerDamageQueue)
     {
-        ScheduleEnemyMoveJob(deltaTime, playerPos, playerDamageQueue.AsParallelWriter());
-        ProcessBossMovement(deltaTime, playerPos, playerDamageQueue);
+        ScheduleEnemyMoveJob(playerPos, playerDamageQueue.AsParallelWriter());
+        ProcessBossMovement(playerPos, playerDamageQueue);
     }
 
     /// <summary>死んだ敵の位置を取得（ジェム生成用）。</summary>
@@ -121,21 +121,20 @@ public class EnemyManager : InitializeMonobehaviour
     /// <summary>
     /// 弾を撃つ敵の発射処理。各グループの ProcessFiring を呼ぶ。BulletManager の Job 完了後に GameManager から呼ぶ。
     /// </summary>
-    public void ProcessEnemyBulletFiring(float deltaTime, float3 playerPos)
+    public void ProcessEnemyBulletFiring(float3 playerPos)
     {
         // ボスステート時は通常敵を無効化しているため、通常敵の弾発射は行わない
         if (_normalEnemiesEnabled == false || _groups == null || bulletManager == null) return;
 
         foreach (var g in _groups)
-            g.ProcessFiring(deltaTime, playerPos, bulletManager);
+            g.ProcessFiring(playerPos, bulletManager);
     }
 
     void RenderEnemies()
     {
         if (renderManager == null || _groups == null) return;
-        float dt = Time.deltaTime;
         foreach (var g in _groups)
-            g.Render(renderManager, dt);
+            g.Render(renderManager);
     }
 
     /// <summary>全グループの敵を非表示にする。</summary>
@@ -218,24 +217,24 @@ public class EnemyManager : InitializeMonobehaviour
     }
 
     /// <summary>ボスの移動処理。プレイヤーへの接触ダメージは playerDamageQueue に登録する。</summary>
-    public void ProcessBossMovement(float deltaTime, float3 playerPos, NativeQueue<int> playerDamageQueue)
+    public void ProcessBossMovement(float3 playerPos, NativeQueue<int> playerDamageQueue)
     {
         if (_bossActive == false || _currentBossComponent == null) return;
-        _currentBossComponent.ProcessMovement(deltaTime, playerPos, playerDamageQueue);
+        _currentBossComponent.ProcessMovement(playerPos, playerDamageQueue);
     }
 
     /// <summary>ボスの弾発射処理。GameManager から順序制御のため呼ばれる。</summary>
-    public void ProcessBossBulletFiring(float deltaTime, float3 playerPos)
+    public void ProcessBossBulletFiring(float3 playerPos)
     {
         if (_bossActive == false || _currentBossComponent == null) return;
-        _currentBossComponent.ProcessFiring(deltaTime, playerPos);
+        _currentBossComponent.ProcessFiring(playerPos);
     }
 
     /// <summary>通常敵・ボスの弾発射処理をまとめて実行。GameManager から呼ばれる。</summary>
-    public void ProcessFiring(float deltaTime, float3 playerPos)
+    public void ProcessFiring(float3 playerPos)
     {
-        ProcessEnemyBulletFiring(deltaTime, playerPos);
-        ProcessBossBulletFiring(deltaTime, playerPos);
+        ProcessEnemyBulletFiring(playerPos);
+        ProcessBossBulletFiring(playerPos);
     }
 
     /// <summary>ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーンをまとめて実行。GameManager から呼ばれる。</summary>

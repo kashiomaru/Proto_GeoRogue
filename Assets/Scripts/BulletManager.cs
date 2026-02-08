@@ -145,12 +145,12 @@ public class BulletManager : InitializeMonobehaviour
     /// <summary>
     /// 弾の移動 Job をスケジュールし完了まで待機する。プレイヤー弾の移動 → 敵弾の移動の順に依存させる。
     /// </summary>
-    public void ProcessMovement(float deltaTime)
+    public void ProcessMovement()
     {
         JobHandle dep = default;
         foreach (var id in _bulletGroupIdsInOrder)
         {
-            dep = _bulletGroups[id].ScheduleMoveJob(deltaTime, dep);
+            dep = _bulletGroups[id].ScheduleMoveJob(dep);
         }
         dep.Complete();
     }

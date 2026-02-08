@@ -56,9 +56,9 @@ public class BulletGroup
     }
 
     /// <summary>弾の移動 Job をスケジュールする。</summary>
-    public JobHandle ScheduleMoveJob(float deltaTime, JobHandle dependency)
+    public JobHandle ScheduleMoveJob(JobHandle dependency)
     {
-        return _pool != null ? _pool.ScheduleMoveJob(deltaTime, dependency) : dependency;
+        return _pool != null ? _pool.ScheduleMoveJob(dependency) : dependency;
     }
 
     /// <summary>指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。ヒットした弾のダメージを damagesOut に追加する。</summary>

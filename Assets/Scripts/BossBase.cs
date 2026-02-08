@@ -79,24 +79,25 @@ public abstract class BossBase : MonoBehaviour
     /// <summary>
     /// ボスの移動・挙動処理。プレイヤーへの接触ダメージは playerDamageQueue に登録する。
     /// </summary>
-    public void ProcessMovement(float deltaTime, float3 targetPos, NativeQueue<int> playerDamageQueue)
+    public void ProcessMovement(float3 targetPos, NativeQueue<int> playerDamageQueue)
     {
         if (!playerDamageQueue.IsCreated) return;
+        
         UpdateFlashColor();
-        UpdateBehavior(deltaTime, targetPos, playerDamageQueue);
+        UpdateBehavior(targetPos, playerDamageQueue);
     }
 
     /// <summary>
     /// ボスの弾発射処理。GameManager から順序制御のため呼ばれる。サブクラスでオーバーライドして弾を発射できる。
     /// </summary>
-    public virtual void ProcessFiring(float deltaTime, float3 playerPos)
+    public virtual void ProcessFiring(float3 playerPos)
     {
     }
 
     /// <summary>
     /// サブクラスで実装。移動・攻撃・接触ダメージなどの挙動を記述する。弾発射は ProcessFiring で行う。プレイヤーへのダメージは playerDamageQueue に Enqueue する。
     /// </summary>
-    protected abstract void UpdateBehavior(float deltaTime, float3 targetPos, NativeQueue<int> playerDamageQueue);
+    protected abstract void UpdateBehavior(float3 targetPos, NativeQueue<int> playerDamageQueue);
 
     /// <summary>
     /// ターゲット方向を向く（Y軸のみ）。サブクラスから利用可能。

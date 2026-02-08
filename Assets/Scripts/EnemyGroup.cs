@@ -234,13 +234,13 @@ public class EnemyGroup
     }
 
     /// <summary>このグループの敵移動Jobをスケジュールする。複数グループ時は前のグループの Job を dependsOn に渡すこと（同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
-    public JobHandle ScheduleEnemyMoveJob(float deltaTime, float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue, JobHandle dependsOn = default)
+    public JobHandle ScheduleEnemyMoveJob(float3 playerPos, NativeQueue<int>.ParallelWriter playerDamageQueue, JobHandle dependsOn = default)
     {
         Assert.IsTrue(_spatialMap.IsCreated, "SpatialMap must be created in EnemyGroup constructor.");
 
         _spatialMap.Clear();
 
-        _cachedMoveJob.deltaTime = deltaTime;
+        _cachedMoveJob.deltaTime = Time.deltaTime;
         _cachedMoveJob.target = playerPos;
         _cachedMoveJob.spatialMap = _spatialMap.AsParallelWriter();
         _cachedMoveJob.damageQueue = playerDamageQueue;
@@ -286,7 +286,7 @@ public class EnemyGroup
     /// 弾を撃つ敵について発射タイマーを進め、間隔が来たら BulletManager に弾を生成させる。BulletManager の Job 完了後に GameManager から呼ぶ。
     /// 発射判定とリクエスト出力は Job で行い、メインスレッドでキューをドレインして SpawnEnemyBullet を呼ぶ。
     /// </summary>
-    public void ProcessFiring(float deltaTime, float3 playerPos, BulletManager bulletManager)
+    public void ProcessFiring(float3 playerPos, BulletManager bulletManager)
     {
         if (_bulletData == null || bulletManager == null || !_bulletSpawnQueue.IsCreated)
         {
@@ -294,7 +294,7 @@ public class EnemyGroup
         }
 
         _cachedBulletFireJob.playerPos = playerPos;
-        _cachedBulletFireJob.deltaTime = deltaTime;
+        _cachedBulletFireJob.deltaTime = Time.deltaTime;
         _cachedBulletFireJob.spawnQueue = _bulletSpawnQueue.AsParallelWriter();
 
         _cachedBulletFireJob.Schedule(_spawnCount, 64).Complete();
@@ -306,8 +306,7 @@ public class EnemyGroup
     }
 
     /// <summary>このグループの敵を RenderManager で描画する（DrawMatrixJob + EnemyEmissionJob + RenderEnemies）。</summary>
-    /// <param name="deltaTime">フラッシュタイマー減算用。通常は Time.deltaTime を渡す。</param>
-    public void Render(RenderManager renderManager, float deltaTime)
+    public void Render(RenderManager renderManager)
     {
         if (renderManager == null) return;
 
@@ -315,7 +314,7 @@ public class EnemyGroup
         _cachedMatrixJob.Schedule(_spawnCount, 64).Complete();
 
         _drawCounter.Value = 0;
-        _cachedEmissionJob.deltaTime = deltaTime;
+        _cachedEmissionJob.deltaTime = Time.deltaTime;
         _cachedEmissionJob.flashIntensity = renderManager.FlashIntensity;
         _cachedEmissionJob.Schedule(_spawnCount, 64).Complete();
 

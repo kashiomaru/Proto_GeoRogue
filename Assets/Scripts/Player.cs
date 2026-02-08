@@ -130,10 +130,11 @@ public class Player : InitializeMonobehaviour
     }
 
     /// <summary>プレイヤーの移動処理。GameManager から順序制御のため呼ばれる。</summary>
-    public void ProcessMovement(float deltaTime)
+    public void ProcessMovement()
     {
         if (IsInitialized == false) return;
-        HandleMovement(deltaTime);
+        
+        HandleMovement();
     }
     
     // ダメージを受ける（実際に与えたダメージを返す）
@@ -240,13 +241,14 @@ public class Player : InitializeMonobehaviour
     /// <summary>
     /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）
     /// </summary>
-    public void ProcessFiring(float deltaTime)
+    public void ProcessFiring()
     {
         if (IsInitialized == false || bulletManager == null)
         {
             return;
         }
 
+        float deltaTime = Time.deltaTime;
         float rate = GetFireRate();
         int countPerShot = GetBulletCountPerShot();
         float speed = GetBulletSpeed();
@@ -365,7 +367,7 @@ public class Player : InitializeMonobehaviour
         _renderer.SetPropertyBlock(_mpb);
     }
     
-    private void HandleMovement(float deltaTime)
+    private void HandleMovement()
     {
         // 新しいInput SystemでWASDキー入力を取得
         Keyboard keyboard = Keyboard.current;
@@ -428,7 +430,7 @@ public class Player : InitializeMonobehaviour
             if (shiftOnlyRotate == false)
             {
                 Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-                transform.position += moveDir.normalized * moveSpeed * deltaTime;
+                transform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
             }
         }
     }

@@ -118,13 +118,13 @@ public class BulletPool
     /// <summary>
     /// 弾の移動 Job をスケジュールする。
     /// </summary>
-    public JobHandle ScheduleMoveJob(float deltaTime, JobHandle dependency)
+    public JobHandle ScheduleMoveJob(JobHandle dependency)
     {
         if (_disposed || !_positions.IsCreated)
         {
             return dependency;
         }
-        _cachedMoveJob.deltaTime = deltaTime;
+        _cachedMoveJob.deltaTime = Time.deltaTime;
         return _cachedMoveJob.Schedule(MaxCount, 64, dependency);
     }
 

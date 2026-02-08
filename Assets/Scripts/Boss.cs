@@ -7,7 +7,7 @@ using Unity.Collections;
 /// </summary>
 public class Boss : BossBase
 {
-    protected override void UpdateBehavior(float deltaTime, float3 targetPos, NativeQueue<int> playerDamageQueue)
+    protected override void UpdateBehavior(float3 targetPos, NativeQueue<int> playerDamageQueue)
     {
         float3 pos = transform.position;
         float distSq = math.distancesq(pos, targetPos);
@@ -23,7 +23,7 @@ public class Boss : BossBase
         else
         {
             float3 dir = math.normalize(targetPos - pos);
-            transform.position = pos + dir * speed * deltaTime;
+            transform.position = pos + dir * speed * Time.deltaTime;
         }
     }
 }

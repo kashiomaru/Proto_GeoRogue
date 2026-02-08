@@ -23,7 +23,7 @@ public class NormalGameState : GameStateBase
         // カウントダウンタイマーの更新
         if (context.GetCountdownTime() > 0f)
         {
-            context.UpdateCountdownTimer(UnityEngine.Time.deltaTime);
+            context.UpdateCountdownTimer();
             
             // タイマーがゼロになった瞬間の分岐
             if (context.IsCountdownFinished())

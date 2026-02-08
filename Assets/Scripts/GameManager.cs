@@ -177,19 +177,18 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        float deltaTime = Time.deltaTime;
         float3 playerPos = playerTransform.position;
 
         // 1. プレイヤー・敵・ボスの移動
-        player.ProcessMovement(deltaTime);
-        enemyManager.ProcessMovement(deltaTime, playerPos, _playerDamageQueue);
+        player.ProcessMovement();
+        enemyManager.ProcessMovement(playerPos, _playerDamageQueue);
 
         // 2. 弾発射（プレイヤー・敵・ボス）
-        player.ProcessFiring(deltaTime);
-        enemyManager.ProcessFiring(deltaTime, playerPos);
+        player.ProcessFiring();
+        enemyManager.ProcessFiring(playerPos);
 
         // 3. 弾移動
-        bulletManager.ProcessMovement(deltaTime);
+        bulletManager.ProcessMovement();
 
         // 4. 当たり判定（プレイヤー弾vs敵・敵弾vsプレイヤー）
         bulletManager.ScheduleCollideJob(enemyManager);
@@ -315,8 +314,9 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// カウントダウンタイマーを更新する（ステートから呼ばれる）
     /// </summary>
-    public void UpdateCountdownTimer(float deltaTime)
+    public void UpdateCountdownTimer()
     {
+        float deltaTime = Time.deltaTime;
         if (_countdownTimer > 0f)
         {
             _countdownTimer -= deltaTime;
