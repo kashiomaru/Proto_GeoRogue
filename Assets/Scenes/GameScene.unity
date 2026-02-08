@@ -1337,7 +1337,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Player
   moveSpeed: 5
   rotationSpeed: 10
-  bulletScale: 0.5
   magnetDist: 5
   initialMoveSpeed: 5
   initialMagnetDist: 5
@@ -1350,6 +1349,7 @@ MonoBehaviour:
   bulletManager: {fileID: 420466358}
   gameManager: {fileID: 379471278}
   bulletData: {fileID: 11400000, guid: e7ea6195fa84e460a8c976f25f0d1030, type: 2}
+  collisionRadius: 1
   _renderer: {fileID: 322285195}
 --- !u!1 &330585543
 GameObject:
@@ -1734,9 +1734,9 @@ MonoBehaviour:
   cameraManager: {fileID: 1642372745}
   renderManager: {fileID: 454398054}
   stages:
-  - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
   - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
   - {fileID: 11400000, guid: 82e23f7fd44e045fea0179e46e34b497, type: 2}
+  - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
   - {fileID: 11400000, guid: 90dbf098d7d1743ba972eca11fcfed72, type: 2}
 --- !u!4 &379471279
 Transform:
@@ -1910,13 +1910,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletManager
   maxBullets: 1000
-  playerTransform: {fileID: 322285197}
-  playerCollisionRadius: 1
-  bulletDamage: 1
-  playerBulletMesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
-  playerBulletMaterial: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
-  enemyBulletMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
-  enemyBulletMaterial: {fileID: 2100000, guid: 556a1e60458b64ed3979020300f4c0dd, type: 2}
   gameManager: {fileID: 379471278}
   renderManager: {fileID: 454398054}
 --- !u!4 &420466359
@@ -5335,7 +5328,6 @@ MonoBehaviour:
   gemManager: {fileID: 420920856}
   gameManager: {fileID: 379471278}
   bulletManager: {fileID: 420466358}
-  bulletScale: 0.5
 --- !u!4 &1856169497
 Transform:
   m_ObjectHideFlags: 0
