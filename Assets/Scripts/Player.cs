@@ -69,6 +69,8 @@ public class Player : InitializeMonobehaviour
     private Vector2 _cachedMoveInput;
     private Vector3 _cachedDirection;
     private int _cachedBulletGroupId;
+    /// <summary>transform のキャッシュ。InitializeInternal で設定。</summary>
+    private Transform _cachedTransform;
 
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
@@ -83,13 +85,16 @@ public class Player : InitializeMonobehaviour
     public bool CanLevelUp => _canLevelUp;
 
     public int BulletGroupId => _cachedBulletGroupId;
-    
+    /// <summary>キャッシュした Transform。GameManager など外部から参照する。</summary>
+    public Transform CachedTransform => _cachedTransform;
+
     protected override void InitializeInternal()
     {
         Debug.Assert(playerCamera != null, "[Player] playerCamera が未設定です。インスペクターでカメラを指定してください。");
         Debug.Assert(_renderer != null, "[Player] _renderer が未設定です。インスペクターで Renderer を指定してください。");
         Debug.Assert(bulletManager != null, "[Player] bulletManager が未設定です。インスペクターで BulletManager を指定してください。");
 
+        _cachedTransform = transform;
         _currentHp = maxHp;
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
@@ -261,7 +266,7 @@ public class Player : InitializeMonobehaviour
         if (_playerShotTimer >= rate)
         {
             _playerShotTimer = 0f;
-            Vector3 baseDir = transform.forward;
+            Vector3 baseDir = _cachedTransform.forward;
 
             if (countPerShot != _lastBulletCountPerShot)
             {
@@ -281,7 +286,7 @@ public class Player : InitializeMonobehaviour
             for (int i = 0; i < countPerShot; i++)
             {
                 Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                bulletManager.SpawnBullet(_cachedBulletGroupId, transform.position, finalDir, speed, bulletLifeTime);
+                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, bulletLifeTime);
             }
         }
     }
@@ -426,15 +431,15 @@ public class Player : InitializeMonobehaviour
             // 回転：スペースが押されていないときのみ
             if (isSpacePressed == false)
             {
-                float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
-                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+                float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
+                _cachedTransform.rotation = Quaternion.Euler(0f, angle, 0f);
             }
             
             // 移動：Shiftを押していないときのみ
             if (shiftOnlyRotate == false)
             {
                 Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-                transform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
+                _cachedTransform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
             }
         }
     }

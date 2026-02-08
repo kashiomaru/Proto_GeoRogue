@@ -21,9 +21,6 @@ public enum GameMode
 
 public class GameManager : MonoBehaviour
 {
-    [Header("Params")]
-    [SerializeField] private Transform playerTransform;
-
     [Header("Title")]
     [Tooltip("タイトル画面に入ったときにプレイヤーを移動させる位置")]
     [SerializeField] private Vector3 titlePlayerPosition = Vector3.zero;
@@ -73,7 +70,7 @@ public class GameManager : MonoBehaviour
     public EnemyManager EnemyManager => enemyManager;
     public UIManager UIManager => uiManager;
     public CameraManager CameraManager => cameraManager;
-    public Transform PlayerTransform => playerTransform;
+    public Transform PlayerTransform => player != null ? player.CachedTransform : null;
 
     /// <summary>現在プレイ中のステージデータ。ステージ未設定の場合は null。</summary>
     public StageData GetCurrentStageData()
@@ -172,7 +169,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        float3 playerPos = playerTransform.position;
+        float3 playerPos = player.CachedTransform.position;
 
         // 1. プレイヤー・敵・ボスの移動
         player.ProcessMovement();
@@ -236,9 +233,9 @@ public class GameManager : MonoBehaviour
     /// </summary>
     void CheckEnemyBulletVsPlayer()
     {
-        if (bulletManager == null || playerTransform == null)
+        if (bulletManager == null || player == null)
             return;
-        bulletManager.ProcessDamage(bulletManager.EnemyBulletGroupId, playerTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
+        bulletManager.ProcessDamage(bulletManager.EnemyBulletGroupId, player.CachedTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
         while (_enemyBulletHitDamages.TryDequeue(out float damage))
         {
             AddPlayerDamage(Mathf.RoundToInt(damage));
@@ -287,7 +284,7 @@ public class GameManager : MonoBehaviour
                 // 実際にダメージが与えられた場合のみダメージテキストを表示
                 if (actualDamage > 0)
                 {
-                    damageTextManager?.ShowDamage(playerTransform.position, actualDamage);
+                    damageTextManager?.ShowDamage(player.CachedTransform.position, actualDamage);
                 }
                 
                 // HPが0になったらゲームオーバーステートへ
@@ -422,7 +419,7 @@ public class GameManager : MonoBehaviour
     // プレイヤーの位置を取得（ボス用）
     public Vector3 GetPlayerPosition()
     {
-        return playerTransform != null ? playerTransform.position : Vector3.zero;
+        return player != null ? player.CachedTransform.position : Vector3.zero;
     }
 
     /// <summary>
@@ -430,9 +427,9 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void ResetPlayerAndCameraForTitle()
     {
-        if (playerTransform != null)
+        if (player != null)
         {
-            playerTransform.position = titlePlayerPosition;
+            player.CachedTransform.position = titlePlayerPosition;
         }
         SwitchCamera(0, immediate: true);
     }
