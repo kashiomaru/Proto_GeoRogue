@@ -233,9 +233,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     void CheckEnemyBulletVsPlayer()
     {
-        if (bulletManager == null || player == null)
-            return;
-        bulletManager.ProcessDamage(bulletManager.EnemyBulletGroupId, player.CachedTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
+        bulletManager.ProcessDamage(enemyManager.EnemyBulletGroupId, player.CachedTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
         while (_enemyBulletHitDamages.TryDequeue(out float damage))
         {
             AddPlayerDamage(Mathf.RoundToInt(damage));

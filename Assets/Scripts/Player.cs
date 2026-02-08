@@ -286,7 +286,7 @@ public class Player : InitializeMonobehaviour
             for (int i = 0; i < countPerShot; i++)
             {
                 Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, bulletLifeTime);
+                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, 1.0f, bulletLifeTime);
             }
         }
     }

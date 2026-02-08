@@ -55,14 +55,11 @@ public class BulletManager : InitializeMonobehaviour
     /// <summary>ProcessMovement などで使う、グループの登録順（プレイヤー→敵）。</summary>
     private List<int> _bulletGroupIdsInOrder;
     private int _bulletGroupIdCounter = 0;
-    private int _enemyBulletGroupId;
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
 
     public float BulletDamage => bulletDamage;
-    /// <summary>敵弾グループ ID（ProcessDamage などで使用）。</summary>
-    public int EnemyBulletGroupId => _enemyBulletGroupId;
     /// <summary>敵弾とプレイヤーの当たり判定に使うプレイヤー側の半径。</summary>
     public float PlayerCollisionRadius => playerCollisionRadius;
 
@@ -119,12 +116,7 @@ public class BulletManager : InitializeMonobehaviour
         }
     }
 
-    public void InitializeEnemyBullets(float scale)
-    {
-        _enemyBulletGroupId = AddBulletGroup(scale);
-    }
-
-    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime = 2f)
+    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float damage, float lifeTime)
     {
         if (IsInitialized == false)
         {
@@ -136,19 +128,7 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
 
-        group.Spawn(position, direction, speed, lifeTime, damage: bulletDamage);
-    }
-
-    /// <summary>
-    /// 敵・ボス弾を 1 発生成する。敵グループやボスの Update から呼ぶ。
-    /// </summary>
-    public void SpawnEnemyBullet(Vector3 position, Vector3 direction, float speed, float damage, float lifeTime)
-    {
-        if (IsInitialized == false || !_bulletGroups.TryGetValue(_enemyBulletGroupId, out var group))
-        {
-            return;
-        }
-        _bulletGroups[_enemyBulletGroupId].Spawn(position, direction, speed, lifeTime, damage);
+        group.Spawn(position, direction, speed, lifeTime, damage);
     }
 
     /// <summary>

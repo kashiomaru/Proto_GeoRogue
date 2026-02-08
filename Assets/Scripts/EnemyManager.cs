@@ -40,9 +40,13 @@ public class EnemyManager : InitializeMonobehaviour
 
     // --- 通常敵は EnemyGroup で管理（1種類＝1グループ、複数種類の場合は複数グループ）---
     private List<EnemyGroup> _groups = new List<EnemyGroup>();
+    /// <summary>敵弾用 BulletGroup の ID。InitializeInternal で AddBulletGroup により設定。</summary>
+    private int _enemyBulletGroupId;
 
     /// <summary>通常敵グループのリスト（弾衝突などで参照）。空の場合は未適用。</summary>
     public IReadOnlyList<EnemyGroup> GetGroups() => _groups;
+    /// <summary>敵弾グループ ID（GameManager の当たり判定などで使用）。</summary>
+    public int EnemyBulletGroupId => _enemyBulletGroupId;
     
     void Update()
     {
@@ -68,7 +72,7 @@ public class EnemyManager : InitializeMonobehaviour
         Debug.Assert(gameManager != null, "[EnemyManager] gameManager が未設定です。インスペクターで GameManager を指定してください。");
 
         bulletManager.Initialize();
-        bulletManager.InitializeEnemyBullets(bulletScale);
+        _enemyBulletGroupId = bulletManager.AddBulletGroup(bulletScale);
     }
 
     /// <summary>敵の移動Jobをスケジュールし完了まで待機（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
@@ -127,7 +131,7 @@ public class EnemyManager : InitializeMonobehaviour
         if (_normalEnemiesEnabled == false || _groups == null || bulletManager == null) return;
 
         foreach (var g in _groups)
-            g.ProcessFiring(playerPos, bulletManager);
+            g.ProcessFiring(_enemyBulletGroupId, playerPos, bulletManager);
     }
 
     void RenderEnemies()
