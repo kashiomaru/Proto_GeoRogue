@@ -52,6 +52,9 @@ public class BulletManager : InitializeMonobehaviour
 
     protected override void InitializeInternal()
     {
+        Debug.Assert(renderManager != null, "[BulletManager] renderManager が未設定です。インスペクターで指定してください。");
+        Debug.Assert(gameManager != null, "[BulletManager] gameManager が未設定です。インスペクターで指定してください。");
+
         _bulletGroups = new Dictionary<int, BulletGroup>();
     }
 
@@ -68,6 +71,11 @@ public class BulletManager : InitializeMonobehaviour
     /// <summary>弾グループを追加する。mesh と material が null の場合は RenderBullets でプレイヤー/敵のデフォルトを使用。</summary>
     public int AddBulletGroup(float scale, Mesh mesh, Material material)
     {
+        if (IsInitialized == false)
+        {
+            return -1;
+        }
+
         var groupId = _bulletGroupIdCounter++;
         var group = new BulletGroup(maxBullets, scale, mesh, material);
         _bulletGroups.Add(groupId, group);
@@ -76,6 +84,11 @@ public class BulletManager : InitializeMonobehaviour
 
     public void RemoveBulletGroup(int groupId)
     {
+        if (IsInitialized == false)
+        {
+            return;
+        }
+
         if (_bulletGroups.TryGetValue(groupId, out var group))
         {
             group.Dispose();
@@ -103,6 +116,11 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void ProcessMovement()
     {
+        if (IsInitialized == false)
+        {
+            return;
+        }
+
         JobHandle dep = default;
         foreach (var group in _bulletGroups)
         {
@@ -150,10 +168,6 @@ public class BulletManager : InitializeMonobehaviour
 
     void LateUpdate()
     {
-        // 参照はインスペクターで必ず指定すること
-        Debug.Assert(renderManager != null, "[BulletManager] renderManager が未設定です。インスペクターで指定してください。");
-        Debug.Assert(gameManager != null, "[BulletManager] gameManager が未設定です。インスペクターで指定してください。");
-
         // 描画は LateUpdate で行う（Update で完了した Job の結果を描画）
         if (IsInitialized == false) return;
         if (gameManager.IsPlaying == false) return;
@@ -165,7 +179,7 @@ public class BulletManager : InitializeMonobehaviour
     /// </summary>
     public void RenderBullets()
     {
-        if (IsInitialized == false || renderManager == null)
+        if (IsInitialized == false)
         {
             return;
         }
@@ -202,6 +216,7 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
+
         group.CollectHitsAgainstCircle((float3)targetPosition, targetCollisionRadius, damageQueueOut);
     }
 }

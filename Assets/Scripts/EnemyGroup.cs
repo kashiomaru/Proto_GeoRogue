@@ -58,7 +58,7 @@ public class EnemyGroup
     private EnemyBulletFireJob _cachedBulletFireJob;
 
     private readonly BulletManager _bulletManager;
-    private readonly int _enemyBulletGroupId;
+    private readonly int _enemyBulletGroupId = -1;
 
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
