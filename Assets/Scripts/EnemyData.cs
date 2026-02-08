@@ -15,6 +15,8 @@ public class EnemyData : ScriptableObject
     [Header("Stats")]
     [SerializeField] private float speed = 4f;
     [SerializeField] private float maxHp = 1f;
+    [Tooltip("プレイヤーに接触したときに与えるダメージ")]
+    [SerializeField] private int damageAmount = 1;
     [SerializeField] private float damageRadius = 1f;
     [Tooltip("弾との当たり判定に使う半径。敵の見た目の大きさに合わせて設定する。")]
     [SerializeField] private float collisionRadius = 1f;
@@ -32,6 +34,7 @@ public class EnemyData : ScriptableObject
     public Vector3 Scale => scale;
     public float Speed => speed;
     public float MaxHp => maxHp;
+    public int DamageAmount => damageAmount;
     public float DamageRadius => damageRadius;
     public float CollisionRadius => collisionRadius;
     public int SpawnCount => spawnCount;

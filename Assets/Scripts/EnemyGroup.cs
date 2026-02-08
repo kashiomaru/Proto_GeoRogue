@@ -18,6 +18,7 @@ public class EnemyGroup
     private readonly float _speed;
     private readonly float _maxHp;
     private readonly float _flashDuration;
+    private readonly int _damageAmount;
     private readonly float _damageRadius;
     private readonly float _collisionRadius;
     private readonly float _cellSize;
@@ -111,6 +112,7 @@ public class EnemyGroup
         _speed = data.Speed;
         _maxHp = data.MaxHp;
         _flashDuration = flashDuration;
+        _damageAmount = data.DamageAmount;
         _damageRadius = data.DamageRadius;
         _collisionRadius = data.CollisionRadius;
         _respawnDistance = respawnDistance;
@@ -193,6 +195,7 @@ public class EnemyGroup
 
         _cachedMoveJob.speed = _speed;
         _cachedMoveJob.cellSize = _cellSize;
+        _cachedMoveJob.damageAmount = _damageAmount;
         _cachedMoveJob.damageRadius = _damageRadius;
         _cachedMoveJob.positions = _positions;
         _cachedMoveJob.directions = _directions;

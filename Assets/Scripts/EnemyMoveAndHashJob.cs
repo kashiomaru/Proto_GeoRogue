@@ -11,6 +11,8 @@ public struct EnemyMoveAndHashJob : IJobParallelFor
     public float speed;
     public float cellSize;
     public float damageRadius;
+    /// <summary>プレイヤーに接触したときに与えるダメージ。</summary>
+    public int damageAmount;
 
     [WriteOnly] public NativeParallelMultiHashMap<int, int>.ParallelWriter spatialMap;
     public NativeArray<float3> positions;
@@ -45,7 +47,7 @@ public struct EnemyMoveAndHashJob : IJobParallelFor
         float distSq = math.distancesq(pos, target);
         if (distSq < damageRadius * damageRadius)
         {
-            damageQueue.Enqueue(1);
+            damageQueue.Enqueue(damageAmount);
         }
 
         // --- 空間ハッシュ登録 ---
