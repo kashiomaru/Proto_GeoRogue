@@ -17,21 +17,13 @@ public struct BulletCollideJob : IJobParallelFor
     [ReadOnly] public NativeParallelMultiHashMap<int, int> spatialMap;
     [ReadOnly] public NativeArray<float3> targetPositions;
     [ReadOnly] public NativeArray<float3> bulletPositions;
+    [ReadOnly] public NativeArray<bool> targetActive;
 
     public NativeArray<bool> bulletActive;
-
-    [NativeDisableParallelForRestriction]
-    public NativeArray<bool> targetActive;
-    
-    [NativeDisableParallelForRestriction]
-    public NativeArray<float> enemyHp;
 
     public float bulletDamage;
 
     public NativeQueue<EnemyDamageInfo>.ParallelWriter damageQueue;
-
-    public NativeQueue<float3>.ParallelWriter deadEnemyPositions;
-    public NativeQueue<int>.ParallelWriter enemyFlashQueue;
 
     public void Execute(int index)
     {
@@ -67,18 +59,7 @@ public struct BulletCollideJob : IJobParallelFor
                         {
                             if (targetActive[enemyIndex])
                             {
-                                float currentHp = enemyHp[enemyIndex];
-                                currentHp -= bulletDamage;
-                                enemyHp[enemyIndex] = currentHp;
-
                                 damageQueue.Enqueue(new EnemyDamageInfo(enemyPos, bulletDamage, enemyIndex));
-                                enemyFlashQueue.Enqueue(enemyIndex);
-
-                                if (currentHp <= 0f)
-                                {
-                                    targetActive[enemyIndex] = false;
-                                    deadEnemyPositions.Enqueue(enemyPos);
-                                }
                             }
                             bulletActive[index] = false;
                             return;

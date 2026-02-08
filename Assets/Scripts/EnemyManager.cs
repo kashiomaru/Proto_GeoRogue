@@ -237,12 +237,12 @@ public class EnemyManager : InitializeMonobehaviour
         ProcessBossBulletFiring(playerPos);
     }
 
-    /// <summary>ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーンをまとめて実行。GameManager から呼ばれる。</summary>
+    /// <summary>ボス死亡チェック・通常敵のダメージ適用・死亡・ダメージ表示・ジェム生成・リスポーンをまとめて実行。GameManager から呼ばれる。</summary>
     public void ProcessDamage(GemManager gemManager)
     {
         CheckBossDeath();
-        ProcessDeadEnemies(gemManager);
         ProcessEnemyDamage();
+        ProcessDeadEnemies(gemManager);
     }
 
     // ボスの死亡チェックと削除処理

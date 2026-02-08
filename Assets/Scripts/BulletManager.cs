@@ -175,10 +175,7 @@ public class BulletManager : InitializeMonobehaviour
             _cachedCollideJob.spatialMap = g.SpatialMap;
             _cachedCollideJob.targetPositions = g.EnemyPositions;
             _cachedCollideJob.targetActive = g.EnemyActive;
-            _cachedCollideJob.enemyHp = g.EnemyHp;
-            _cachedCollideJob.deadEnemyPositions = g.GetDeadEnemyPositionsWriter();
             _cachedCollideJob.damageQueue = g.GetEnemyDamageQueueWriter();
-            _cachedCollideJob.enemyFlashQueue = g.GetEnemyFlashQueueWriter();
             dep = _cachedCollideJob.Schedule(_bulletGroups[_playerBulletGroupId].MaxCount, 64, dep);
         }
         dep.Complete();

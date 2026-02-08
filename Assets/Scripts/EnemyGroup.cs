@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering;
@@ -46,9 +47,8 @@ public class EnemyGroup
     private NativeArray<Vector4> _emissionColors;
     private NativeReference<int> _drawCounter;
     private NativeParallelMultiHashMap<int, int> _spatialMap;
-    private NativeQueue<float3> _deadPositions;
+    private List<Vector3> _deadPositions;
     private NativeQueue<EnemyDamageInfo> _damageQueue;
-    private NativeQueue<int> _flashQueue;
 
     private DrawMatrixJob _cachedMatrixJob;
     private EnemyEmissionJob _cachedEmissionJob;
@@ -152,9 +152,8 @@ public class EnemyGroup
         _drawCounter = new NativeReference<int>(0, Allocator.Persistent);
 
         _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
-        _deadPositions = new NativeQueue<float3>(Allocator.Persistent);
+        _deadPositions = new List<Vector3>();
         _damageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
-        _flashQueue = new NativeQueue<int>(Allocator.Persistent);
 
         SetupCachedJobs();
         _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
@@ -226,9 +225,7 @@ public class EnemyGroup
         if (_emissionColors.IsCreated) _emissionColors.Dispose();
         if (_drawCounter.IsCreated) _drawCounter.Dispose();
         if (_spatialMap.IsCreated) _spatialMap.Dispose();
-        if (_deadPositions.IsCreated) _deadPositions.Dispose();
         if (_damageQueue.IsCreated) _damageQueue.Dispose();
-        if (_flashQueue.IsCreated) _flashQueue.Dispose();
         if (_bulletSpreadRotations.IsCreated) _bulletSpreadRotations.Dispose();
         if (_bulletSpawnQueue.IsCreated) _bulletSpawnQueue.Dispose();
     }
@@ -250,25 +247,38 @@ public class EnemyGroup
     /// <summary>死んだ敵の位置をキューから取り出しジェム生成に渡す。</summary>
     public void ProcessDeadEnemies(GemManager gemManager)
     {
-        while (_deadPositions.TryDequeue(out float3 position))
+        foreach (var position in _deadPositions)
         {
             gemManager?.SpawnGem(position);
         }
+        _deadPositions.Clear();
     }
 
-    /// <summary>ダメージキューとフラッシュキューを処理し、ダメージ表示とヒットフラッシュを適用する。</summary>
+    /// <summary>ダメージキューを処理し、HP減算・フラッシュ・死亡処理・ダメージ表示を行う。</summary>
     public void ProcessEnemyDamage(DamageTextManager damageTextManager)
     {
         while (_damageQueue.TryDequeue(out EnemyDamageInfo damageInfo))
         {
+            int idx = damageInfo.index;
+            if (idx < 0 || idx >= _spawnCount || _active[idx] == false)
+                continue;
+
+            float currentHp = _hp[idx];
+            currentHp -= damageInfo.damage;
+            _hp[idx] = currentHp;
+
+            if (_flashTimers.IsCreated)
+                _flashTimers[idx] = _flashDuration;
+
+            if (currentHp <= 0f)
+            {
+                _active[idx] = false;
+                _deadPositions.Add(damageInfo.position);
+            }
+
             int damageInt = (int)damageInfo.damage;
             if (damageInt > 0)
                 damageTextManager?.ShowDamage(damageInfo.position, damageInt, _collisionRadius);
-        }
-        while (_flashQueue.TryDequeue(out int enemyIndex))
-        {
-            if (enemyIndex >= 0 && enemyIndex < _spawnCount && _flashTimers.IsCreated)
-                _flashTimers[enemyIndex] = _flashDuration;
         }
     }
 
@@ -334,15 +344,10 @@ public class EnemyGroup
     {
         _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
 
-        while (_deadPositions.TryDequeue(out _)) { }
+        _deadPositions.Clear();
         while (_damageQueue.TryDequeue(out _)) { }
-        while (_flashQueue.TryDequeue(out _)) { }
     }
 
-    /// <summary>死んだ敵の位置キュー（弾衝突Job用）。</summary>
-    public NativeQueue<float3>.ParallelWriter GetDeadEnemyPositionsWriter() => _deadPositions.AsParallelWriter();
     /// <summary>敵ダメージ情報キュー（弾衝突Job用）。</summary>
     public NativeQueue<EnemyDamageInfo>.ParallelWriter GetEnemyDamageQueueWriter() => _damageQueue.AsParallelWriter();
-    /// <summary>敵フラッシュキュー（弾衝突Job用）。</summary>
-    public NativeQueue<int>.ParallelWriter GetEnemyFlashQueueWriter() => _flashQueue.AsParallelWriter();
 }
