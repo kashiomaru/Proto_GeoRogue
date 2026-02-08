@@ -243,7 +243,7 @@ public class GameManager : MonoBehaviour
                 continue;
             }
 
-            bulletManager.ProcessDamage(group.EnemyBulletGroupId, player.CachedTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
+            bulletManager.ProcessDamage(group.EnemyBulletGroupId, player.CachedTransform.position, player.CollisionRadius, _enemyBulletHitDamages);
 
             while (_enemyBulletHitDamages.TryDequeue(out float damage))
             {

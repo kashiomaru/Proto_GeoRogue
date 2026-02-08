@@ -32,6 +32,8 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private GameManager gameManager;
     [Tooltip("プレイヤー弾の設定（メッシュ・マテリアルなど）。未設定の場合は BulletManager のデフォルトを使用。")]
     [SerializeField] private BulletData bulletData;
+    [Tooltip("プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径")]
+    [SerializeField] private float collisionRadius = 1f;
 
     private int _currentHp;
     private float _invincibleTimer = 0f;
@@ -86,6 +88,8 @@ public class Player : InitializeMonobehaviour
     public Transform CachedTransform => _cachedTransform;
     /// <summary>プレイヤー弾の設定（未設定の場合は null）。</summary>
     public BulletData BulletData => bulletData;
+    /// <summary>プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径。</summary>
+    public float CollisionRadius => collisionRadius;
 
     protected override void InitializeInternal()
     {
@@ -104,7 +108,7 @@ public class Player : InitializeMonobehaviour
         _bulletCountPerShot = bulletData.CountPerShot;
 
         bulletManager.Initialize();
-        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Scale, bulletData.Mesh, bulletData.Material);
+        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material);
     }
 
     protected override void FinalizeInternal()
@@ -294,7 +298,7 @@ public class Player : InitializeMonobehaviour
             for (int i = 0; i < countPerShot; i++)
             {
                 Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, 1.0f, bulletData.LifeTime);
+                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, bulletData.LifeTime);
             }
         }
     }

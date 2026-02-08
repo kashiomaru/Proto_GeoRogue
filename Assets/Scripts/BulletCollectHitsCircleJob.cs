@@ -11,7 +11,7 @@ public struct BulletCollectHitsCircleJob : IJobParallelFor
     public float radiusSq;
 
     [ReadOnly] public NativeArray<float3> positions;
-    [ReadOnly] public NativeArray<float> damage;
+    public float damage;
 
     public NativeArray<bool> active;
     public NativeQueue<float>.ParallelWriter damageOut;
@@ -27,7 +27,7 @@ public struct BulletCollectHitsCircleJob : IJobParallelFor
         {
             return;
         }
-        damageOut.Enqueue(damage[index]);
+        damageOut.Enqueue(damage);
         active[index] = false;
     }
 }

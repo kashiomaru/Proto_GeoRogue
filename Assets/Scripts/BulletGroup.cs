@@ -16,7 +16,6 @@ public class BulletGroup
     private NativeArray<float3> _velocities;
     private NativeArray<bool> _active;
     private NativeArray<float> _lifeTime;
-    private NativeArray<float> _damage;
     private int _indexHead;
     private bool _disposed;
 
@@ -33,12 +32,11 @@ public class BulletGroup
     public NativeArray<float3> Velocities => _velocities;
     public NativeArray<bool> Active => _active;
     public NativeArray<float> LifeTime => _lifeTime;
-    /// <summary>弾ごとのダメージ配列</summary>
-    public NativeArray<float> Damage => _damage;
 
     // --- 描画用 ---
     private NativeArray<Matrix4x4> _matrices;
     private NativeReference<int> _matrixCounter;
+    private float _damage;
     private float _scale;
     /// <summary>毎フレームの new を避けるため RunMatrixJob で再利用するスケール。</summary>
     private Vector3 _cachedScale;
@@ -47,6 +45,7 @@ public class BulletGroup
     private readonly Material _material;
     private readonly RenderParams _renderParams;
 
+    public float Damage => _damage;
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
     /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>
@@ -62,11 +61,15 @@ public class BulletGroup
     /// 最大弾数・描画スケール・メッシュ・マテリアルを指定して構築する。
     /// </summary>
     /// <param name="maxCount">最大弾数</param>
+    /// <param name="damage">弾ごとのダメージ</param>
     /// <param name="scale">描画スケール</param>
-    /// <param name="mesh">描画用メッシュ（未設定の場合は null）</param>
-    /// <param name="material">描画用マテリアル（未設定の場合は null）</param>
-    public BulletGroup(int maxCount, float scale, Mesh mesh = null, Material material = null)
+    /// <param name="mesh">描画用メッシュ</param>
+    /// <param name="material">描画用マテリアル</param>
+    public BulletGroup(int maxCount, float damage, float scale, Mesh mesh, Material material)
     {
+        Debug.Assert(mesh != null, "[BulletGroup] mesh が未設定です。インスペクターで指定してください。");
+        Debug.Assert(material != null, "[BulletGroup] material が未設定です。インスペクターで指定してください。");
+
         _maxCount = maxCount;
         _disposed = false;
 
@@ -75,7 +78,6 @@ public class BulletGroup
         _velocities = new NativeArray<float3>(maxCount, Allocator.Persistent);
         _active = new NativeArray<bool>(maxCount, Allocator.Persistent);
         _lifeTime = new NativeArray<float>(maxCount, Allocator.Persistent);
-        _damage = new NativeArray<float>(maxCount, Allocator.Persistent);
 
         _cachedInitActiveJob.active = _active;
         _cachedInitActiveJob.Schedule(maxCount, 64).Complete();
@@ -89,6 +91,7 @@ public class BulletGroup
 
         _matrices = new NativeArray<Matrix4x4>(maxCount, Allocator.Persistent);
         _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
+        _damage = damage;
         _scale = scale;
         _cachedScale = new Vector3(_scale, _scale, _scale);
         _mesh = mesh;
@@ -123,7 +126,7 @@ public class BulletGroup
     /// <param name="speed">速度</param>
     /// <param name="lifeTime">生存時間（秒）</param>
     /// <param name="damage">弾ごとのダメージ</param>
-    public void Spawn(Vector3 position, Vector3 direction, float speed, float lifeTime, float damage = 0f)
+    public void Spawn(Vector3 position, Vector3 direction, float speed, float lifeTime)
     {
         if (_disposed || !_positions.IsCreated)
         {
@@ -138,7 +141,6 @@ public class BulletGroup
         _directions[id] = (float3)dir;
         _velocities[id] = (float3)(dir * speed);
         _lifeTime[id] = lifeTime;
-        _damage[id] = damage;
     }
 
     /// <summary>
@@ -231,7 +233,6 @@ public class BulletGroup
         if (_velocities.IsCreated) _velocities.Dispose();
         if (_active.IsCreated) _active.Dispose();
         if (_lifeTime.IsCreated) _lifeTime.Dispose();
-        if (_damage.IsCreated) _damage.Dispose();
         if (_matrices.IsCreated) _matrices.Dispose();
         if (_matrixCounter.IsCreated) _matrixCounter.Dispose();
         _disposed = true;

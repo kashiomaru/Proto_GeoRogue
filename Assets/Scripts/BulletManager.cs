@@ -28,14 +28,6 @@ public class BulletManager : InitializeMonobehaviour
     [Header("Settings")]
     [SerializeField] private int maxBullets = 1000;
 
-    [Header("Params")]
-    [SerializeField] private Transform playerTransform;
-    [Tooltip("敵弾とプレイヤーの当たり判定に使うプレイヤー側の半径")]
-    [SerializeField] private float playerCollisionRadius = 1f;
-
-    [Header("Player Shot")]
-    [SerializeField] private float bulletDamage = 1.0f;
-
     [Header("References")]
     [SerializeField] private GameManager gameManager;
     [SerializeField] private RenderManager renderManager;
@@ -45,10 +37,6 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
-
-    public float BulletDamage => bulletDamage;
-    /// <summary>敵弾とプレイヤーの当たり判定に使うプレイヤー側の半径。</summary>
-    public float PlayerCollisionRadius => playerCollisionRadius;
 
     protected override void InitializeInternal()
     {
@@ -69,7 +57,7 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>弾グループを追加する。mesh と material が null の場合は RenderBullets でプレイヤー/敵のデフォルトを使用。</summary>
-    public int AddBulletGroup(float scale, Mesh mesh, Material material)
+    public int AddBulletGroup(float damage, float scale, Mesh mesh, Material material)
     {
         if (IsInitialized == false)
         {
@@ -77,7 +65,7 @@ public class BulletManager : InitializeMonobehaviour
         }
 
         var groupId = _bulletGroupIdCounter++;
-        var group = new BulletGroup(maxBullets, scale, mesh, material);
+        var group = new BulletGroup(maxBullets, damage, scale, mesh, material);
         _bulletGroups.Add(groupId, group);
         return groupId;
     }
@@ -96,7 +84,7 @@ public class BulletManager : InitializeMonobehaviour
         }
     }
 
-    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float damage, float lifeTime)
+    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime)
     {
         if (IsInitialized == false)
         {
@@ -108,7 +96,7 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
 
-        group.Spawn(position, direction, speed, lifeTime, damage);
+        group.Spawn(position, direction, speed, lifeTime);
     }
 
     /// <summary>
@@ -154,7 +142,7 @@ public class BulletManager : InitializeMonobehaviour
 
         _cachedCollideJob.bulletPositions = bulletGroup.Positions;
         _cachedCollideJob.bulletActive = bulletGroup.Active;
-        _cachedCollideJob.bulletDamage = bulletDamage;
+        _cachedCollideJob.bulletDamage = bulletGroup.Damage;
 
         _cachedCollideJob.cellSize = targetCellSize;
         _cachedCollideJob.targetCollisionRadiusSq = targetCollisionRadiusSq;

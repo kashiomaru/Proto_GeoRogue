@@ -137,7 +137,7 @@ public class EnemyGroup
             }
             _bulletSpawnQueue = new NativeQueue<EnemyBulletSpawnRequest>(Allocator.Persistent);
 
-            _enemyBulletGroupId = _bulletManager.AddBulletGroup(_bulletData.Scale, _bulletData.Mesh, _bulletData.Material);
+            _enemyBulletGroupId = _bulletManager.AddBulletGroup(_bulletData.Damage, _bulletData.Scale, _bulletData.Mesh, _bulletData.Material);
         }
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
@@ -325,7 +325,7 @@ public class EnemyGroup
 
         while (_bulletSpawnQueue.TryDequeue(out EnemyBulletSpawnRequest req))
         {
-            bulletManager.SpawnBullet(_enemyBulletGroupId, (Vector3)req.position, (Vector3)req.direction, req.speed, req.damage, req.lifeTime);
+            bulletManager.SpawnBullet(_enemyBulletGroupId, (Vector3)req.position, (Vector3)req.direction, req.speed, req.lifeTime);
         }
     }
 
