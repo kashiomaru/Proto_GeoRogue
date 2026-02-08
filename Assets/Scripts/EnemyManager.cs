@@ -110,13 +110,12 @@ public class EnemyManager : InitializeMonobehaviour
     }
 
     /// <summary>敵のリスポーン処理。</summary>
-    public void HandleRespawn()
+    public void ProcessRespawn(float3 playerPos)
     {
-        if (_groups == null || gameManager == null) return;
-        float3 playerPos = (float3)gameManager.GetPlayerPosition();
+        if (_groups == null) return;
         uint seed = (uint)Time.frameCount;
         foreach (var g in _groups)
-            g.HandleRespawn(playerPos, seed);
+            g.ProcessRespawn(playerPos, seed);
     }
 
     /// <summary>

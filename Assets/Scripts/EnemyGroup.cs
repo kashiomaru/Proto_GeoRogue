@@ -80,7 +80,7 @@ public class EnemyGroup
 
     /// <summary>
     /// 敵データと共通パラメータでグループを生成する。バッファを確保し、全敵を非アクティブで初期化する。
-    /// 配置は次フレーム以降の HandleRespawn に任せる（プレイヤー周りのドーナツ状に配置される）。
+    /// 配置は次フレーム以降の ProcessRespawn に任せる（プレイヤー周りのドーナツ状に配置される）。
     /// </summary>
     /// <param name="data">敵データ（null 不可）。</param>
     /// <param name="maxCount">このグループの最大数（配列サイズ）。</param>
@@ -273,7 +273,7 @@ public class EnemyGroup
     }
 
     /// <summary>プレイヤー位置を元にリスポーン処理を行う。seed は毎フレーム変えると配置が変わる（例: Time.frameCount）。</summary>
-    public void HandleRespawn(float3 playerPos, uint seed)
+    public void ProcessRespawn(float3 playerPos, uint seed)
     {
         _cachedRespawnJob.playerPos = playerPos;
         _cachedRespawnJob.deleteDistSq = _respawnDistance * _respawnDistance;
@@ -330,7 +330,7 @@ public class EnemyGroup
         _cachedGroupInitJob.Schedule(_spawnCount, 64).Complete();
     }
 
-    /// <summary>このグループの敵をすべて非アクティブにし、キューとフラッシュをクリアする。配置は次フレーム以降の HandleRespawn に任せる。</summary>
+    /// <summary>このグループの敵をすべて非アクティブにし、キューとフラッシュをクリアする。配置は次フレーム以降の ProcessRespawn に任せる。</summary>
     public void ResetEnemies()
     {
         _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();

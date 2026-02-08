@@ -223,7 +223,7 @@ public class GameManager : MonoBehaviour
 
         // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン
         enemyManager.ProcessDamage(gemManager);
-        enemyManager.HandleRespawn();
+        enemyManager.ProcessRespawn(playerPos);
 
         // 6. プレイヤーへのダメージ処理
         HandlePlayerDamage();
