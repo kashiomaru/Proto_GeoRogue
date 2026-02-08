@@ -51,6 +51,8 @@ public class GameManager : MonoBehaviour
     private NativeQueue<int> _playerDamageQueue;
     /// <summary>プレイヤー弾vsボスの当たり判定でヒットした弾のダメージを格納するキュー。</summary>
     private NativeQueue<float> _bossDamageQueue;
+    /// <summary>敵弾vsプレイヤーの当たり判定でヒットした弾のダメージを格納するキュー。</summary>
+    private NativeQueue<float> _enemyBulletHitDamages;
 
     private float _countdownTimer;
 
@@ -111,6 +113,7 @@ public class GameManager : MonoBehaviour
     {
         _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
         _bossDamageQueue = new NativeQueue<float>(Allocator.Persistent);
+        _enemyBulletHitDamages = new NativeQueue<float>(Allocator.Persistent);
 
         // カウントダウンタイマーを初期化
         _countdownTimer = GetEffectiveCountdownDuration();
@@ -184,7 +187,7 @@ public class GameManager : MonoBehaviour
 
         // 4. 当たり判定（プレイヤー弾vs敵・敵弾vsプレイヤー）
         CheckPlayerBulletVsEnemy();
-        bulletManager.CheckEnemyBulletVsPlayer();
+        CheckEnemyBulletVsPlayer();
 
         // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン
         enemyManager.ProcessDamage(gemManager);
@@ -226,6 +229,20 @@ public class GameManager : MonoBehaviour
                 dep);
         }
         dep.Complete();
+    }
+
+    /// <summary>
+    /// 敵弾とプレイヤーの当たり判定。ヒットした弾は無効化し、プレイヤーにダメージを通知する。
+    /// </summary>
+    void CheckEnemyBulletVsPlayer()
+    {
+        if (bulletManager == null || playerTransform == null)
+            return;
+        bulletManager.ProcessDamage(bulletManager.EnemyBulletGroupId, playerTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
+        while (_enemyBulletHitDamages.TryDequeue(out float damage))
+        {
+            AddPlayerDamage(Mathf.RoundToInt(damage));
+        }
     }
 
     /// <summary>
@@ -301,6 +318,8 @@ public class GameManager : MonoBehaviour
             _playerDamageQueue.Dispose();
         if (_bossDamageQueue.IsCreated)
             _bossDamageQueue.Dispose();
+        if (_enemyBulletHitDamages.IsCreated)
+            _enemyBulletHitDamages.Dispose();
     }
     
     /// <summary>

@@ -59,15 +59,15 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
-    /// <summary>CollectHitsAgainstCircle の結果（ヒットした弾のダメージ）を入れるキュー。敵弾vsプレイヤー用。</summary>
-    private NativeQueue<float> _collectedHitDamages;
 
     public float BulletDamage => bulletDamage;
+    /// <summary>敵弾グループ ID（ProcessDamage などで使用）。</summary>
+    public int EnemyBulletGroupId => _enemyBulletGroupId;
+    /// <summary>敵弾とプレイヤーの当たり判定に使うプレイヤー側の半径。</summary>
+    public float PlayerCollisionRadius => playerCollisionRadius;
 
     protected override void InitializeInternal()
     {
-        _collectedHitDamages = new NativeQueue<float>(Allocator.Persistent);
-
         _bulletGroups = new Dictionary<int, BulletGroup>();
         _bulletGroupIdsInOrder = new List<int>();
 
@@ -97,8 +97,6 @@ public class BulletManager : InitializeMonobehaviour
         }
         _bulletGroups.Clear();
         _bulletGroups = null;
-
-        _collectedHitDamages.Dispose();
     }
 
     public int AddBulletGroup(float scale)
@@ -249,22 +247,6 @@ public class BulletManager : InitializeMonobehaviour
         foreach (var group in _bulletGroups)
         {
             group.Value.Reset();
-        }
-    }
-
-    /// <summary>
-    /// 敵弾とプレイヤーの当たり判定。ヒットした弾は無効化し、プレイヤーにダメージを通知する。Job 完了後に GameManager から呼ぶ。
-    /// </summary>
-    public void CheckEnemyBulletVsPlayer()
-    {
-        if (IsInitialized == false || playerTransform == null || !_bulletGroups.TryGetValue(_enemyBulletGroupId, out var group))
-        {
-            return;
-        }
-        group.CollectHitsAgainstCircle((float3)playerTransform.position, playerCollisionRadius, _collectedHitDamages);
-        while (_collectedHitDamages.TryDequeue(out float damage))
-        {
-            gameManager?.AddPlayerDamage(Mathf.RoundToInt(damage));
         }
     }
 
