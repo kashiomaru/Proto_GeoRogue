@@ -21,7 +21,7 @@ public struct BulletDamageInfo
 }
 
 /// <summary>
-/// プレイヤー弾と敵弾の 2 つの BulletPool を保持し、発射・移動スケジュール・当たり判定・描画をまとめて行う。
+/// プレイヤー弾と敵弾の 2 つの BulletGroup を保持し、発射・移動スケジュール・当たり判定・描画をまとめて行う。
 /// </summary>
 public class BulletManager : InitializeMonobehaviour
 {
@@ -288,7 +288,7 @@ public class BulletManager : InitializeMonobehaviour
         }
 
         group.CollectHitsAgainstCircle((float3)boss.Position, boss.CollisionRadius, _collectedHitDamages);
-        
+
         for (int i = 0; i < _collectedHitDamages.Length; i++)
         {
             float actualDamage = boss.TakeDamage(_collectedHitDamages[i]);
