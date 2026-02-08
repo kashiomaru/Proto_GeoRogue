@@ -5,7 +5,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
-/// <summary>弾が敵に与えたダメージ情報を保持する構造体。</summary>
 public struct BulletDamageInfo
 {
     public float3 position;
@@ -20,9 +19,6 @@ public struct BulletDamageInfo
     }
 }
 
-/// <summary>
-/// プレイヤー弾と敵弾の 2 つの BulletGroup を保持し、発射・移動スケジュール・当たり判定・描画をまとめて行う。
-/// </summary>
 public class BulletManager : InitializeMonobehaviour
 {
     [Header("Settings")]
@@ -35,7 +31,6 @@ public class BulletManager : InitializeMonobehaviour
     private Dictionary<int, BulletGroup> _bulletGroups;
     private int _bulletGroupIdCounter = 0;
 
-    /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
 
     protected override void InitializeInternal()
@@ -56,7 +51,6 @@ public class BulletManager : InitializeMonobehaviour
         _bulletGroups = null;
     }
 
-    /// <summary>弾グループを追加する。mesh と material が null の場合は RenderBullets でプレイヤー/敵のデフォルトを使用。</summary>
     public int AddBulletGroup(int damage, float scale, Mesh mesh, Material material)
     {
         if (IsInitialized == false)
@@ -100,7 +94,7 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 弾の移動 Job をスケジュールし完了まで待機する。プレイヤー弾の移動 → 敵弾の移動の順に依存させる。
+    /// 弾の移動 Job をスケジュールし完了まで待機する
     /// </summary>
     public void ProcessMovement()
     {
@@ -118,12 +112,13 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 指定した弾グループとターゲットグループの当たり判定 Job をスケジュールする
+    /// 指定した弾グループとターゲットグループの当たり判定 Job をスケジュールする。
+    /// targetCollisionRadius はメソッド内で二乗して Job に渡す。
     /// </summary>
     public JobHandle ProcessDamage(
         int bulletGroupId,
         float targetCellSize,
-        float targetCollisionRadiusSq,
+        float targetCollisionRadius,
         NativeParallelMultiHashMap<int, int> targetSpatialMap,
         NativeArray<float3> targetPositions,
         NativeArray<bool> targetActive,
@@ -144,12 +139,12 @@ public class BulletManager : InitializeMonobehaviour
         _cachedCollideJob.bulletActive = bulletGroup.Active;
         _cachedCollideJob.bulletDamage = bulletGroup.Damage;
 
-        _cachedCollideJob.cellSize = targetCellSize;
-        _cachedCollideJob.targetCollisionRadiusSq = targetCollisionRadiusSq;
-        _cachedCollideJob.spatialMap = targetSpatialMap;
+        _cachedCollideJob.targetCellSize = targetCellSize;
+        _cachedCollideJob.targetCollisionRadiusSq = targetCollisionRadius * targetCollisionRadius;
+        _cachedCollideJob.targetSpatialMap = targetSpatialMap;
         _cachedCollideJob.targetPositions = targetPositions;
         _cachedCollideJob.targetActive = targetActive;
-        _cachedCollideJob.damageQueue = targetDamageQueue;
+        _cachedCollideJob.targetDamageQueue = targetDamageQueue;
 
         return _cachedCollideJob.Schedule(bulletGroup.MaxCount, 64, dependency);
     }
@@ -179,9 +174,6 @@ public class BulletManager : InitializeMonobehaviour
         }
     }
 
-    /// <summary>
-    /// 弾をすべてリセット（プレイヤー弾・敵弾とも）。ResetGameState 時などに呼ぶ。
-    /// </summary>
     public void ResetBullets()
     {
         foreach (var group in _bulletGroups)
@@ -192,7 +184,6 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <summary>
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。ヒットした弾のダメージを damageQueueOut に Enqueue する。
-    /// プレイヤー弾vsボスなど、呼び出し側でダメージ適用する場合に使用する。
     /// </summary>
     /// <param name="bulletGroupId">弾グループ ID</param>
     /// <param name="targetPosition">当たり判定の中心</param>

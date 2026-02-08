@@ -218,7 +218,7 @@ public class GameManager : MonoBehaviour
             dep = bulletManager.ProcessDamage(
                 player.BulletGroupId,
                 g.CellSize,
-                g.CollisionRadius * g.CollisionRadius,
+                g.CollisionRadius,
                 g.SpatialMap,
                 g.Positions,
                 g.Active,

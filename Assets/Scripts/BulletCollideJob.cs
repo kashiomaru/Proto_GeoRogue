@@ -10,11 +10,11 @@ using Unity.Mathematics;
 [BurstCompile]
 public struct BulletCollideJob : IJobParallelFor
 {
-    public float cellSize;
+    public float targetCellSize;
     /// <summary>弾との当たり判定に使うターゲットの半径の二乗（このグループ共通）。</summary>
     public float targetCollisionRadiusSq;
 
-    [ReadOnly] public NativeParallelMultiHashMap<int, int> spatialMap;
+    [ReadOnly] public NativeParallelMultiHashMap<int, int> targetSpatialMap;
     [ReadOnly] public NativeArray<float3> targetPositions;
     [ReadOnly] public NativeArray<float3> bulletPositions;
     [ReadOnly] public NativeArray<bool> targetActive;
@@ -23,7 +23,7 @@ public struct BulletCollideJob : IJobParallelFor
 
     public int bulletDamage;
 
-    public NativeQueue<BulletDamageInfo>.ParallelWriter damageQueue;
+    public NativeQueue<BulletDamageInfo>.ParallelWriter targetDamageQueue;
 
     public void Execute(int index)
     {
@@ -34,7 +34,7 @@ public struct BulletCollideJob : IJobParallelFor
 
         float3 pos = bulletPositions[index];
 
-        int2 gridCoords = new int2((int)math.floor(pos.x / cellSize), (int)math.floor(pos.z / cellSize));
+        int2 gridCoords = new int2((int)math.floor(pos.x / targetCellSize), (int)math.floor(pos.z / targetCellSize));
 
         for (int x = -1; x <= 1; x++)
         {
@@ -43,7 +43,7 @@ public struct BulletCollideJob : IJobParallelFor
                 int2 neighborCoords = gridCoords + new int2(x, y);
                 int hash = (int)math.hash(neighborCoords);
 
-                if (spatialMap.TryGetFirstValue(hash, out int targetIndex, out var iterator))
+                if (targetSpatialMap.TryGetFirstValue(hash, out int targetIndex, out var iterator))
                 {
                     do
                     {
@@ -57,12 +57,12 @@ public struct BulletCollideJob : IJobParallelFor
 
                         if (distSq < targetCollisionRadiusSq)
                         {
-                            damageQueue.Enqueue(new BulletDamageInfo(enemyPos, bulletDamage, targetIndex));
+                            targetDamageQueue.Enqueue(new BulletDamageInfo(enemyPos, bulletDamage, targetIndex));
                             bulletActive[index] = false;
                             return;
                         }
 
-                    } while (spatialMap.TryGetNextValue(out targetIndex, ref iterator));
+                    } while (targetSpatialMap.TryGetNextValue(out targetIndex, ref iterator));
                 }
             }
         }
