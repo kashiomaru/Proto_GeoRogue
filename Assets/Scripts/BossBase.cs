@@ -89,12 +89,12 @@ public abstract class BossBase : MonoBehaviour
     /// <summary>
     /// ボスの弾発射処理。GameManager から順序制御のため呼ばれる。サブクラスでオーバーライドして弾を発射できる。
     /// </summary>
-    public virtual void ProcessBulletFiring(float deltaTime, float3 playerPos)
+    public virtual void ProcessFiring(float deltaTime, float3 playerPos)
     {
     }
 
     /// <summary>
-    /// サブクラスで実装。移動・攻撃・接触ダメージなどの挙動を記述する。弾発射は ProcessBulletFiring で行う。プレイヤーへのダメージは playerDamageQueue に Enqueue する。
+    /// サブクラスで実装。移動・攻撃・接触ダメージなどの挙動を記述する。弾発射は ProcessFiring で行う。プレイヤーへのダメージは playerDamageQueue に Enqueue する。
     /// </summary>
     protected abstract void UpdateBehavior(float deltaTime, NativeQueue<int> playerDamageQueue);
 

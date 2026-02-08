@@ -286,7 +286,7 @@ public class EnemyGroup
     /// 弾を撃つ敵について発射タイマーを進め、間隔が来たら BulletManager に弾を生成させる。BulletManager の Job 完了後に GameManager から呼ぶ。
     /// 発射判定とリクエスト出力は Job で行い、メインスレッドでキューをドレインして SpawnEnemyBullet を呼ぶ。
     /// </summary>
-    public void ProcessBulletFiring(float deltaTime, float3 playerPos, BulletManager bulletManager)
+    public void ProcessFiring(float deltaTime, float3 playerPos, BulletManager bulletManager)
     {
         if (_bulletData == null || bulletManager == null || !_bulletSpawnQueue.IsCreated)
         {

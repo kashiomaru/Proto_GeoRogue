@@ -4,7 +4,6 @@ using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
 using Unity.Collections;
 using Unity.Burst;
-using Unity.Jobs;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
@@ -208,19 +207,18 @@ public class GameManager : MonoBehaviour
         float3 playerPos = playerTransform.position;
 
         // 1. プレイヤー・敵・ボスの移動
-        player.ProcessMovement();
+        player.ProcessMovement(deltaTime);
         enemyManager.ProcessMovement(deltaTime, playerPos, _playerDamageQueue);
 
         // 2. 弾発射（プレイヤー・敵・ボス）
-        player.HandlePlayerShooting();
-        enemyManager.ProcessBulletFiring(deltaTime, playerPos);
+        player.ProcessFiring(deltaTime);
+        enemyManager.ProcessFiring(deltaTime, playerPos);
 
         // 3. 弾移動
-        bulletManager.ScheduleMoveJob(deltaTime);
+        bulletManager.ProcessMovement(deltaTime);
 
         // 4. 当たり判定（プレイヤー弾vs敵・敵弾vsプレイヤー）
-        JobHandle bulletCollideHandle = bulletManager.ScheduleCollideJob(default(JobHandle), enemyManager);
-        bulletCollideHandle.Complete();
+        bulletManager.ScheduleCollideJob(enemyManager);
         bulletManager.CheckEnemyBulletVsPlayer();
 
         // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン

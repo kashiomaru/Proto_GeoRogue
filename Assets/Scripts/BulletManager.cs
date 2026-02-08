@@ -38,7 +38,7 @@ public class BulletManager : InitializeMonobehaviour
     private RenderParams _rpEnemyBullet;
 
     private Dictionary<int, BulletGroup> _bulletGroups;
-    /// <summary>ScheduleMoveJob などで使う、グループの登録順（プレイヤー→敵）。</summary>
+    /// <summary>ProcessMovement などで使う、グループの登録順（プレイヤー→敵）。</summary>
     private List<int> _bulletGroupIdsInOrder;
     private int _bulletGroupIdCounter = 0;
     private int _playerBulletGroupId;
@@ -119,7 +119,7 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾を 1 発生成する。Player.HandlePlayerShooting から呼ぶ。
+    /// プレイヤー弾を 1 発生成する。Player.ProcessFiring から呼ぶ。
     /// </summary>
     public void SpawnPlayerBullet(Vector3 position, Vector3 direction, float speed, float lifeTime = 2f)
     {
@@ -145,7 +145,7 @@ public class BulletManager : InitializeMonobehaviour
     /// <summary>
     /// 弾の移動 Job をスケジュールし完了まで待機する。プレイヤー弾の移動 → 敵弾の移動の順に依存させる。
     /// </summary>
-    public void ScheduleMoveJob(float deltaTime)
+    public void ProcessMovement(float deltaTime)
     {
         JobHandle dep = default;
         foreach (var id in _bulletGroupIdsInOrder)
@@ -156,15 +156,15 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾と敵の当たり判定 Job をスケジュールする。弾の移動 Job 完了後に実行するため dependency に移動 Job のハンドルを渡す。
+    /// プレイヤー弾と敵の当たり判定 Job をスケジュールし完了まで待機する。
     /// </summary>
-    public JobHandle ScheduleCollideJob(JobHandle dependency, EnemyManager enemyManager)
+    public void ScheduleCollideJob(EnemyManager enemyManager)
     {
         var groups = enemyManager != null ? enemyManager.GetGroups() : null;
         if (groups == null || groups.Count == 0)
-            return dependency;
+            return;
 
-        JobHandle dep = dependency;
+        JobHandle dep = default;
         _bulletGroups[_playerBulletGroupId].SetCollideJobBulletData(ref _cachedCollideJob);
         _cachedCollideJob.bulletDamage = bulletDamage;
 
@@ -181,7 +181,7 @@ public class BulletManager : InitializeMonobehaviour
             _cachedCollideJob.enemyFlashQueue = g.GetEnemyFlashQueueWriter();
             dep = _cachedCollideJob.Schedule(_bulletGroups[_playerBulletGroupId].MaxCount, 64, dep);
         }
-        return dep;
+        dep.Complete();
     }
 
     void LateUpdate()

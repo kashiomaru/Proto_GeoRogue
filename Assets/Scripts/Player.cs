@@ -141,10 +141,10 @@ public class Player : InitializeMonobehaviour
     }
 
     /// <summary>プレイヤーの移動処理。GameManager から順序制御のため呼ばれる。</summary>
-    public void ProcessMovement()
+    public void ProcessMovement(float deltaTime)
     {
         if (IsInitialized == false) return;
-        HandleMovement();
+        HandleMovement(deltaTime);
     }
     
     // ダメージを受ける（実際に与えたダメージを返す）
@@ -251,7 +251,7 @@ public class Player : InitializeMonobehaviour
     /// <summary>
     /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）
     /// </summary>
-    public void HandlePlayerShooting()
+    public void ProcessFiring(float deltaTime)
     {
         if (IsInitialized == false || bulletManager == null)
         {
@@ -262,7 +262,7 @@ public class Player : InitializeMonobehaviour
         int countPerShot = GetBulletCountPerShot();
         float speed = GetBulletSpeed();
 
-        _playerShotTimer += Time.deltaTime;
+        _playerShotTimer += deltaTime;
         if (_playerShotTimer >= rate)
         {
             _playerShotTimer = 0f;
@@ -289,12 +289,6 @@ public class Player : InitializeMonobehaviour
                 bulletManager.SpawnPlayerBullet(transform.position, finalDir, speed, 2f);
             }
         }
-    }
-
-    // 後方互換のため残す（Reset を呼ぶ）
-    public void ResetPlayer()
-    {
-        Reset();
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
@@ -382,7 +376,7 @@ public class Player : InitializeMonobehaviour
         _renderer.SetPropertyBlock(_mpb);
     }
     
-    private void HandleMovement()
+    private void HandleMovement(float deltaTime)
     {
         // 新しいInput SystemでWASDキー入力を取得
         Keyboard keyboard = Keyboard.current;
@@ -445,7 +439,7 @@ public class Player : InitializeMonobehaviour
             if (shiftOnlyRotate == false)
             {
                 Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-                transform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
+                transform.position += moveDir.normalized * moveSpeed * deltaTime;
             }
         }
     }

@@ -120,7 +120,7 @@ public class EnemyManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 弾を撃つ敵の発射処理。各グループの ProcessBulletFiring を呼ぶ。BulletManager の Job 完了後に GameManager から呼ぶ。
+    /// 弾を撃つ敵の発射処理。各グループの ProcessFiring を呼ぶ。BulletManager の Job 完了後に GameManager から呼ぶ。
     /// </summary>
     public void ProcessEnemyBulletFiring(float deltaTime, float3 playerPos)
     {
@@ -128,7 +128,7 @@ public class EnemyManager : InitializeMonobehaviour
         if (_normalEnemiesEnabled == false || _groups == null || bulletManager == null) return;
 
         foreach (var g in _groups)
-            g.ProcessBulletFiring(deltaTime, playerPos, bulletManager);
+            g.ProcessFiring(deltaTime, playerPos, bulletManager);
     }
 
     void RenderEnemies()
@@ -231,11 +231,11 @@ public class EnemyManager : InitializeMonobehaviour
     public void ProcessBossBulletFiring(float deltaTime, float3 playerPos)
     {
         if (_bossActive == false || _currentBossComponent == null) return;
-        _currentBossComponent.ProcessBulletFiring(deltaTime, playerPos);
+        _currentBossComponent.ProcessFiring(deltaTime, playerPos);
     }
 
     /// <summary>通常敵・ボスの弾発射処理をまとめて実行。GameManager から呼ばれる。</summary>
-    public void ProcessBulletFiring(float deltaTime, float3 playerPos)
+    public void ProcessFiring(float deltaTime, float3 playerPos)
     {
         ProcessEnemyBulletFiring(deltaTime, playerPos);
         ProcessBossBulletFiring(deltaTime, playerPos);
