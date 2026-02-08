@@ -57,8 +57,13 @@ public class EnemyGroup
     private EnemyGroupInitJob _cachedGroupInitJob;
     private EnemyBulletFireJob _cachedBulletFireJob;
 
+    private readonly BulletManager _bulletManager;
+    private readonly int _enemyBulletGroupId;
+
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
+    /// <summary>このグループ用の敵弾 BulletGroup ID（GameManager の当たり判定などで使用）。</summary>
+    public int EnemyBulletGroupId => _enemyBulletGroupId;
     /// <summary>空間マップ（弾衝突Job用）。</summary>
     public NativeParallelMultiHashMap<int, int> SpatialMap => _spatialMap;
     /// <summary>敵座標（弾衝突Job用）。</summary>
@@ -88,15 +93,18 @@ public class EnemyGroup
     /// <param name="respawnDistance">リスポーン判定距離。</param>
     /// <param name="respawnMinRadius">リスポーン最小半径。</param>
     /// <param name="respawnMaxRadius">リスポーン最大半径。</param>
+    /// <param name="bulletManager">弾グループ追加用（null の場合は弾発射・当たり判定を行わない）。</param>
     public EnemyGroup(
         EnemyData data,
         int maxCount,
         float flashDuration,
         float respawnDistance,
         float respawnMinRadius,
-        float respawnMaxRadius)
+        float respawnMaxRadius,
+        BulletManager bulletManager)
     {
         Assert.IsNotNull(data, "EnemyData must not be null.");
+        Assert.IsNotNull(bulletManager, "BulletManager must not be null.");
 
         _maxCount = Mathf.Max(1, maxCount);
         _spawnCount = data.SpawnCount > 0 ? Mathf.Clamp(data.SpawnCount, 1, _maxCount) : Mathf.Clamp(10, 1, _maxCount);
@@ -112,6 +120,7 @@ public class EnemyGroup
         _material = data.Material;
         _scale = data.Scale;
         _bulletData = data.BulletData;
+        _bulletManager = bulletManager;
 
         // 弾の拡散方向用 Y 軸回転を事前計算（countPerShot / spreadAngle はグループ固定のため）。Job に渡すため NativeArray。
         if (_bulletData != null)
@@ -127,6 +136,8 @@ public class EnemyGroup
                 _bulletSpreadRotations[j] = quaternion.RotateY(math.radians(angleDeg));
             }
             _bulletSpawnQueue = new NativeQueue<EnemyBulletSpawnRequest>(Allocator.Persistent);
+
+            _enemyBulletGroupId = _bulletManager.AddBulletGroup(_bulletData.Scale, _bulletData.Mesh, _bulletData.Material);
         }
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
@@ -156,6 +167,7 @@ public class EnemyGroup
         _damageQueue = new NativeQueue<BulletDamageInfo>(Allocator.Persistent);
 
         SetupCachedJobs();
+
         _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
     }
 
@@ -215,6 +227,8 @@ public class EnemyGroup
     /// <summary>確保したバッファを破棄する。二重呼び出し防止は呼び出し側で行う。</summary>
     public void Dispose()
     {
+        _bulletManager.RemoveBulletGroup(_enemyBulletGroupId);
+
         if (_positions.IsCreated) _positions.Dispose();
         if (_directions.IsCreated) _directions.Dispose();
         if (_active.IsCreated) _active.Dispose();
@@ -296,10 +310,9 @@ public class EnemyGroup
     /// 弾を撃つ敵について発射タイマーを進め、間隔が来たら BulletManager に弾を生成させる。BulletManager の Job 完了後に GameManager から呼ぶ。
     /// 発射判定とリクエスト出力は Job で行い、メインスレッドでキューをドレインして SpawnEnemyBullet を呼ぶ。
     /// </summary>
-    /// <param name="enemyBulletGroupId">敵弾用 BulletGroup の ID（EnemyManager が AddBulletGroup で取得した値）。</param>
-    public void ProcessFiring(int enemyBulletGroupId, float3 playerPos, BulletManager bulletManager)
+    public void ProcessFiring(float3 playerPos, BulletManager bulletManager)
     {
-        if (_bulletData == null || bulletManager == null || !_bulletSpawnQueue.IsCreated)
+        if (_bulletData == null || bulletManager == null || _enemyBulletGroupId < 0 || !_bulletSpawnQueue.IsCreated)
         {
             return;
         }
@@ -312,7 +325,7 @@ public class EnemyGroup
 
         while (_bulletSpawnQueue.TryDequeue(out EnemyBulletSpawnRequest req))
         {
-            bulletManager.SpawnBullet(enemyBulletGroupId, (Vector3)req.position, (Vector3)req.direction, req.speed, req.damage, req.lifeTime);
+            bulletManager.SpawnBullet(_enemyBulletGroupId, (Vector3)req.position, (Vector3)req.direction, req.speed, req.damage, req.lifeTime);
         }
     }
 

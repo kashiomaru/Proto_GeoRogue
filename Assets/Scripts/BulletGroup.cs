@@ -45,7 +45,6 @@ public class BulletGroup
     private DrawMatrixJob _matrixJob;
     private readonly Mesh _mesh;
     private readonly Material _material;
-    private readonly bool _hasRenderParams;
     private readonly RenderParams _renderParams;
 
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
@@ -56,8 +55,6 @@ public class BulletGroup
     public Mesh Mesh => _mesh;
     /// <summary>描画用マテリアル。未設定の場合は null。</summary>
     public Material Material => _material;
-    /// <summary>マテリアルが渡された場合に構築済みの RenderParams。未設定の場合は false。</summary>
-    public bool HasRenderParams => _hasRenderParams;
     /// <summary>HasRenderParams が true のときのみ有効。描画用 RenderParams。</summary>
     public RenderParams RenderParams => _renderParams;
 
@@ -98,7 +95,6 @@ public class BulletGroup
         _material = material;
         if (material != null)
         {
-            _hasRenderParams = true;
             _renderParams = new RenderParams(material)
             {
                 shadowCastingMode = ShadowCastingMode.On,
@@ -107,7 +103,6 @@ public class BulletGroup
         }
         else
         {
-            _hasRenderParams = false;
             _renderParams = default;
         }
 

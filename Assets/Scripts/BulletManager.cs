@@ -36,19 +36,11 @@ public class BulletManager : InitializeMonobehaviour
     [Header("Player Shot")]
     [SerializeField] private float bulletDamage = 1.0f;
 
-    [Header("Enemy Bullet Settings")]
-    [SerializeField] private Mesh enemyBulletMesh;
-    [SerializeField] private Material enemyBulletMaterial;
-
     [Header("References")]
     [SerializeField] private GameManager gameManager;
     [SerializeField] private RenderManager renderManager;
 
-    private RenderParams _rpEnemyBullet;
-
     private Dictionary<int, BulletGroup> _bulletGroups;
-    /// <summary>ProcessMovement などで使う、グループの登録順（プレイヤー→敵）。</summary>
-    private List<int> _bulletGroupIdsInOrder;
     private int _bulletGroupIdCounter = 0;
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
@@ -61,16 +53,6 @@ public class BulletManager : InitializeMonobehaviour
     protected override void InitializeInternal()
     {
         _bulletGroups = new Dictionary<int, BulletGroup>();
-        _bulletGroupIdsInOrder = new List<int>();
-
-        if (enemyBulletMaterial != null)
-        {
-            _rpEnemyBullet = new RenderParams(enemyBulletMaterial)
-            {
-                shadowCastingMode = ShadowCastingMode.On,
-                receiveShadows = true
-            };
-        }
     }
 
     protected override void FinalizeInternal()
@@ -84,12 +66,11 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>弾グループを追加する。mesh と material が null の場合は RenderBullets でプレイヤー/敵のデフォルトを使用。</summary>
-    public int AddBulletGroup(float scale, Mesh mesh = null, Material material = null)
+    public int AddBulletGroup(float scale, Mesh mesh, Material material)
     {
         var groupId = _bulletGroupIdCounter++;
         var group = new BulletGroup(maxBullets, scale, mesh, material);
         _bulletGroups.Add(groupId, group);
-        _bulletGroupIdsInOrder.Add(groupId);
         return groupId;
     }
 
@@ -99,7 +80,6 @@ public class BulletManager : InitializeMonobehaviour
         {
             group.Dispose();
             _bulletGroups.Remove(groupId);
-            _bulletGroupIdsInOrder.Remove(groupId);
         }
     }
 
@@ -124,15 +104,15 @@ public class BulletManager : InitializeMonobehaviour
     public void ProcessMovement()
     {
         JobHandle dep = default;
-        foreach (var id in _bulletGroupIdsInOrder)
+        foreach (var group in _bulletGroups)
         {
-            dep = _bulletGroups[id].ScheduleMoveJob(dep);
+            dep = group.Value.ScheduleMoveJob(dep);
         }
         dep.Complete();
     }
 
     /// <summary>
-    /// 指定した弾グループとターゲットグループの当たり判定 Job をスケジュールする。GameManager.CheckPlayerBulletVsEnemy から呼ばれる。
+    /// 指定した弾グループとターゲットグループの当たり判定 Job をスケジュールする
     /// </summary>
     public JobHandle ProcessDamage(
         int bulletGroupId,
@@ -193,11 +173,7 @@ public class BulletManager : InitializeMonobehaviour
         foreach (var group in _bulletGroups)
         {
             group.Value.RunMatrixJob();
-
-            Mesh mesh = group.Value.Mesh ?? enemyBulletMesh;
-            RenderParams rp = group.Value.HasRenderParams ? group.Value.RenderParams : _rpEnemyBullet;
-            if (mesh != null)
-                renderManager.RenderBullets(rp, mesh, group.Value.Matrices, group.Value.DrawCount);
+            renderManager.RenderBullets(group.Value.RenderParams, group.Value.Mesh, group.Value.Matrices, group.Value.DrawCount);
         }
     }
 

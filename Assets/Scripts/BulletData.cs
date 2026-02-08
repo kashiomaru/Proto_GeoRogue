@@ -35,6 +35,8 @@ public class BulletData : ScriptableObject
     [SerializeField] private Mesh mesh;
     [Tooltip("描画に使うマテリアル")]
     [SerializeField] private Material material;
+    [Tooltip("描画スケール（BulletGroup の scale に渡す）")]
+    [SerializeField] private float scale = 0.5f;
 
     [Header("Shot Pattern")]
     [Tooltip("発射間隔（秒）。この間隔で弾を撃つ")]
@@ -47,6 +49,7 @@ public class BulletData : ScriptableObject
     public BulletDirectionType DirectionType => directionType;
     public Mesh Mesh => mesh;
     public Material Material => material;
+    public float Scale => scale;
     public float Speed => speed;
     public float Damage => damage;
     public float LifeTime => lifeTime;

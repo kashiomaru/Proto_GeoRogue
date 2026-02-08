@@ -9,7 +9,6 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float rotationSpeed = 10f; // 回転速度
 
     [Header("Upgrade Params (LevelUp で変化)")]
-    [SerializeField] private float bulletScale = 0.5f;
     [SerializeField] private float magnetDist = 5f;
 
     [Header("Reset 時の復元値（上記の初期値。インスペクターで編集可）")]
@@ -105,12 +104,13 @@ public class Player : InitializeMonobehaviour
         _bulletCountPerShot = bulletData.CountPerShot;
 
         bulletManager.Initialize();
-        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletScale, bulletData.Mesh, bulletData.Material);
+        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Scale, bulletData.Mesh, bulletData.Material);
     }
 
     protected override void FinalizeInternal()
     {
         // 特になし（Native 等の解放は行っていない）
+        bulletManager.RemoveBulletGroup(_cachedBulletGroupId);
     }
     
     private void Update()

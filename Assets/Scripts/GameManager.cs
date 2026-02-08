@@ -233,10 +233,22 @@ public class GameManager : MonoBehaviour
     /// </summary>
     void CheckEnemyBulletVsPlayer()
     {
-        bulletManager.ProcessDamage(enemyManager.EnemyBulletGroupId, player.CachedTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
-        while (_enemyBulletHitDamages.TryDequeue(out float damage))
+        var groups = enemyManager.GetGroups();
+        if (groups == null) return;
+
+        foreach (var group in groups)
         {
-            AddPlayerDamage(Mathf.RoundToInt(damage));
+            if (group.EnemyBulletGroupId < 0)
+            {
+                continue;
+            }
+
+            bulletManager.ProcessDamage(group.EnemyBulletGroupId, player.CachedTransform.position, bulletManager.PlayerCollisionRadius, _enemyBulletHitDamages);
+            
+            while (_enemyBulletHitDamages.TryDequeue(out float damage))
+            {
+                _playerDamageQueue.Enqueue(damage);
+            }
         }
     }
 
@@ -403,15 +415,6 @@ public class GameManager : MonoBehaviour
     public void SwitchCameraByName(string cameraName)
     {
         cameraManager?.SwitchCameraByName(cameraName);
-    }
-    
-    // プレイヤーへのダメージを追加（ボス用）
-    public void AddPlayerDamage(int damage)
-    {
-        if (_playerDamageQueue.IsCreated)
-        {
-            _playerDamageQueue.Enqueue(damage);
-        }
     }
     
     // プレイヤーの位置を取得（ボス用）
