@@ -48,7 +48,7 @@ public class EnemyGroup
     private NativeReference<int> _drawCounter;
     private NativeParallelMultiHashMap<int, int> _spatialMap;
     private List<Vector3> _deadPositions;
-    private NativeQueue<EnemyDamageInfo> _damageQueue;
+    private NativeQueue<BulletDamageInfo> _damageQueue;
 
     private DrawMatrixJob _cachedMatrixJob;
     private EnemyEmissionJob _cachedEmissionJob;
@@ -153,7 +153,7 @@ public class EnemyGroup
 
         _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
         _deadPositions = new List<Vector3>();
-        _damageQueue = new NativeQueue<EnemyDamageInfo>(Allocator.Persistent);
+        _damageQueue = new NativeQueue<BulletDamageInfo>(Allocator.Persistent);
 
         SetupCachedJobs();
         _cachedGroupInitJob.Schedule(_maxCount, 64).Complete();
@@ -257,7 +257,7 @@ public class EnemyGroup
     /// <summary>ダメージキューを処理し、HP減算・フラッシュ・死亡処理・ダメージ表示を行う。</summary>
     public void ProcessEnemyDamage(DamageTextManager damageTextManager)
     {
-        while (_damageQueue.TryDequeue(out EnemyDamageInfo damageInfo))
+        while (_damageQueue.TryDequeue(out BulletDamageInfo damageInfo))
         {
             int idx = damageInfo.index;
             if (idx < 0 || idx >= _spawnCount || _active[idx] == false)
@@ -349,5 +349,5 @@ public class EnemyGroup
     }
 
     /// <summary>敵ダメージ情報キュー（弾衝突Job用）。</summary>
-    public NativeQueue<EnemyDamageInfo>.ParallelWriter GetEnemyDamageQueueWriter() => _damageQueue.AsParallelWriter();
+    public NativeQueue<BulletDamageInfo>.ParallelWriter GetEnemyDamageQueueWriter() => _damageQueue.AsParallelWriter();
 }

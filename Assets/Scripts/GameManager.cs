@@ -7,21 +7,6 @@ using Unity.Burst;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
-// 敵へのダメージ情報を保持する構造体
-public struct EnemyDamageInfo
-{
-    public float3 position;
-    public float damage;
-    public int index;
-
-    public EnemyDamageInfo(float3 pos, float dmg, int idx)
-    {
-        position = pos;
-        damage = dmg;
-        index = idx;
-    }
-}
-
 // ゲームモード
 public enum GameMode
 {

@@ -5,6 +5,21 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
+/// <summary>弾が敵に与えたダメージ情報を保持する構造体。</summary>
+public struct BulletDamageInfo
+{
+    public float3 position;
+    public float damage;
+    public int index;
+
+    public BulletDamageInfo(float3 pos, float dmg, int idx)
+    {
+        position = pos;
+        damage = dmg;
+        index = idx;
+    }
+}
+
 /// <summary>
 /// プレイヤー弾と敵弾の 2 つの BulletPool を保持し、発射・移動スケジュール・当たり判定・描画をまとめて行う。
 /// </summary>
