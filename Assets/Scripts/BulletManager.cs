@@ -171,10 +171,10 @@ public class BulletManager : InitializeMonobehaviour
         foreach (var g in groups)
         {
             _cachedCollideJob.cellSize = g.CellSize;
-            _cachedCollideJob.collisionRadius = g.CollisionRadius;
+            _cachedCollideJob.targetCollisionRadiusSq = g.CollisionRadius * g.CollisionRadius;
             _cachedCollideJob.spatialMap = g.SpatialMap;
-            _cachedCollideJob.enemyPositions = g.EnemyPositions;
-            _cachedCollideJob.enemyActive = g.EnemyActive;
+            _cachedCollideJob.targetPositions = g.EnemyPositions;
+            _cachedCollideJob.targetActive = g.EnemyActive;
             _cachedCollideJob.enemyHp = g.EnemyHp;
             _cachedCollideJob.deadEnemyPositions = g.GetDeadEnemyPositionsWriter();
             _cachedCollideJob.damageQueue = g.GetEnemyDamageQueueWriter();

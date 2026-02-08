@@ -11,24 +11,26 @@ using Unity.Mathematics;
 public struct BulletCollideJob : IJobParallelFor
 {
     public float cellSize;
-    /// <summary>弾との当たり判定に使う敵の半径（このグループ共通）。</summary>
-    public float collisionRadius;
+    /// <summary>弾との当たり判定に使う敵の半径の二乗（このグループ共通）。</summary>
+    public float targetCollisionRadiusSq;
 
     [ReadOnly] public NativeParallelMultiHashMap<int, int> spatialMap;
-    [ReadOnly] public NativeArray<float3> enemyPositions;
+    [ReadOnly] public NativeArray<float3> targetPositions;
     [ReadOnly] public NativeArray<float3> bulletPositions;
 
     public NativeArray<bool> bulletActive;
 
     [NativeDisableParallelForRestriction]
-    public NativeArray<bool> enemyActive;
+    public NativeArray<bool> targetActive;
+    
     [NativeDisableParallelForRestriction]
     public NativeArray<float> enemyHp;
 
     public float bulletDamage;
 
-    public NativeQueue<float3>.ParallelWriter deadEnemyPositions;
     public NativeQueue<EnemyDamageInfo>.ParallelWriter damageQueue;
+
+    public NativeQueue<float3>.ParallelWriter deadEnemyPositions;
     public NativeQueue<int>.ParallelWriter enemyFlashQueue;
 
     public void Execute(int index)
@@ -53,18 +55,17 @@ public struct BulletCollideJob : IJobParallelFor
                 {
                     do
                     {
-                        if (enemyActive[enemyIndex] == false)
+                        if (targetActive[enemyIndex] == false)
                         {
                             continue;
                         }
 
-                        float3 enemyPos = enemyPositions[enemyIndex];
+                        float3 enemyPos = targetPositions[enemyIndex];
                         float distSq = math.distancesq(pos, enemyPos);
-                        float radiusSq = collisionRadius * collisionRadius;
 
-                        if (distSq < radiusSq)
+                        if (distSq < targetCollisionRadiusSq)
                         {
-                            if (enemyActive[enemyIndex])
+                            if (targetActive[enemyIndex])
                             {
                                 float currentHp = enemyHp[enemyIndex];
                                 currentHp -= bulletDamage;
@@ -75,7 +76,7 @@ public struct BulletCollideJob : IJobParallelFor
 
                                 if (currentHp <= 0f)
                                 {
-                                    enemyActive[enemyIndex] = false;
+                                    targetActive[enemyIndex] = false;
                                     deadEnemyPositions.Enqueue(enemyPos);
                                 }
                             }
