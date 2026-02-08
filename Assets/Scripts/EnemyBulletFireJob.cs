@@ -9,10 +9,10 @@ public struct EnemyBulletSpawnRequest
     public float3 position;
     public float3 direction;
     public float speed;
-    public float damage;
+    public int damage;
     public float lifeTime;
 
-    public EnemyBulletSpawnRequest(float3 pos, float3 dir, float spd, float dmg, float life)
+    public EnemyBulletSpawnRequest(float3 pos, float3 dir, float spd, int dmg, float life)
     {
         position = pos;
         direction = dir;
@@ -34,7 +34,7 @@ public struct EnemyBulletFireJob : IJobParallelFor
     public float interval;
     public float deltaTime;
     public float speed;
-    public float damage;
+    public int damage;
     public float lifeTime;
     public int countPerShot;
 

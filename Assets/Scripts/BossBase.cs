@@ -14,7 +14,7 @@ public abstract class BossBase : MonoBehaviour
     [SerializeField] protected float rotationSpeed = 3f;
     [SerializeField] protected float damageRadius = 1.0f;
     [SerializeField] protected int damageAmount = 1;
-    [SerializeField] protected float maxHp = 100f;
+    [SerializeField] protected int maxHp = 100;
     [SerializeField] protected float collisionRadius = 2.0f;
 
     [Header("Flash Settings")]
@@ -26,8 +26,8 @@ public abstract class BossBase : MonoBehaviour
     [SerializeField] protected Renderer bossRenderer;
     [SerializeField] protected Transform damageTextPositionAnchor;
 
-    protected float _currentHp;
-    protected float _effectiveMaxHp;
+    protected int _currentHp;
+    protected int _effectiveMaxHp;
     protected Func<Vector3> getPlayerPosition;
     protected BulletManager _bulletManager;
     protected float _currentRotationVelocity;
@@ -53,21 +53,21 @@ public abstract class BossBase : MonoBehaviour
         }
     }
 
-    public float TakeDamage(float damage)
+    public int TakeDamage(int damage)
     {
-        float actualDamage = math.min(damage, _currentHp);
+        int actualDamage = math.min(damage, _currentHp);
         _currentHp -= actualDamage;
         _flashTimer = flashDuration;
-        if (_currentHp <= 0f)
+        if (_currentHp <= 0)
         {
-            _currentHp = 0f;
+            _currentHp = 0;
         }
         return actualDamage;
     }
 
-    public float CurrentHp => _currentHp;
-    public float MaxHp => _effectiveMaxHp;
-    public bool IsDead => _currentHp <= 0f;
+    public int CurrentHp => _currentHp;
+    public int MaxHp => _effectiveMaxHp;
+    public bool IsDead => _currentHp <= 0;
     public Vector3 Position => transform.position;
     public float CollisionRadius => collisionRadius;
 

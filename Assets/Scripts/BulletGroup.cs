@@ -36,7 +36,7 @@ public class BulletGroup
     // --- 描画用 ---
     private NativeArray<Matrix4x4> _matrices;
     private NativeReference<int> _matrixCounter;
-    private float _damage;
+    private int _damage;
     private float _scale;
     /// <summary>毎フレームの new を避けるため RunMatrixJob で再利用するスケール。</summary>
     private Vector3 _cachedScale;
@@ -45,7 +45,7 @@ public class BulletGroup
     private readonly Material _material;
     private readonly RenderParams _renderParams;
 
-    public float Damage => _damage;
+    public int Damage => _damage;
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
     /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>
@@ -65,7 +65,7 @@ public class BulletGroup
     /// <param name="scale">描画スケール</param>
     /// <param name="mesh">描画用メッシュ</param>
     /// <param name="material">描画用マテリアル</param>
-    public BulletGroup(int maxCount, float damage, float scale, Mesh mesh, Material material)
+    public BulletGroup(int maxCount, int damage, float scale, Mesh mesh, Material material)
     {
         Debug.Assert(mesh != null, "[BulletGroup] mesh が未設定です。インスペクターで指定してください。");
         Debug.Assert(material != null, "[BulletGroup] material が未設定です。インスペクターで指定してください。");
@@ -160,7 +160,7 @@ public class BulletGroup
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。
     /// ヒットした弾のダメージを damageQueueOut に Enqueue する。呼び出し側で NativeQueue を用意すること。
     /// </summary>
-    public void CollectHitsAgainstCircle(float3 center, float radius, NativeQueue<float> damageQueueOut)
+    public void CollectHitsAgainstCircle(float3 center, float radius, NativeQueue<int> damageQueueOut)
     {
         if (_disposed || !_positions.IsCreated || !damageQueueOut.IsCreated)
         {

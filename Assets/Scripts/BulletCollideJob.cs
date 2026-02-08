@@ -21,7 +21,7 @@ public struct BulletCollideJob : IJobParallelFor
 
     public NativeArray<bool> bulletActive;
 
-    public float bulletDamage;
+    public int bulletDamage;
 
     public NativeQueue<BulletDamageInfo>.ParallelWriter damageQueue;
 

@@ -26,7 +26,7 @@ public class BulletData : ScriptableObject
     [Tooltip("弾の飛ぶ速度")]
     [SerializeField] private float speed = 15f;
     [Tooltip("プレイヤーに与えるダメージ（敵・ボス弾の場合）")]
-    [SerializeField] private float damage = 1f;
+    [SerializeField] private int damage = 1;
     [Tooltip("弾の生存時間（秒）。この時間経過で弾は消える")]
     [SerializeField] private float lifeTime = 3f;
 
@@ -51,7 +51,7 @@ public class BulletData : ScriptableObject
     public Material Material => material;
     public float Scale => scale;
     public float Speed => speed;
-    public float Damage => damage;
+    public int Damage => damage;
     public float LifeTime => lifeTime;
     public float FireInterval => Mathf.Max(0.01f, fireInterval);
     public int CountPerShot => Mathf.Max(1, countPerShot);

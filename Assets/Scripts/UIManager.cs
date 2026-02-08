@@ -274,8 +274,8 @@ public class UIManager : MonoBehaviour
         var boss = gameManager.EnemyManager.GetCurrentBossComponent();
         if (boss != null)
         {
-            float max = boss.MaxHp;
-            bossHpBar.value = max > 0f ? boss.CurrentHp / max : 0f;
+            int max = boss.MaxHp;
+            bossHpBar.value = max > 0 ? (float)boss.CurrentHp / max : 0f;
         }
     }
     

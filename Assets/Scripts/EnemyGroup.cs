@@ -16,7 +16,7 @@ public class EnemyGroup
     private readonly int _maxCount;
     private readonly int _spawnCount; // 実際に出現させる数（1～_maxCount）
     private readonly float _speed;
-    private readonly float _maxHp;
+    private readonly int _maxHp;
     private readonly float _flashDuration;
     private readonly int _damageAmount;
     private readonly float _damageRadius;
@@ -41,7 +41,7 @@ public class EnemyGroup
     /// <summary>敵の向き（前方ベクトル、正規化）。描画・発射方向に使用。</summary>
     private NativeArray<float3> _directions;
     private NativeArray<bool> _active;
-    private NativeArray<float> _hp;
+    private NativeArray<int> _hp;
     private NativeArray<float> _fireTimers;
     private NativeArray<float> _flashTimers;
     private NativeArray<Matrix4x4> _matrices;
@@ -72,7 +72,7 @@ public class EnemyGroup
     /// <summary>ターゲットのアクティブフラグ（弾衝突Job用）。</summary>
     public NativeArray<bool> Active => _active;
     /// <summary>敵HP（弾衝突Job用）。</summary>
-    public NativeArray<float> EnemyHp => _hp;
+    public NativeArray<int> EnemyHp => _hp;
     /// <summary>弾との当たり判定に使う半径（弾衝突Job用）。</summary>
     public float CollisionRadius => _collisionRadius;
     /// <summary>セルサイズ（弾衝突Job用）。</summary>
@@ -157,7 +157,7 @@ public class EnemyGroup
         _positions = new NativeArray<float3>(_maxCount, Allocator.Persistent);
         _directions = new NativeArray<float3>(_maxCount, Allocator.Persistent);
         _active = new NativeArray<bool>(_maxCount, Allocator.Persistent);
-        _hp = new NativeArray<float>(_maxCount, Allocator.Persistent);
+        _hp = new NativeArray<int>(_maxCount, Allocator.Persistent);
         _fireTimers = new NativeArray<float>(_maxCount, Allocator.Persistent);
         _flashTimers = new NativeArray<float>(_maxCount, Allocator.Persistent);
         _matrices = new NativeArray<Matrix4x4>(_maxCount, Allocator.Persistent);
@@ -280,22 +280,21 @@ public class EnemyGroup
             if (idx < 0 || idx >= _spawnCount || _active[idx] == false)
                 continue;
 
-            float currentHp = _hp[idx];
+            int currentHp = _hp[idx];
             currentHp -= damageInfo.damage;
             _hp[idx] = currentHp;
 
             if (_flashTimers.IsCreated)
                 _flashTimers[idx] = _flashDuration;
 
-            if (currentHp <= 0f)
+            if (currentHp <= 0)
             {
                 _active[idx] = false;
                 _deadPositions.Add(damageInfo.position);
             }
 
-            int damageInt = (int)damageInfo.damage;
-            if (damageInt > 0)
-                damageTextManager?.ShowDamage(damageInfo.position, damageInt, _collisionRadius);
+            if (damageInfo.damage > 0)
+                damageTextManager?.ShowDamage(damageInfo.position, damageInfo.damage, _collisionRadius);
         }
     }
 

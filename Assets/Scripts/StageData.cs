@@ -64,7 +64,7 @@ public class StageData : ScriptableObject
     public Material EnemyMaterial => FirstEnemyData?.Material;
     public Vector3 EnemyScale => FirstEnemyData != null ? FirstEnemyData.Scale : Vector3.one;
     public float EnemySpeed => FirstEnemyData?.Speed ?? 0f;
-    public float EnemyMaxHp => FirstEnemyData?.MaxHp ?? 0f;
+    public int EnemyMaxHp => FirstEnemyData?.MaxHp ?? 0;
     public float EnemyDamageRadius => FirstEnemyData?.DamageRadius ?? 0f;
     /// <summary>空間分割のセルサイズ（当たり半径から算出。FirstEnemyData が null のときは 0）。</summary>
     public float CellSize => FirstEnemyData != null ? Mathf.Max(0.5f, FirstEnemyData.CollisionRadius * 0.51f) : 0f;

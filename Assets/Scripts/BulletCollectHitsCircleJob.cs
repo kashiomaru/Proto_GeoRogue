@@ -11,10 +11,10 @@ public struct BulletCollectHitsCircleJob : IJobParallelFor
     public float radiusSq;
 
     [ReadOnly] public NativeArray<float3> positions;
-    public float damage;
+    public int damage;
 
     public NativeArray<bool> active;
-    public NativeQueue<float>.ParallelWriter damageOut;
+    public NativeQueue<int>.ParallelWriter damageOut;
 
     public void Execute(int index)
     {

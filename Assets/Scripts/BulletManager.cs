@@ -9,10 +9,10 @@ using System.Collections.Generic;
 public struct BulletDamageInfo
 {
     public float3 position;
-    public float damage;
+    public int damage;
     public int index;
 
-    public BulletDamageInfo(float3 pos, float dmg, int idx)
+    public BulletDamageInfo(float3 pos, int dmg, int idx)
     {
         position = pos;
         damage = dmg;
@@ -57,7 +57,7 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>弾グループを追加する。mesh と material が null の場合は RenderBullets でプレイヤー/敵のデフォルトを使用。</summary>
-    public int AddBulletGroup(float damage, float scale, Mesh mesh, Material material)
+    public int AddBulletGroup(int damage, float scale, Mesh mesh, Material material)
     {
         if (IsInitialized == false)
         {
@@ -198,7 +198,7 @@ public class BulletManager : InitializeMonobehaviour
     /// <param name="targetPosition">当たり判定の中心</param>
     /// <param name="targetCollisionRadius">当たり判定の半径</param>
     /// <param name="damageQueueOut">ヒットした弾のダメージを格納するキュー（呼び出し側で用意）</param>
-    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<float> damageQueueOut)
+    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<int> damageQueueOut)
     {
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
         {

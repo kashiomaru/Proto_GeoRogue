@@ -15,7 +15,7 @@ public struct EnemyRespawnJob : IJobParallelFor
     public float deleteDistSq;
     public float respawnMinRadius;
     public float respawnMaxRadius;
-    public float maxHp;
+    public int maxHp;
     /// <summary>0 以下なら発射タイマーは 0。正なら 0～この値の乱数で初期化。</summary>
     public float fireIntervalMax;
     public uint seed;
@@ -23,7 +23,7 @@ public struct EnemyRespawnJob : IJobParallelFor
     public NativeArray<float3> positions;
     public NativeArray<float3> directions;
     public NativeArray<bool> active;
-    public NativeArray<float> hp;
+    public NativeArray<int> hp;
     public NativeArray<float> fireTimers;
     public NativeArray<float> flashTimers;
 
