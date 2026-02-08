@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -42,21 +43,33 @@ public class BulletGroup
     /// <summary>毎フレームの new を避けるため RunMatrixJob で再利用するスケール。</summary>
     private Vector3 _cachedScale;
     private DrawMatrixJob _matrixJob;
+    private readonly Mesh _mesh;
+    private readonly Material _material;
+    private readonly bool _hasRenderParams;
+    private readonly RenderParams _renderParams;
 
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
     /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>
     public int DrawCount => _matrixCounter.IsCreated ? _matrixCounter.Value : 0;
+    /// <summary>描画用メッシュ。未設定の場合は null。</summary>
+    public Mesh Mesh => _mesh;
+    /// <summary>描画用マテリアル。未設定の場合は null。</summary>
+    public Material Material => _material;
+    /// <summary>マテリアルが渡された場合に構築済みの RenderParams。未設定の場合は false。</summary>
+    public bool HasRenderParams => _hasRenderParams;
+    /// <summary>HasRenderParams が true のときのみ有効。描画用 RenderParams。</summary>
+    public RenderParams RenderParams => _renderParams;
 
     /// <summary>
-    /// 初期化。最大弾数・描画スケールを指定する。Dispose 後は再初期化しないこと。
+    /// 最大弾数・描画スケール・メッシュ・マテリアルを指定して構築する。
     /// </summary>
-    public void Initialize(int maxCount, float scale = 0.5f)
+    /// <param name="maxCount">最大弾数</param>
+    /// <param name="scale">描画スケール</param>
+    /// <param name="mesh">描画用メッシュ（未設定の場合は null）</param>
+    /// <param name="material">描画用マテリアル（未設定の場合は null）</param>
+    public BulletGroup(int maxCount, float scale, Mesh mesh = null, Material material = null)
     {
-        if (_positions.IsCreated)
-        {
-            Dispose();
-        }
         _maxCount = maxCount;
         _disposed = false;
 
@@ -81,6 +94,22 @@ public class BulletGroup
         _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _scale = scale;
         _cachedScale = new Vector3(_scale, _scale, _scale);
+        _mesh = mesh;
+        _material = material;
+        if (material != null)
+        {
+            _hasRenderParams = true;
+            _renderParams = new RenderParams(material)
+            {
+                shadowCastingMode = ShadowCastingMode.On,
+                receiveShadows = true
+            };
+        }
+        else
+        {
+            _hasRenderParams = false;
+            _renderParams = default;
+        }
 
         _matrixJob = new DrawMatrixJob
         {

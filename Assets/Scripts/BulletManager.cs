@@ -36,10 +36,6 @@ public class BulletManager : InitializeMonobehaviour
     [Header("Player Shot")]
     [SerializeField] private float bulletDamage = 1.0f;
 
-    [Header("Player Bullet Settings")]
-    [SerializeField] private Mesh playerBulletMesh;
-    [SerializeField] private Material playerBulletMaterial;
-
     [Header("Enemy Bullet Settings")]
     [SerializeField] private Mesh enemyBulletMesh;
     [SerializeField] private Material enemyBulletMaterial;
@@ -48,7 +44,6 @@ public class BulletManager : InitializeMonobehaviour
     [SerializeField] private GameManager gameManager;
     [SerializeField] private RenderManager renderManager;
 
-    private RenderParams _rpPlayerBullet;
     private RenderParams _rpEnemyBullet;
 
     private Dictionary<int, BulletGroup> _bulletGroups;
@@ -68,14 +63,6 @@ public class BulletManager : InitializeMonobehaviour
         _bulletGroups = new Dictionary<int, BulletGroup>();
         _bulletGroupIdsInOrder = new List<int>();
 
-        if (playerBulletMaterial != null)
-        {
-            _rpPlayerBullet = new RenderParams(playerBulletMaterial)
-            {
-                shadowCastingMode = ShadowCastingMode.On,
-                receiveShadows = true
-            };
-        }
         if (enemyBulletMaterial != null)
         {
             _rpEnemyBullet = new RenderParams(enemyBulletMaterial)
@@ -96,11 +83,11 @@ public class BulletManager : InitializeMonobehaviour
         _bulletGroups = null;
     }
 
-    public int AddBulletGroup(float scale)
+    /// <summary>弾グループを追加する。mesh と material が null の場合は RenderBullets でプレイヤー/敵のデフォルトを使用。</summary>
+    public int AddBulletGroup(float scale, Mesh mesh = null, Material material = null)
     {
         var groupId = _bulletGroupIdCounter++;
-        var group = new BulletGroup();
-        group.Initialize(maxBullets, scale: scale);
+        var group = new BulletGroup(maxBullets, scale, mesh, material);
         _bulletGroups.Add(groupId, group);
         _bulletGroupIdsInOrder.Add(groupId);
         return groupId;
@@ -207,15 +194,10 @@ public class BulletManager : InitializeMonobehaviour
         {
             group.Value.RunMatrixJob();
 
-            // TODO: グループにマテリアルをもたせるようにする
-            if (group.Key == 0)
-            {
-                renderManager.RenderBullets(_rpPlayerBullet, playerBulletMesh, group.Value.Matrices, group.Value.DrawCount);
-            }
-            else
-            {
-                renderManager.RenderBullets(_rpEnemyBullet, enemyBulletMesh, group.Value.Matrices, group.Value.DrawCount);
-            }
+            Mesh mesh = group.Value.Mesh ?? enemyBulletMesh;
+            RenderParams rp = group.Value.HasRenderParams ? group.Value.RenderParams : _rpEnemyBullet;
+            if (mesh != null)
+                renderManager.RenderBullets(rp, mesh, group.Value.Matrices, group.Value.DrawCount);
         }
     }
 

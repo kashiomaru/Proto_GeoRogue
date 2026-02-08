@@ -105,7 +105,7 @@ public class Player : InitializeMonobehaviour
         _bulletCountPerShot = bulletData.CountPerShot;
 
         bulletManager.Initialize();
-        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletScale);
+        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletScale, bulletData.Mesh, bulletData.Material);
     }
 
     protected override void FinalizeInternal()

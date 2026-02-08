@@ -16,6 +16,8 @@ MonoBehaviour:
   speed: 20
   damage: 1
   lifeTime: 2
+  mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  material: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
   fireInterval: 0.1
   countPerShot: 1
   spreadAngle: 10
