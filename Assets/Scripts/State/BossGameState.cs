@@ -57,8 +57,6 @@ public class BossGameState : GameStateBase
         // ボスと弾の当たり判定
         if (context.EnemyManager != null)
         {
-            context.CheckBossBulletCollision();
-            
             // ボス撃破時はゲームクリアへ遷移
             var boss = context.EnemyManager.GetCurrentBossComponent();
             if (boss == null || boss.IsDead)

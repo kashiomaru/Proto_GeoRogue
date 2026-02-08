@@ -13,6 +13,7 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float bulletSpeed = 20f;
     [SerializeField] private int bulletCountPerShot = 1;
     [SerializeField] private float bulletScale = 0.5f;
+    [SerializeField] private float bulletLifeTime = 2f;
     [SerializeField] private float magnetDist = 5f;
     [Tooltip("マルチショット時の拡散角度（度）")]
     [SerializeField] private float multiShotSpreadAngle = 10f;
@@ -67,6 +68,7 @@ public class Player : InitializeMonobehaviour
     private Color _cachedFlashColor;
     private Vector2 _cachedMoveInput;
     private Vector3 _cachedDirection;
+    private int _cachedBulletGroupId;
 
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
@@ -79,6 +81,8 @@ public class Player : InitializeMonobehaviour
     public int NextLevelExp => _nextLevelExp;
     public int CurrentLevel => _currentLevel;
     public bool CanLevelUp => _canLevelUp;
+
+    public int BulletGroupId => _cachedBulletGroupId;
     
     protected override void InitializeInternal()
     {
@@ -91,7 +95,7 @@ public class Player : InitializeMonobehaviour
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         bulletManager.Initialize();
-        bulletManager.InitializePlayerBullets(bulletScale);
+        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletScale);
     }
 
     protected override void FinalizeInternal()
@@ -277,7 +281,7 @@ public class Player : InitializeMonobehaviour
             for (int i = 0; i < countPerShot; i++)
             {
                 Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                bulletManager.SpawnPlayerBullet(transform.position, finalDir, speed, 2f);
+                bulletManager.SpawnBullet(_cachedBulletGroupId, transform.position, finalDir, speed, bulletLifeTime);
             }
         }
     }

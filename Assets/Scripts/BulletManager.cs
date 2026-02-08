@@ -56,11 +56,7 @@ public class BulletManager : InitializeMonobehaviour
     /// <summary>ProcessMovement などで使う、グループの登録順（プレイヤー→敵）。</summary>
     private List<int> _bulletGroupIdsInOrder;
     private int _bulletGroupIdCounter = 0;
-    private int _playerBulletGroupId;
     private int _enemyBulletGroupId;
-
-    /// <summary>プレイヤー弾グループの ID。CheckPlayerBulletVsEnemy などで使用。</summary>
-    public int PlayerBulletGroupId => _playerBulletGroupId;
 
     /// <summary>敵グループループ内で再利用する当たり判定 Job。グループごとに参照だけ差し替える。</summary>
     private BulletCollideJob _cachedCollideJob;
@@ -126,26 +122,24 @@ public class BulletManager : InitializeMonobehaviour
         }
     }
 
-    public void InitializePlayerBullets(float scale)
-    {
-        _playerBulletGroupId = AddBulletGroup(scale);
-    }
-
     public void InitializeEnemyBullets(float scale)
     {
         _enemyBulletGroupId = AddBulletGroup(scale);
     }
 
-    /// <summary>
-    /// プレイヤー弾を 1 発生成する。Player.ProcessFiring から呼ぶ。
-    /// </summary>
-    public void SpawnPlayerBullet(Vector3 position, Vector3 direction, float speed, float lifeTime = 2f)
+    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime = 2f)
     {
-        if (IsInitialized == false || !_bulletGroups.TryGetValue(_playerBulletGroupId, out var group))
+        if (IsInitialized == false)
         {
             return;
         }
-        _bulletGroups[_playerBulletGroupId].Spawn(position, direction, speed, lifeTime, damage: bulletDamage);
+
+        if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
+        {
+            return;
+        }
+
+        group.Spawn(position, direction, speed, lifeTime, damage: bulletDamage);
     }
 
     /// <summary>
@@ -231,11 +225,21 @@ public class BulletManager : InitializeMonobehaviour
         {
             return;
         }
-        _bulletGroups[_playerBulletGroupId].RunMatrixJob();
-        renderManager.RenderBullets(_rpPlayerBullet, playerBulletMesh, _bulletGroups[_playerBulletGroupId].Matrices, _bulletGroups[_playerBulletGroupId].DrawCount);
 
-        _bulletGroups[_enemyBulletGroupId].RunMatrixJob();
-        renderManager.RenderBullets(_rpEnemyBullet, enemyBulletMesh, _bulletGroups[_enemyBulletGroupId].Matrices, _bulletGroups[_enemyBulletGroupId].DrawCount);
+        foreach (var group in _bulletGroups)
+        {
+            group.Value.RunMatrixJob();
+
+            // TODO: グループにマテリアルをもたせるようにする
+            if (group.Key == 0)
+            {
+                renderManager.RenderBullets(_rpPlayerBullet, playerBulletMesh, group.Value.Matrices, group.Value.DrawCount);
+            }
+            else
+            {
+                renderManager.RenderBullets(_rpEnemyBullet, enemyBulletMesh, group.Value.Matrices, group.Value.DrawCount);
+            }
+        }
     }
 
     /// <summary>
@@ -268,9 +272,9 @@ public class BulletManager : InitializeMonobehaviour
     /// <summary>
     /// ボスとプレイヤー弾の当たり判定。ヒットした弾は無効化する。
     /// </summary>
-    public void CheckBossBulletCollision(EnemyManager enemyManager)
+    public void CheckBossBulletCollision(EnemyManager enemyManager, int bulletGroupId)
     {
-        if (enemyManager == null || !_bulletGroups.TryGetValue(_playerBulletGroupId, out var group))
+        if (enemyManager == null || !_bulletGroups.TryGetValue(bulletGroupId, out var group))
         {
             return;
         }

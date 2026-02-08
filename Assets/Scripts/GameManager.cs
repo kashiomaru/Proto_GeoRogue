@@ -185,6 +185,7 @@ public class GameManager : MonoBehaviour
         // 5. ボス死亡チェック・通常敵の死亡・ダメージ表示・リスポーン
         enemyManager.ProcessDamage(gemManager);
         enemyManager.ProcessRespawn(playerPos);
+        bulletManager?.CheckBossBulletCollision(enemyManager, player.BulletGroupId);
 
         // 6. プレイヤーへのダメージ処理
         HandlePlayerDamage();
@@ -211,7 +212,7 @@ public class GameManager : MonoBehaviour
         foreach (var g in groups)
         {
             dep = bulletManager.ProcessDamage(
-                bulletManager.PlayerBulletGroupId,
+                player.BulletGroupId,
                 g.CellSize,
                 g.CollisionRadius * g.CollisionRadius,
                 g.SpatialMap,
@@ -269,7 +270,6 @@ public class GameManager : MonoBehaviour
         }
     }
     
-
     void OnDestroy()
     {
         if (_playerDamageQueue.IsCreated)
@@ -352,14 +352,6 @@ public class GameManager : MonoBehaviour
     {
         enemyManager?.SetNormalEnemiesEnabled(mode == GameMode.Normal);
         enemyManager?.SetBossActive(mode == GameMode.Boss);
-    }
-    
-    /// <summary>
-    /// ボスと弾の当たり判定（ステートから呼ばれる）
-    /// </summary>
-    public void CheckBossBulletCollision()
-    {
-        bulletManager?.CheckBossBulletCollision(enemyManager);
     }
     
     // カメラ切り替え処理
