@@ -62,9 +62,9 @@ public class EnemyGroup
     /// <summary>空間マップ（弾衝突Job用）。</summary>
     public NativeParallelMultiHashMap<int, int> SpatialMap => _spatialMap;
     /// <summary>敵座標（弾衝突Job用）。</summary>
-    public NativeArray<float3> EnemyPositions => _positions;
-    /// <summary>敵アクティブフラグ（弾衝突Job用）。</summary>
-    public NativeArray<bool> EnemyActive => _active;
+    public NativeArray<float3> Positions => _positions;
+    /// <summary>ターゲットのアクティブフラグ（弾衝突Job用）。</summary>
+    public NativeArray<bool> Active => _active;
     /// <summary>敵HP（弾衝突Job用）。</summary>
     public NativeArray<float> EnemyHp => _hp;
     /// <summary>弾との当たり判定に使う半径（弾衝突Job用）。</summary>

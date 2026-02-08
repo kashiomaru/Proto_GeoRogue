@@ -24,6 +24,8 @@ public class BulletGroup
     public NativeArray<Matrix4x4> Matrices => _matrices;
     /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>
     public int DrawCount => _matrixCounter.IsCreated ? _matrixCounter.Value : 0;
+    public NativeArray<float3> Positions => _pool != null ? _pool.Positions : new NativeArray<float3>(0, Allocator.Persistent);
+    public NativeArray<bool> Active => _pool != null ? _pool.Active : new NativeArray<bool>(0, Allocator.Persistent);
 
     /// <summary>
     /// 初期化。最大弾数・描画スケールを指定する。
@@ -70,7 +72,11 @@ public class BulletGroup
     /// <summary>BulletCollideJob にこのグループの弾データ（Positions / Active）を設定する。</summary>
     public void SetCollideJobBulletData(ref BulletCollideJob job)
     {
-        if (_pool == null) return;
+        if (_pool == null)
+        {
+            return;
+        }
+
         job.bulletPositions = _pool.Positions;
         job.bulletActive = _pool.Active;
     }

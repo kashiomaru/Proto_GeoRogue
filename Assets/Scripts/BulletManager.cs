@@ -180,20 +180,54 @@ public class BulletManager : InitializeMonobehaviour
             return;
 
         JobHandle dep = default;
-        _bulletGroups[_playerBulletGroupId].SetCollideJobBulletData(ref _cachedCollideJob);
-        _cachedCollideJob.bulletDamage = bulletDamage;
 
         foreach (var g in groups)
         {
-            _cachedCollideJob.cellSize = g.CellSize;
-            _cachedCollideJob.targetCollisionRadiusSq = g.CollisionRadius * g.CollisionRadius;
-            _cachedCollideJob.spatialMap = g.SpatialMap;
-            _cachedCollideJob.targetPositions = g.EnemyPositions;
-            _cachedCollideJob.targetActive = g.EnemyActive;
-            _cachedCollideJob.damageQueue = g.GetEnemyDamageQueueWriter();
-            dep = _cachedCollideJob.Schedule(_bulletGroups[_playerBulletGroupId].MaxCount, 64, dep);
+            dep = ProcessDamage(
+                _playerBulletGroupId,
+                g.CellSize,
+                g.CollisionRadius * g.CollisionRadius,
+                g.SpatialMap,
+                g.Positions,
+                g.Active,
+                g.GetEnemyDamageQueueWriter(),
+                dep);
         }
         dep.Complete();
+    }
+
+    public JobHandle ProcessDamage(
+        int bulletGroupId,
+        float targetCellSize,
+        float targetCollisionRadiusSq,
+        NativeParallelMultiHashMap<int, int> targetSpatialMap,
+        NativeArray<float3> targetPositions,
+        NativeArray<bool> targetActive,
+        NativeQueue<BulletDamageInfo>.ParallelWriter targetDamageQueue,
+        JobHandle dependency = default)
+    {
+        if (IsInitialized == false)
+        {
+            return dependency;
+        }
+
+        if (_bulletGroups.TryGetValue(bulletGroupId, out var bulletGroup) == false)
+        {
+            return dependency;
+        }
+
+        _cachedCollideJob.bulletPositions = bulletGroup.Positions;
+        _cachedCollideJob.bulletActive = bulletGroup.Active;
+        _cachedCollideJob.bulletDamage = bulletDamage;
+
+        _cachedCollideJob.cellSize = targetCellSize;
+        _cachedCollideJob.targetCollisionRadiusSq = targetCollisionRadiusSq;
+        _cachedCollideJob.spatialMap = targetSpatialMap;
+        _cachedCollideJob.targetPositions = targetPositions;
+        _cachedCollideJob.targetActive = targetActive;
+        _cachedCollideJob.damageQueue = targetDamageQueue;
+
+        return _cachedCollideJob.Schedule(bulletGroup.MaxCount, 64, dependency);
     }
 
     void LateUpdate()
