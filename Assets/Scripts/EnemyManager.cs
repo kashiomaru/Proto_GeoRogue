@@ -40,6 +40,11 @@ public class EnemyManager : InitializeMonobehaviour
     // --- 通常敵は EnemyGroup で管理（1種類＝1グループ、複数種類の場合は複数グループ）---
     private List<EnemyGroup> _groups = new List<EnemyGroup>();
 
+    /// <summary>TryGetClosestEnemyPosition 用。初期化時に MaxEnemyDataSlots 分確保し、毎フレームの new を避ける。</summary>
+    private NativeArray<float3> _closestEnemyResultPositions;
+    private NativeArray<float> _closestEnemyResultDistancesSq;
+    private NativeArray<JobHandle> _closestEnemyJobHandles;
+
     /// <summary>通常敵グループのリスト（弾衝突などで参照）。空の場合は未適用。</summary>
     public IReadOnlyList<EnemyGroup> GetGroups() => _groups;
     
@@ -67,6 +72,61 @@ public class EnemyManager : InitializeMonobehaviour
         Debug.Assert(gameManager != null, "[EnemyManager] gameManager が未設定です。インスペクターで GameManager を指定してください。");
 
         bulletManager.Initialize();
+
+        _closestEnemyResultPositions = new NativeArray<float3>(StageData.MaxEnemyDataSlots, Allocator.Persistent);
+        _closestEnemyResultDistancesSq = new NativeArray<float>(StageData.MaxEnemyDataSlots, Allocator.Persistent);
+        _closestEnemyJobHandles = new NativeArray<JobHandle>(StageData.MaxEnemyDataSlots, Allocator.Persistent);
+    }
+
+    /// <summary>
+    /// プレイヤーに最も近い敵の座標を取得する。引数でプレイヤー位置を渡す。
+    /// Job で各グループごとに並列で最近傍を求め、全グループの結果から最小を返す。
+    /// </summary>
+    /// <param name="playerPos">プレイヤーの位置（float3）。</param>
+    /// <param name="position">見つかった場合、最も近い敵の座標。見つからない場合は default。</param>
+    /// <returns>アクティブな敵が1体以上いれば true、いなければ false。</returns>
+    public bool TryGetClosestEnemyPosition(float3 playerPos, out float3 position)
+    {
+        position = default;
+        if (_normalEnemiesEnabled == false || _groups == null || _groups.Count == 0)
+            return false;
+
+        int n = _groups.Count;
+        for (int i = 0; i < n; i++)
+        {
+            var g = _groups[i];
+            var job = new FindClosestEnemyJob
+            {
+                groupIndex = i,
+                playerPos = playerPos,
+                positions = g.Positions,
+                active = g.Active,
+                count = g.SpawnCount,
+                resultPositions = _closestEnemyResultPositions,
+                resultDistancesSq = _closestEnemyResultDistancesSq
+            };
+            _closestEnemyJobHandles[i] = job.Schedule();
+        }
+
+        JobHandle.CombineDependencies(_closestEnemyJobHandles.GetSubArray(0, n)).Complete();
+
+        int minIndex = 0;
+        float minSq = _closestEnemyResultDistancesSq[0];
+        for (int i = 1; i < n; i++)
+        {
+            float sq = _closestEnemyResultDistancesSq[i];
+            if (sq < minSq)
+            {
+                minSq = sq;
+                minIndex = i;
+            }
+        }
+
+        if (minSq >= float.MaxValue)
+            return false;
+
+        position = _closestEnemyResultPositions[minIndex];
+        return true;
     }
 
     /// <summary>敵の移動Jobをスケジュールし完了まで待機（全グループ分を直列に依存させる。同一 playerDamageQueue への書き込み競合を防ぐ）。</summary>
@@ -331,6 +391,13 @@ public class EnemyManager : InitializeMonobehaviour
 
     protected override void FinalizeInternal()
     {
+        if (_closestEnemyResultPositions.IsCreated)
+            _closestEnemyResultPositions.Dispose();
+        if (_closestEnemyResultDistancesSq.IsCreated)
+            _closestEnemyResultDistancesSq.Dispose();
+        if (_closestEnemyJobHandles.IsCreated)
+            _closestEnemyJobHandles.Dispose();
+
         foreach (var g in _groups)
             g.Dispose();
         _groups.Clear();
