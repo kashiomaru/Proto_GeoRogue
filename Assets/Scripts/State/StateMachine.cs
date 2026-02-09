@@ -41,8 +41,9 @@ public class StateMachine<TState, TContext>
     /// </summary>
     public void ChangeState(TState newStateKey)
     {
-        // 同じステートへの切り替えは無視
-        if (EqualityComparer<TState>.Default.Equals(_currentStateKey, newStateKey))
+        // 既にいずれかのステートに入っている場合のみ、同じステートへの切り替えを無視
+        // （未初期化時は _currentStateKey が default と一致することがあるため）
+        if (_currentState != null && EqualityComparer<TState>.Default.Equals(_currentStateKey, newStateKey))
         {
             return;
         }

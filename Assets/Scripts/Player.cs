@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Collections.Generic;
 
 public class Player : InitializeMonobehaviour
@@ -57,6 +56,9 @@ public class Player : InitializeMonobehaviour
     private Vector3 _currentVelocity; // 慣性用の現在速度
     private Vector3 _smoothDampVelocity; // SmoothDamp 用（内部用）
 
+    /// <summary>入力モード用ステートマシン。ProcessMovement で更新される。</summary>
+    private StateMachine<PlayerInputMode, Player> _inputModeStateMachine;
+
     // プレイヤー弾発射用
     private float _playerShotTimer;
     private int _lastBulletCountPerShot = -1;
@@ -94,6 +96,8 @@ public class Player : InitializeMonobehaviour
     public BulletData BulletData => bulletData;
     /// <summary>プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径。</summary>
     public float CollisionRadius => collisionRadius;
+    /// <summary>現在の入力モード。</summary>
+    public PlayerInputMode CurrentInputMode => _inputModeStateMachine?.CurrentStateKey ?? PlayerInputMode.KeyboardWASD;
 
     protected override void InitializeInternal()
     {
@@ -113,6 +117,10 @@ public class Player : InitializeMonobehaviour
 
         bulletManager.Initialize();
         _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material);
+
+        _inputModeStateMachine = new StateMachine<PlayerInputMode, Player>(this);
+        _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
+        _inputModeStateMachine.Initialize(PlayerInputMode.KeyboardWASD);
     }
 
     protected override void FinalizeInternal()
@@ -151,12 +159,18 @@ public class Player : InitializeMonobehaviour
         UpdateFlashColor();
     }
 
-    /// <summary>プレイヤーの移動処理。GameManager から順序制御のため呼ばれる。</summary>
+    /// <summary>プレイヤーの移動処理。GameManager から順序制御のため呼ばれる。入力モードのステートが入力を読んで移動を適用する。</summary>
     public void ProcessMovement()
     {
         if (IsInitialized == false) return;
-        
-        HandleMovement();
+
+        _inputModeStateMachine?.Update();
+    }
+
+    /// <summary>入力モードを切り替える。</summary>
+    public void ChangeInputMode(PlayerInputMode mode)
+    {
+        _inputModeStateMachine?.ChangeState(mode);
     }
     
     // ダメージを受ける（実際に与えたダメージを返す）
@@ -395,39 +409,15 @@ public class Player : InitializeMonobehaviour
         _renderer.SetPropertyBlock(_mpb);
     }
     
-    private void HandleMovement()
+    /// <summary>
+    /// 入力モードのステートから呼ばれる。指定された入力に応じて移動・回転・慣性を適用する。
+    /// </summary>
+    /// <param name="horizontal">左右入力（-1～1）</param>
+    /// <param name="vertical">前後入力（-1～1）</param>
+    /// <param name="isSpacePressed">スペース押下時は回転しない</param>
+    /// <param name="shiftOnlyRotate">true のときは回転のみで移動しない</param>
+    public void ApplyMovementInput(float horizontal, float vertical, bool isSpacePressed, bool shiftOnlyRotate)
     {
-        // 新しいInput SystemでWASDキー入力を取得
-        Keyboard keyboard = Keyboard.current;
-        if (keyboard == null)
-        {
-            return;
-        }
-
-        float horizontal = 0f;
-        float vertical = 0f;
-        
-        // 左右移動
-        if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
-        {
-            horizontal -= 1f;
-        }
-        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
-        {
-            horizontal += 1f;
-        }
-
-        // 前後移動
-        if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
-        {
-            vertical += 1f;
-        }
-        if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
-        {
-            vertical -= 1f;
-        }
-        
-        // 入力方向を計算（毎フレームの new を避けるためキャッシュを再利用）
         _cachedMoveInput.x = horizontal;
         _cachedMoveInput.y = vertical;
         _cachedDirection.x = _cachedMoveInput.x;
@@ -435,13 +425,7 @@ public class Player : InitializeMonobehaviour
         _cachedDirection.z = _cachedMoveInput.y;
         _cachedDirection.Normalize();
         bool hasInput = _cachedDirection.sqrMagnitude >= 0.01f;
-        
-        // スペースキーが押されているかチェック
-        bool isSpacePressed = keyboard.spaceKey.isPressed;
-        // Shift押下時は回転のみ（移動しない）
-        bool shiftOnlyRotate = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
 
-        // 目標速度（慣性用）：入力ありかつ移動するときは移動方向×速度、それ以外はゼロ
         Vector3 targetVelocity = Vector3.zero;
         if (hasInput && shiftOnlyRotate == false)
         {
@@ -450,7 +434,6 @@ public class Player : InitializeMonobehaviour
             targetVelocity = moveDir.normalized * moveSpeed;
         }
 
-        // 回転：入力ありかつスペースが押されていないときのみ
         if (hasInput && isSpacePressed == false)
         {
             float targetAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
@@ -458,7 +441,6 @@ public class Player : InitializeMonobehaviour
             _cachedTransform.rotation = Quaternion.Euler(0f, angle, 0f);
         }
 
-        // 慣性付き移動：現在速度を目標速度に滑らかに補間し、位置を更新
         _currentVelocity = Vector3.SmoothDamp(_currentVelocity, targetVelocity, ref _smoothDampVelocity, accelerationTime);
         _cachedTransform.position += _currentVelocity * Time.deltaTime;
     }
