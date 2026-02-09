@@ -11,6 +11,8 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float accelerationTime = 0.15f;
     [Tooltip("ゲーム開始時の入力モード。インスペクターで切り替え可能")]
     [SerializeField] private PlayerInputMode initialInputMode = PlayerInputMode.KeyboardWASD;
+    [Tooltip("ゲーム開始時の発射モード。インスペクターで切り替え可能")]
+    [SerializeField] private PlayerFiringMode initialFiringMode = PlayerFiringMode.Fan;
 
     [Header("Upgrade Params (LevelUp で変化)")]
     [SerializeField] private float magnetDist = 5f;
@@ -62,6 +64,8 @@ public class Player : InitializeMonobehaviour
 
     /// <summary>入力モード用ステートマシン。ProcessMovement で更新される。</summary>
     private StateMachine<PlayerInputMode, Player> _inputModeStateMachine;
+    /// <summary>発射モード用ステートマシン。ProcessFiring で更新される。</summary>
+    private StateMachine<PlayerFiringMode, Player> _firingStateMachine;
 
     // プレイヤー弾発射用
     private float _playerShotTimer;
@@ -102,6 +106,8 @@ public class Player : InitializeMonobehaviour
     public float CollisionRadius => collisionRadius;
     /// <summary>現在の入力モード。</summary>
     public PlayerInputMode CurrentInputMode => _inputModeStateMachine?.CurrentStateKey ?? PlayerInputMode.KeyboardWASD;
+    /// <summary>現在の発射モード。</summary>
+    public PlayerFiringMode CurrentFiringMode => _firingStateMachine?.CurrentStateKey ?? PlayerFiringMode.Fan;
 
     protected override void InitializeInternal()
     {
@@ -131,6 +137,10 @@ public class Player : InitializeMonobehaviour
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_Auto, new KeyboardWASDAutoInputState());
         _inputModeStateMachine.RegisterState(PlayerInputMode.CursorMove_AutoLook, new CursorMoveAutoLookInputState());
         _inputModeStateMachine.Initialize(initialInputMode);
+
+        _firingStateMachine = new StateMachine<PlayerFiringMode, Player>(this);
+        _firingStateMachine.RegisterState(PlayerFiringMode.Fan, new FanFiringState());
+        _firingStateMachine.Initialize(initialFiringMode);
     }
 
     protected override void FinalizeInternal()
@@ -290,7 +300,7 @@ public class Player : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）
+    /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）。発射モードのステートに委譲する。
     /// </summary>
     public void ProcessFiring()
     {
@@ -299,39 +309,57 @@ public class Player : InitializeMonobehaviour
             return;
         }
 
+        _firingStateMachine?.Update();
+    }
+
+    /// <summary>
+    /// 発射タイマーを進め、間隔が来ていれば前方に弾を発射する。発射モードのステート（Auto など）から呼ばれる。
+    /// </summary>
+    /// <returns>発射した場合 true</returns>
+    public bool TryFire()
+    {
+        if (bulletManager == null || bulletData == null)
+        {
+            return false;
+        }
+
         float deltaTime = Time.deltaTime;
         float rate = GetFireRate();
         int countPerShot = GetBulletCountPerShot();
         float speed = GetBulletSpeed();
 
         _playerShotTimer += deltaTime;
-        if (_playerShotTimer >= rate)
+        if (_playerShotTimer < rate)
         {
-            _playerShotTimer = 0f;
-            Vector3 baseDir = _cachedTransform.forward;
+            return false;
+        }
 
-            if (countPerShot != _lastBulletCountPerShot)
-            {
-                _cachedShotDirections.Clear();
-                float spreadAngle = bulletData.SpreadAngle;
-                for (int i = 0; i < countPerShot; i++)
-                {
-                    float angle = countPerShot > 1
-                        ? -spreadAngle * (countPerShot - 1) * 0.5f + (spreadAngle * i)
-                        : 0f;
-                    Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
-                    _cachedShotDirections.Add(dir);
-                }
-                _lastBulletCountPerShot = countPerShot;
-            }
+        _playerShotTimer = 0f;
+        Vector3 baseDir = _cachedTransform.forward;
 
-            Quaternion baseRot = Quaternion.LookRotation(baseDir);
+        if (countPerShot != _lastBulletCountPerShot)
+        {
+            _cachedShotDirections.Clear();
+            float spreadAngle = bulletData.SpreadAngle;
             for (int i = 0; i < countPerShot; i++)
             {
-                Vector3 finalDir = baseRot * _cachedShotDirections[i];
-                bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, bulletData.LifeTime);
+                float angle = countPerShot > 1
+                    ? -spreadAngle * (countPerShot - 1) * 0.5f + (spreadAngle * i)
+                    : 0f;
+                Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
+                _cachedShotDirections.Add(dir);
             }
+            _lastBulletCountPerShot = countPerShot;
         }
+
+        Quaternion baseRot = Quaternion.LookRotation(baseDir);
+        for (int i = 0; i < countPerShot; i++)
+        {
+            Vector3 finalDir = baseRot * _cachedShotDirections[i];
+            bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, bulletData.LifeTime);
+        }
+
+        return true;
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
