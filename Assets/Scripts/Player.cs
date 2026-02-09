@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 using System.Collections.Generic;
 
 public class Player : InitializeMonobehaviour
@@ -33,6 +34,7 @@ public class Player : InitializeMonobehaviour
     [Header("References")]
     [SerializeField] private BulletManager bulletManager;
     [SerializeField] private GameManager gameManager;
+    [SerializeField] private EnemyManager enemyManager;
     [Tooltip("プレイヤー弾の設定（メッシュ・マテリアルなど）。未設定の場合は BulletManager のデフォルトを使用。")]
     [SerializeField] private BulletData bulletData;
     [Tooltip("プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径")]
@@ -44,7 +46,7 @@ public class Player : InitializeMonobehaviour
     private float _initialFlashTimer = 0f; // 最初の点滅タイマー
     
     // レンダリング関連
-    [SerializeField] private Renderer _renderer;
+    [SerializeField] private Renderer playerRenderer;
     private MaterialPropertyBlock _mpb;
     private int _propertyID_EmissionColor;
     
@@ -104,8 +106,10 @@ public class Player : InitializeMonobehaviour
     protected override void InitializeInternal()
     {
         Debug.Assert(playerCamera != null, "[Player] playerCamera が未設定です。インスペクターでカメラを指定してください。");
-        Debug.Assert(_renderer != null, "[Player] _renderer が未設定です。インスペクターで Renderer を指定してください。");
+        Debug.Assert(playerRenderer != null, "[Player] playerRenderer が未設定です。インスペクターで Renderer を指定してください。");
         Debug.Assert(bulletManager != null, "[Player] bulletManager が未設定です。インスペクターで BulletManager を指定してください。");
+        Debug.Assert(gameManager != null, "[Player] gameManager が未設定です。インスペクターで GameManager を指定してください。");
+        Debug.Assert(enemyManager != null, "[Player] enemyManager が未設定です。インスペクターで EnemyManager を指定してください。");
         Debug.Assert(bulletData != null, "[Player] bulletData が未設定です。インスペクターで Bullet Data を指定してください。");
 
         _cachedTransform = transform;
@@ -124,6 +128,7 @@ public class Player : InitializeMonobehaviour
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_MouseLook, new KeyboardWASDMouseLookInputState());
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_ArrowLook, new KeyboardWASDArrowLookInputState());
+        _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_Auto, new KeyboardWASDAutoInputState());
         _inputModeStateMachine.Initialize(initialInputMode);
     }
 
@@ -343,7 +348,7 @@ public class Player : InitializeMonobehaviour
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()
     {
-        if (_renderer == null || _mpb == null)
+        if (playerRenderer == null || _mpb == null)
         {
             return;
         }
@@ -410,7 +415,7 @@ public class Player : InitializeMonobehaviour
             _mpb.SetColor(_propertyID_EmissionColor, Color.black);
         }
         
-        _renderer.SetPropertyBlock(_mpb);
+        playerRenderer.SetPropertyBlock(_mpb);
     }
     
     /// <summary>
@@ -472,7 +477,19 @@ public class Player : InitializeMonobehaviour
     {
         return playerCamera;
     }
-    
+
+    /// <summary>一番近い敵の位置を取得する。入力モード（Auto など）から使用。敵がいない場合は false。</summary>
+    public bool TryGetNearestEnemyPosition(out Vector3 position)
+    {
+        position = default;
+        if (enemyManager == null) return false;
+        Vector3 p = _cachedTransform.position;
+        if (!enemyManager.TryGetClosestEnemyPosition(new float3(p.x, p.y, p.z), out float3 enemyPos))
+            return false;
+        position = new Vector3(enemyPos.x, enemyPos.y, enemyPos.z);
+        return true;
+    }
+
     // LevelUpManager用のパラメータ取得・設定メソッド
     public float GetMoveSpeed()
     {

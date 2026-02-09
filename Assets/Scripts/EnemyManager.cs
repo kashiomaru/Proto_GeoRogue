@@ -80,52 +80,75 @@ public class EnemyManager : InitializeMonobehaviour
 
     /// <summary>
     /// プレイヤーに最も近い敵の座標を取得する。引数でプレイヤー位置を渡す。
-    /// Job で各グループごとに並列で最近傍を求め、全グループの結果から最小を返す。
+    /// 通常敵＋ボス（いる場合）のうち最も近いものを返す。
     /// </summary>
     /// <param name="playerPos">プレイヤーの位置（float3）。</param>
     /// <param name="position">見つかった場合、最も近い敵の座標。見つからない場合は default。</param>
-    /// <returns>アクティブな敵が1体以上いれば true、いなければ false。</returns>
+    /// <returns>アクティブな敵またはボスが1体以上いれば true、いなければ false。</returns>
     public bool TryGetClosestEnemyPosition(float3 playerPos, out float3 position)
     {
         position = default;
-        if (_normalEnemiesEnabled == false || _groups == null || _groups.Count == 0)
+        if (_groups == null)
             return false;
 
+        float3 candidatePos = default;
+        float candidateSq = float.MaxValue;
+
         int n = _groups.Count;
-        for (int i = 0; i < n; i++)
+        if (_normalEnemiesEnabled && n > 0)
         {
-            var g = _groups[i];
-            var job = new FindClosestEnemyJob
+            JobHandle dep = default;
+            for (int i = 0; i < n; i++)
             {
-                groupIndex = i,
-                playerPos = playerPos,
-                positions = g.Positions,
-                active = g.Active,
-                count = g.SpawnCount,
-                resultPositions = _closestEnemyResultPositions,
-                resultDistancesSq = _closestEnemyResultDistancesSq
-            };
-            _closestEnemyJobHandles[i] = job.Schedule();
+                var g = _groups[i];
+                var job = new FindClosestEnemyJob
+                {
+                    groupIndex = i,
+                    playerPos = playerPos,
+                    positions = g.Positions,
+                    active = g.Active,
+                    count = g.SpawnCount,
+                    resultPositions = _closestEnemyResultPositions,
+                    resultDistancesSq = _closestEnemyResultDistancesSq
+                };
+                _closestEnemyJobHandles[i] = job.Schedule(dep);
+                dep = _closestEnemyJobHandles[i];
+            }
+
+            dep.Complete();
+
+            int minIndex = 0;
+            float minSq = _closestEnemyResultDistancesSq[0];
+            for (int i = 1; i < n; i++)
+            {
+                float sq = _closestEnemyResultDistancesSq[i];
+                if (sq < minSq)
+                {
+                    minSq = sq;
+                    minIndex = i;
+                }
+            }
+
+            candidatePos = _closestEnemyResultPositions[minIndex];
+            candidateSq = minSq;
         }
 
-        JobHandle.CombineDependencies(_closestEnemyJobHandles.GetSubArray(0, n)).Complete();
-
-        int minIndex = 0;
-        float minSq = _closestEnemyResultDistancesSq[0];
-        for (int i = 1; i < n; i++)
+        if (_bossActive && _currentBoss != null)
         {
-            float sq = _closestEnemyResultDistancesSq[i];
-            if (sq < minSq)
+            Vector3 bp = _currentBoss.transform.position;
+            float3 bossPos = new float3(bp.x, bp.y, bp.z);
+            float bossDistSq = math.distancesq(playerPos, bossPos);
+            if (bossDistSq < candidateSq)
             {
-                minSq = sq;
-                minIndex = i;
+                candidateSq = bossDistSq;
+                candidatePos = bossPos;
             }
         }
 
-        if (minSq >= float.MaxValue)
+        if (candidateSq >= float.MaxValue)
             return false;
 
-        position = _closestEnemyResultPositions[minIndex];
+        position = candidatePos;
         return true;
     }
 

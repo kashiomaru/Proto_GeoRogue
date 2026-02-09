@@ -1338,7 +1338,7 @@ MonoBehaviour:
   moveSpeed: 5
   rotationSpeed: 10
   accelerationTime: 0.15
-  initialInputMode: 1
+  initialInputMode: 3
   magnetDist: 5
   initialMoveSpeed: 5
   initialMagnetDist: 5
@@ -1350,9 +1350,10 @@ MonoBehaviour:
   maxLevel: 99
   bulletManager: {fileID: 420466358}
   gameManager: {fileID: 379471278}
+  enemyManager: {fileID: 1856169496}
   bulletData: {fileID: 11400000, guid: e7ea6195fa84e460a8c976f25f0d1030, type: 2}
   collisionRadius: 1
-  _renderer: {fileID: 322285195}
+  playerRenderer: {fileID: 322285195}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
