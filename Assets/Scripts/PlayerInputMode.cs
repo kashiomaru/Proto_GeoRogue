@@ -8,4 +8,7 @@ public enum PlayerInputMode
 
     /// <summary>WASDで移動、マウスカーソル方向へ回転</summary>
     KeyboardWASD_MouseLook,
+
+    /// <summary>WASDで移動、十字キー（上下左右）で回転</summary>
+    KeyboardWASD_ArrowLook,
 }
