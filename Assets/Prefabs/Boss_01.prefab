@@ -110,7 +110,7 @@ MonoBehaviour:
   damageRadius: 1
   damageAmount: 1
   maxHp: 100
-  collisionRadius: 2
+  collisionRadius: 1.5
   flashDuration: 0.1
   flashInterval: 0.1
   flashIntensity: 0.4

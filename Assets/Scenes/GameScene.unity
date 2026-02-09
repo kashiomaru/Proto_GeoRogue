@@ -1339,6 +1339,7 @@ MonoBehaviour:
   rotationSpeed: 10
   accelerationTime: 0.15
   initialInputMode: 3
+  initialFiringMode: 1
   magnetDist: 5
   initialMoveSpeed: 5
   initialMagnetDist: 5

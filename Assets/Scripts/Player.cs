@@ -1,6 +1,5 @@
 using UnityEngine;
 using Unity.Mathematics;
-using System.Collections.Generic;
 
 public class Player : InitializeMonobehaviour
 {
@@ -67,10 +66,8 @@ public class Player : InitializeMonobehaviour
     /// <summary>発射モード用ステートマシン。ProcessFiring で更新される。</summary>
     private StateMachine<PlayerFiringMode, Player> _firingStateMachine;
 
-    // プレイヤー弾発射用
+    // プレイヤー弾発射用（発射間隔のタイマー。配置ロジックは各発射ステートが持つ）
     private float _playerShotTimer;
-    private int _lastBulletCountPerShot = -1;
-    private readonly List<Vector3> _cachedShotDirections = new List<Vector3>();
 
     // 毎フレームの new を避けるためのキャッシュ
     private Color _cachedFlashColor;
@@ -140,6 +137,7 @@ public class Player : InitializeMonobehaviour
 
         _firingStateMachine = new StateMachine<PlayerFiringMode, Player>(this);
         _firingStateMachine.RegisterState(PlayerFiringMode.Fan, new FanFiringState());
+        _firingStateMachine.RegisterState(PlayerFiringMode.Straight, new StraightFiringState());
         _firingStateMachine.Initialize(initialFiringMode);
     }
 
@@ -291,7 +289,6 @@ public class Player : InitializeMonobehaviour
         _bulletCountPerShot = bulletData.CountPerShot;
 
         _playerShotTimer = 0f;
-        _lastBulletCountPerShot = -1;
 
         _currentVelocity = Vector3.zero;
         _smoothDampVelocity = Vector3.zero;
@@ -313,10 +310,11 @@ public class Player : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 発射タイマーを進め、間隔が来ていれば前方に弾を発射する。発射モードのステート（Auto など）から呼ばれる。
+    /// 発射間隔のタイマーを進め、間隔が来ていれば 1 回分の「発射権」を消費して true を返す。
+    /// 発射ステートはこれが true のときだけ、配置ロジックに従って SpawnPlayerBullet を呼ぶ。
     /// </summary>
-    /// <returns>発射した場合 true</returns>
-    public bool TryFire()
+    /// <returns>発射してよいタイミングなら true</returns>
+    public bool TryConsumeFireInterval()
     {
         if (bulletManager == null || bulletData == null)
         {
@@ -325,8 +323,6 @@ public class Player : InitializeMonobehaviour
 
         float deltaTime = Time.deltaTime;
         float rate = GetFireRate();
-        int countPerShot = GetBulletCountPerShot();
-        float speed = GetBulletSpeed();
 
         _playerShotTimer += deltaTime;
         if (_playerShotTimer < rate)
@@ -335,31 +331,21 @@ public class Player : InitializeMonobehaviour
         }
 
         _playerShotTimer = 0f;
-        Vector3 baseDir = _cachedTransform.forward;
-
-        if (countPerShot != _lastBulletCountPerShot)
-        {
-            _cachedShotDirections.Clear();
-            float spreadAngle = bulletData.SpreadAngle;
-            for (int i = 0; i < countPerShot; i++)
-            {
-                float angle = countPerShot > 1
-                    ? -spreadAngle * (countPerShot - 1) * 0.5f + (spreadAngle * i)
-                    : 0f;
-                Vector3 dir = Quaternion.AngleAxis(angle, Vector3.up) * Vector3.forward;
-                _cachedShotDirections.Add(dir);
-            }
-            _lastBulletCountPerShot = countPerShot;
-        }
-
-        Quaternion baseRot = Quaternion.LookRotation(baseDir);
-        for (int i = 0; i < countPerShot; i++)
-        {
-            Vector3 finalDir = baseRot * _cachedShotDirections[i];
-            bulletManager.SpawnBullet(_cachedBulletGroupId, _cachedTransform.position, finalDir, speed, bulletData.LifeTime);
-        }
-
         return true;
+    }
+
+    /// <summary>
+    /// 指定位置・方向にプレイヤー弾を 1 発生成する。発射ステートの配置ロジックから呼ばれる。
+    /// </summary>
+    public void SpawnPlayerBullet(Vector3 position, Vector3 direction)
+    {
+        if (bulletManager == null || bulletData == null)
+        {
+            return;
+        }
+
+        float speed = GetBulletSpeed();
+        bulletManager.SpawnBullet(_cachedBulletGroupId, position, direction, speed, bulletData.LifeTime);
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
