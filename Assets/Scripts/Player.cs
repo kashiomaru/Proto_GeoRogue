@@ -129,6 +129,7 @@ public class Player : InitializeMonobehaviour
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_MouseLook, new KeyboardWASDMouseLookInputState());
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_ArrowLook, new KeyboardWASDArrowLookInputState());
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_Auto, new KeyboardWASDAutoInputState());
+        _inputModeStateMachine.RegisterState(PlayerInputMode.CursorMove_AutoLook, new CursorMoveAutoLookInputState());
         _inputModeStateMachine.Initialize(initialInputMode);
     }
 
@@ -426,7 +427,8 @@ public class Player : InitializeMonobehaviour
     /// <param name="isSpacePressed">スペース押下時は回転しない（キーボード向きモード用）</param>
     /// <param name="shiftOnlyRotate">true のときは回転のみで移動しない</param>
     /// <param name="overrideLookAngleDeg">指定時は回転のみこの角度にする。移動は KeyboardWASD と同じ（カメラ基準）。</param>
-    public void ApplyMovementInput(float horizontal, float vertical, bool isSpacePressed, bool shiftOnlyRotate, float? overrideLookAngleDeg = null)
+    /// <param name="moveSpeedScale">指定時は移動速度にこの倍率（0～1）を掛ける。カーソル移動モードで距離に応じた速度に使う。</param>
+    public void ApplyMovementInput(float horizontal, float vertical, bool isSpacePressed, bool shiftOnlyRotate, float? overrideLookAngleDeg = null, float? moveSpeedScale = null)
     {
         _cachedMoveInput.x = horizontal;
         _cachedMoveInput.y = vertical;
@@ -439,13 +441,15 @@ public class Player : InitializeMonobehaviour
         // 移動方向は常に KeyboardWASD と同じ（カメラ基準の入力方向）
         float movementAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
 
+        float speedMult = moveSpeedScale.HasValue ? Mathf.Clamp01(moveSpeedScale.Value) : 1f;
+
         Vector3 targetVelocity = Vector3.zero;
         if (hasInput && shiftOnlyRotate == false)
         {
             Vector3 moveDir = Quaternion.Euler(0f, movementAngle, 0f) * Vector3.forward;
             if (moveDir.sqrMagnitude >= 0.01f)
             {
-                targetVelocity = moveDir.normalized * moveSpeed;
+                targetVelocity = moveDir.normalized * (moveSpeed * speedMult);
             }
         }
 

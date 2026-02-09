@@ -14,4 +14,7 @@ public enum PlayerInputMode
 
     /// <summary>WASDで移動、一番近い敵の方向へ自動回転</summary>
     KeyboardWASD_Auto,
+
+    /// <summary>カーソル位置へ移動、向きは一番近い敵</summary>
+    CursorMove_AutoLook,
 }
