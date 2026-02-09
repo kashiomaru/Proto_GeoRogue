@@ -138,6 +138,7 @@ public class Player : InitializeMonobehaviour
         _firingStateMachine = new StateMachine<PlayerFiringMode, Player>(this);
         _firingStateMachine.RegisterState(PlayerFiringMode.Fan, new FanFiringState());
         _firingStateMachine.RegisterState(PlayerFiringMode.Straight, new StraightFiringState());
+        _firingStateMachine.RegisterState(PlayerFiringMode.Omnidirectional, new OmnidirectionalFiringState());
         _firingStateMachine.Initialize(initialFiringMode);
     }
 

@@ -9,6 +9,6 @@ public enum PlayerFiringMode
     /// <summary>直線型。プレイヤー向きに横並びで同方向に発射する。</summary>
     Straight,
 
-    /// <summary>四方型（前後左右など）。将来実装。</summary>
-    FourDirections,
+    /// <summary>全方向等分割。360度を弾数で等分割した方向に発射する。</summary>
+    Omnidirectional,
 }
