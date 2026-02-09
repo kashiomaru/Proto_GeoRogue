@@ -3,6 +3,9 @@
 /// </summary>
 public enum PlayerInputMode
 {
-    /// <summary>WASD＋矢印キー＋スペース＋Shift の従来入力</summary>
+    /// <summary>WASD＋矢印キー＋スペース＋Shift で移動・回転</summary>
     KeyboardWASD,
+
+    /// <summary>WASDで移動、マウスカーソル方向へ回転</summary>
+    KeyboardWASD_MouseLook,
 }

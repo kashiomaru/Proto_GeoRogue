@@ -8,6 +8,8 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float rotationSpeed = 10f; // 回転速度
     [Tooltip("慣性の強さ。目標速度に近づくまでの目安時間（秒）。大きいほど入力やめても滑る")]
     [SerializeField] private float accelerationTime = 0.15f;
+    [Tooltip("ゲーム開始時の入力モード。インスペクターで切り替え可能")]
+    [SerializeField] private PlayerInputMode initialInputMode = PlayerInputMode.KeyboardWASD;
 
     [Header("Upgrade Params (LevelUp で変化)")]
     [SerializeField] private float magnetDist = 5f;
@@ -120,7 +122,8 @@ public class Player : InitializeMonobehaviour
 
         _inputModeStateMachine = new StateMachine<PlayerInputMode, Player>(this);
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
-        _inputModeStateMachine.Initialize(PlayerInputMode.KeyboardWASD);
+        _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_MouseLook, new KeyboardWASDMouseLookInputState());
+        _inputModeStateMachine.Initialize(initialInputMode);
     }
 
     protected override void FinalizeInternal()
@@ -414,9 +417,10 @@ public class Player : InitializeMonobehaviour
     /// </summary>
     /// <param name="horizontal">左右入力（-1～1）</param>
     /// <param name="vertical">前後入力（-1～1）</param>
-    /// <param name="isSpacePressed">スペース押下時は回転しない</param>
+    /// <param name="isSpacePressed">スペース押下時は回転しない（キーボード向きモード用）</param>
     /// <param name="shiftOnlyRotate">true のときは回転のみで移動しない</param>
-    public void ApplyMovementInput(float horizontal, float vertical, bool isSpacePressed, bool shiftOnlyRotate)
+    /// <param name="overrideLookAngleDeg">指定時は回転のみこの角度にする。移動は KeyboardWASD と同じ（カメラ基準）。</param>
+    public void ApplyMovementInput(float horizontal, float vertical, bool isSpacePressed, bool shiftOnlyRotate, float? overrideLookAngleDeg = null)
     {
         _cachedMoveInput.x = horizontal;
         _cachedMoveInput.y = vertical;
@@ -426,18 +430,25 @@ public class Player : InitializeMonobehaviour
         _cachedDirection.Normalize();
         bool hasInput = _cachedDirection.sqrMagnitude >= 0.01f;
 
+        // 移動方向は常に KeyboardWASD と同じ（カメラ基準の入力方向）
+        float movementAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
+
         Vector3 targetVelocity = Vector3.zero;
         if (hasInput && shiftOnlyRotate == false)
         {
-            float targetAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
-            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-            targetVelocity = moveDir.normalized * moveSpeed;
+            Vector3 moveDir = Quaternion.Euler(0f, movementAngle, 0f) * Vector3.forward;
+            if (moveDir.sqrMagnitude >= 0.01f)
+            {
+                targetVelocity = moveDir.normalized * moveSpeed;
+            }
         }
 
-        if (hasInput && isSpacePressed == false)
+        // 回転：override 時はマウス方向、それ以外は入力方向＋カメラ
+        float rotationAngle = overrideLookAngleDeg ?? movementAngle;
+        bool applyRotation = overrideLookAngleDeg.HasValue || (hasInput && isSpacePressed == false);
+        if (applyRotation)
         {
-            float targetAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
-            float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
+            float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, rotationAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
             _cachedTransform.rotation = Quaternion.Euler(0f, angle, 0f);
         }
 
@@ -453,6 +464,12 @@ public class Player : InitializeMonobehaviour
         }
 
         return playerCamera.transform.eulerAngles.y;
+    }
+
+    /// <summary>入力ステートからマウス向き計算などに使用する。未設定時は null。</summary>
+    public Camera GetPlayerCamera()
+    {
+        return playerCamera;
     }
     
     // LevelUpManager用のパラメータ取得・設定メソッド
