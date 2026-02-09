@@ -7,6 +7,8 @@ public class Player : InitializeMonobehaviour
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float rotationSpeed = 10f; // 回転速度
+    [Tooltip("慣性の強さ。目標速度に近づくまでの目安時間（秒）。大きいほど入力やめても滑る")]
+    [SerializeField] private float accelerationTime = 0.15f;
 
     [Header("Upgrade Params (LevelUp で変化)")]
     [SerializeField] private float magnetDist = 5f;
@@ -52,6 +54,8 @@ public class Player : InitializeMonobehaviour
     private bool _canLevelUp = false; // レベルアップ可能フラグ
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
+    private Vector3 _currentVelocity; // 慣性用の現在速度
+    private Vector3 _smoothDampVelocity; // SmoothDamp 用（内部用）
 
     // プレイヤー弾発射用
     private float _playerShotTimer;
@@ -255,6 +259,9 @@ public class Player : InitializeMonobehaviour
         _playerShotTimer = 0f;
         _lastBulletCountPerShot = -1;
 
+        _currentVelocity = Vector3.zero;
+        _smoothDampVelocity = Vector3.zero;
+
         UpdateFlashColor();
     }
 
@@ -433,27 +440,27 @@ public class Player : InitializeMonobehaviour
         bool isSpacePressed = keyboard.spaceKey.isPressed;
         // Shift押下時は回転のみ（移動しない）
         bool shiftOnlyRotate = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
-        
-        // 移動・回転処理
-        if (hasInput)
+
+        // 目標速度（慣性用）：入力ありかつ移動するときは移動方向×速度、それ以外はゼロ
+        Vector3 targetVelocity = Vector3.zero;
+        if (hasInput && shiftOnlyRotate == false)
         {
-            // カメラの向きを基準に移動方向を計算
             float targetAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
-            
-            // 回転：スペースが押されていないときのみ
-            if (isSpacePressed == false)
-            {
-                float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
-                _cachedTransform.rotation = Quaternion.Euler(0f, angle, 0f);
-            }
-            
-            // 移動：Shiftを押していないときのみ
-            if (shiftOnlyRotate == false)
-            {
-                Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-                _cachedTransform.position += moveDir.normalized * moveSpeed * Time.deltaTime;
-            }
+            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            targetVelocity = moveDir.normalized * moveSpeed;
         }
+
+        // 回転：入力ありかつスペースが押されていないときのみ
+        if (hasInput && isSpacePressed == false)
+        {
+            float targetAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
+            float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, targetAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
+            _cachedTransform.rotation = Quaternion.Euler(0f, angle, 0f);
+        }
+
+        // 慣性付き移動：現在速度を目標速度に滑らかに補間し、位置を更新
+        _currentVelocity = Vector3.SmoothDamp(_currentVelocity, targetVelocity, ref _smoothDampVelocity, accelerationTime);
+        _cachedTransform.position += _currentVelocity * Time.deltaTime;
     }
 
     private float GetPlayerCameraAngle()
