@@ -83,6 +83,8 @@ public class Player : InitializeMonobehaviour
     private int _bulletCountPerShot;
     /// <summary>クリティカル発生確率（0～1）。LevelUp で増加。</summary>
     private float _criticalChance;
+    /// <summary>弾の寿命ボーナス（秒）。LevelUp で増加。発射時に BulletData.LifeTime に加算する。</summary>
+    private float _bulletLifeTimeBonus;
 
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
@@ -294,6 +296,7 @@ public class Player : InitializeMonobehaviour
         SetBulletDamage(bulletData.Damage);
         _criticalChance = bulletData.CriticalChance;
         bulletManager?.SetBulletGroupCritical(_cachedBulletGroupId, _criticalChance, bulletData.CriticalMultiplier);
+        _bulletLifeTimeBonus = 0f;
 
         _playerShotTimer = 0f;
 
@@ -352,7 +355,8 @@ public class Player : InitializeMonobehaviour
         }
 
         float speed = GetBulletSpeed();
-        bulletManager.SpawnBullet(_cachedBulletGroupId, position, direction, speed, bulletData.LifeTime, bulletData.DirectionRotation);
+        float lifeTime = (bulletData != null ? bulletData.LifeTime : 0f) + _bulletLifeTimeBonus;
+        bulletManager.SpawnBullet(_cachedBulletGroupId, position, direction, speed, lifeTime, bulletData.DirectionRotation);
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
@@ -380,6 +384,10 @@ public class Player : InitializeMonobehaviour
     }
     /// <summary>クリティカル時のダメージ倍率（BulletData から取得）。</summary>
     public float GetCriticalMultiplier() => bulletData != null ? bulletData.CriticalMultiplier : 1f;
+    /// <summary>弾の寿命ボーナス（秒）。発射時に BulletData.LifeTime に加算される。</summary>
+    public float GetBulletLifeTimeBonus() => _bulletLifeTimeBonus;
+    /// <summary>弾の寿命ボーナスを設定する（LevelUp の弾の寿命アップなどで使用）。</summary>
+    public void SetBulletLifeTimeBonus(float value) { _bulletLifeTimeBonus = Mathf.Max(0f, value); }
 
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()

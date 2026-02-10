@@ -12,12 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7bb0fbef67bd4b0ab732b80c7d56902, type: 3}
   m_Name: PlayerBullet
   m_EditorClassIdentifier: Assembly-CSharp::BulletData
-  directionType: 0
   directionRotation: 0
   curveValue: 0
   speed: 20
   damage: 1
-  lifeTime: 2
+  lifeTime: 1
   mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
   scale: 0.5
