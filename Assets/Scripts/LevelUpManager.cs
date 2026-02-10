@@ -7,19 +7,20 @@ public class LevelUpManager : MonoBehaviour
     [SerializeField] private UIManager uiManager; // UIManagerへの参照
     [SerializeField] private Player player; // アップグレードパラメータはすべて Player で保持
 
-    // 抽選テーブル（本来はScriptableObjectやCSVからロード推奨）
-    private List<UpgradeData> _upgradeDatabase = new List<UpgradeData>()
+    [Header("抽選テーブル")]
+    [Tooltip("weight: 0=出現しない、大きいほど出現しやすい。インスペクターで編集可。")]
+    [SerializeField] private List<UpgradeData> _upgradeDatabase = new List<UpgradeData>()
     {
-        new UpgradeData { type = UpgradeType.FireRateUp, title = "Fire Rate" },
-        new UpgradeData { type = UpgradeType.BulletSpeedUp, title = "Bullet Speed" },
-        new UpgradeData { type = UpgradeType.MoveSpeedUp, title = "Move Speed" },
-        new UpgradeData { type = UpgradeType.MagnetRange, title = "Magnet" },
-        new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot" },
-        new UpgradeData { type = UpgradeType.DamageUp, title = "Damage" },
-        new UpgradeData { type = UpgradeType.CriticalDamage, title = "Critical Damage" },
-        new UpgradeData { type = UpgradeType.CriticalRate, title = "Critical Rate" },
-        new UpgradeData { type = UpgradeType.BulletLifeTimeUp, title = "Bullet Life" },
-        new UpgradeData { type = UpgradeType.PlayerHpUp, title = "Player HP" },
+        new UpgradeData { type = UpgradeType.FireRateUp, title = "Fire Rate", weight = 1 },
+        new UpgradeData { type = UpgradeType.BulletSpeedUp, title = "Bullet Speed", weight = 1 },
+        new UpgradeData { type = UpgradeType.MoveSpeedUp, title = "Move Speed", weight = 1 },
+        new UpgradeData { type = UpgradeType.MagnetRange, title = "Magnet", weight = 1 },
+        new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot", weight = 1 },
+        new UpgradeData { type = UpgradeType.DamageUp, title = "Damage", weight = 1 },
+        new UpgradeData { type = UpgradeType.CriticalDamage, title = "Critical Damage", weight = 1 },
+        new UpgradeData { type = UpgradeType.CriticalRate, title = "Critical Rate", weight = 1 },
+        new UpgradeData { type = UpgradeType.BulletLifeTimeUp, title = "Bullet Life", weight = 1 },
+        new UpgradeData { type = UpgradeType.PlayerHpUp, title = "Player HP", weight = 1 },
     };
 
     // 外部（GameManager）から経験値が溜まったら呼ばれる（互換性のため残す）
@@ -46,17 +47,38 @@ public class LevelUpManager : MonoBehaviour
     
     private List<UpgradeData> SelectRandomUpgrades(int count)
     {
-        List<UpgradeData> deck = new List<UpgradeData>(_upgradeDatabase);
-        List<UpgradeData> selected = new List<UpgradeData>();
-        
-        for (int i = 0; i < count && deck.Count > 0; i++)
+        // weight > 0 のものだけ候補にする
+        List<UpgradeData> candidates = new List<UpgradeData>();
+        foreach (var data in _upgradeDatabase)
         {
-            int randIndex = Random.Range(0, deck.Count);
-            UpgradeData data = deck[randIndex];
-            deck.RemoveAt(randIndex); // 選んだものはリストから消す（重複防止）
-            selected.Add(data);
+            if (data.weight > 0)
+                candidates.Add(data);
         }
-        
+        List<UpgradeData> selected = new List<UpgradeData>();
+
+        for (int i = 0; i < count && candidates.Count > 0; i++)
+        {
+            int totalWeight = 0;
+            foreach (var data in candidates)
+                totalWeight += data.weight;
+            if (totalWeight <= 0)
+                break;
+
+            int r = Random.Range(0, totalWeight);
+            int pickIndex = 0;
+            for (int j = 0; j < candidates.Count; j++)
+            {
+                r -= candidates[j].weight;
+                if (r < 0)
+                {
+                    pickIndex = j;
+                    break;
+                }
+            }
+            selected.Add(candidates[pickIndex]);
+            candidates.RemoveAt(pickIndex); // 重複防止
+        }
+
         return selected;
     }
 
