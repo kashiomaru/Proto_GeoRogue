@@ -62,12 +62,12 @@ public class EnemyGroup
     private EnemyBulletFireJob _cachedBulletFireJob;
 
     private readonly BulletManager _bulletManager;
-    private readonly int _enemyBulletGroupId = -1;
+    private readonly IBulletGroupHandler _enemyBulletHandler;
 
     /// <summary>実際に出現させる敵の数。</summary>
     public int SpawnCount => _spawnCount;
-    /// <summary>このグループ用の敵弾 BulletGroup ID（GameManager の当たり判定などで使用）。</summary>
-    public int EnemyBulletGroupId => _enemyBulletGroupId;
+    /// <summary>このグループ用の敵弾ハンドル（弾を撃たない場合は null）。GameManager の当たり判定などで使用。</summary>
+    public IBulletGroupHandler GetEnemyBulletHandler() => _enemyBulletHandler;
     /// <summary>空間マップ（弾衝突Job用）。</summary>
     public NativeParallelMultiHashMap<int, int> SpatialMap => _spatialMap;
     /// <summary>敵座標（弾衝突Job用）。</summary>
@@ -143,7 +143,11 @@ public class EnemyGroup
             }
             _bulletSpawnQueue = new NativeQueue<EnemyBulletSpawnRequest>(Allocator.Persistent);
 
-            _enemyBulletGroupId = _bulletManager.AddBulletGroup(_bulletData.Damage, _bulletData.Scale, _bulletData.Mesh, _bulletData.Material);
+            _enemyBulletHandler = _bulletManager.AddBulletGroup(_bulletData.Damage, _bulletData.Scale, _bulletData.Mesh, _bulletData.Material);
+        }
+        else
+        {
+            _enemyBulletHandler = null;
         }
 
         // 空間分割のセルサイズは当たり半径から算出（R < 2*cellSize を満たす）
@@ -235,7 +239,8 @@ public class EnemyGroup
     /// <summary>確保したバッファを破棄する。二重呼び出し防止は呼び出し側で行う。</summary>
     public void Dispose()
     {
-        _bulletManager.RemoveBulletGroup(_enemyBulletGroupId);
+        if (_enemyBulletHandler != null)
+            _bulletManager.RemoveBulletGroup(_enemyBulletHandler);
 
         if (_positions.IsCreated) _positions.Dispose();
         if (_directions.IsCreated) _directions.Dispose();
@@ -320,7 +325,7 @@ public class EnemyGroup
     /// </summary>
     public void ProcessFiring(BulletManager bulletManager)
     {
-        if (_bulletData == null || bulletManager == null || _enemyBulletGroupId < 0 || !_bulletSpawnQueue.IsCreated)
+        if (_bulletData == null || bulletManager == null || _enemyBulletHandler == null || !_bulletSpawnQueue.IsCreated)
         {
             return;
         }
@@ -333,7 +338,7 @@ public class EnemyGroup
         while (_bulletSpawnQueue.TryDequeue(out EnemyBulletSpawnRequest req))
         {
             float dirRot = (_bulletData != null) ? _bulletData.DirectionRotation : 0f;
-            bulletManager.SpawnBullet(_enemyBulletGroupId, (Vector3)req.position, (Vector3)req.direction, req.speed, req.lifeTime, dirRot);
+            _enemyBulletHandler.Spawn((Vector3)req.position, (Vector3)req.direction, req.speed, req.lifeTime, dirRot);
         }
     }
 

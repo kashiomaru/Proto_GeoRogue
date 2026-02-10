@@ -79,7 +79,7 @@ public class Player : InitializeMonobehaviour
     private Color _cachedFlashColor;
     private Vector2 _cachedMoveInput;
     private Vector3 _cachedDirection;
-    private int _cachedBulletGroupId;
+    private IBulletGroupHandler _bulletHandler;
     /// <summary>transform のキャッシュ。InitializeInternal で設定。</summary>
     private Transform _cachedTransform;
 
@@ -104,7 +104,8 @@ public class Player : InitializeMonobehaviour
     public int CurrentLevel => _currentLevel;
     public bool CanLevelUp => _canLevelUp;
 
-    public int BulletGroupId => _cachedBulletGroupId;
+    /// <summary>プレイヤー弾グループのハンドル（当たり判定などで BulletManager に渡す）。</summary>
+    public IBulletGroupHandler GetBulletHandler() => _bulletHandler;
     /// <summary>キャッシュした Transform。GameManager など外部から参照する。</summary>
     public Transform CachedTransform => _cachedTransform;
     /// <summary>プレイヤー弾の設定（未設定の場合は null）。</summary>
@@ -138,7 +139,7 @@ public class Player : InitializeMonobehaviour
         _criticalChance = bulletData.CriticalChance;
 
         bulletManager.Initialize();
-        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, bulletData.CriticalChance, bulletData.CriticalMultiplier, bulletData.CurveValue);
+        _bulletHandler = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, bulletData.CriticalChance, bulletData.CriticalMultiplier, bulletData.CurveValue);
 
         _inputModeStateMachine = new StateMachine<PlayerInputMode, Player>(this);
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
@@ -158,7 +159,7 @@ public class Player : InitializeMonobehaviour
     protected override void FinalizeInternal()
     {
         // 特になし（Native 等の解放は行っていない）
-        bulletManager.RemoveBulletGroup(_cachedBulletGroupId);
+        bulletManager.RemoveBulletGroup(_bulletHandler);
     }
     
     private void Update()
@@ -304,7 +305,7 @@ public class Player : InitializeMonobehaviour
         _bulletCountPerShot = bulletData.CountPerShot;
         SetBulletDamage(bulletData.Damage);
         _criticalChance = bulletData.CriticalChance;
-        bulletManager?.SetBulletGroupCritical(_cachedBulletGroupId, _criticalChance, bulletData.CriticalMultiplier);
+        _bulletHandler?.SetCritical(_criticalChance, bulletData.CriticalMultiplier);
         _bulletLifeTimeBonus = 0f;
 
         _playerShotTimer = 0f;
@@ -365,7 +366,7 @@ public class Player : InitializeMonobehaviour
 
         float speed = GetBulletSpeed();
         float lifeTime = (bulletData != null ? bulletData.LifeTime : 0f) + _bulletLifeTimeBonus;
-        bulletManager.SpawnBullet(_cachedBulletGroupId, position, direction, speed, lifeTime, bulletData.DirectionRotation);
+        _bulletHandler?.Spawn(position, direction, speed, lifeTime, bulletData.DirectionRotation);
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
@@ -380,16 +381,16 @@ public class Player : InitializeMonobehaviour
     public float GetMagnetDist() => magnetDist;
     public void SetMagnetDist(float value) { magnetDist = value; }
     /// <summary>プレイヤー弾のダメージ（BulletManager のグループから取得）。</summary>
-    public int GetBulletDamage() => bulletManager != null ? bulletManager.GetBulletGroupDamage(_cachedBulletGroupId) : 0;
+    public int GetBulletDamage() => _bulletHandler != null ? _bulletHandler.GetDamage() : 0;
     /// <summary>プレイヤー弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
-    public void SetBulletDamage(int value) { bulletManager?.SetBulletGroupDamage(_cachedBulletGroupId, value); }
+    public void SetBulletDamage(int value) { _bulletHandler?.SetDamage(value); }
     /// <summary>クリティカル発生確率（0～1）。</summary>
     public float GetCriticalChance() => _criticalChance;
     /// <summary>クリティカル発生確率を設定する。獲得ごとに+10%などで使用。最大1でクランプ。</summary>
     public void SetCriticalChance(float value)
     {
         _criticalChance = Mathf.Clamp01(value);
-        bulletManager?.SetBulletGroupCritical(_cachedBulletGroupId, _criticalChance, bulletData != null ? bulletData.CriticalMultiplier : 1f);
+        _bulletHandler?.SetCritical(_criticalChance, bulletData != null ? bulletData.CriticalMultiplier : 1f);
     }
     /// <summary>クリティカル時のダメージ倍率（BulletData から取得）。</summary>
     public float GetCriticalMultiplier() => bulletData != null ? bulletData.CriticalMultiplier : 1f;

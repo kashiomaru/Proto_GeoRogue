@@ -212,11 +212,14 @@ public class GameManager : MonoBehaviour
         if (groups == null || groups.Count == 0)
             return;
 
+        var playerBulletHandler = player.GetBulletHandler();
+        if (playerBulletHandler == null) return;
+
         JobHandle dep = default;
         foreach (var g in groups)
         {
             dep = bulletManager.ProcessDamage(
-                player.BulletGroupId,
+                playerBulletHandler,
                 g.CellSize,
                 g.CollisionRadius,
                 g.SpatialMap,
@@ -238,12 +241,13 @@ public class GameManager : MonoBehaviour
 
         foreach (var group in groups)
         {
-            if (group.EnemyBulletGroupId < 0)
+            var enemyBulletHandler = group.GetEnemyBulletHandler();
+            if (enemyBulletHandler == null)
             {
                 continue;
             }
 
-            bulletManager.ProcessDamage(group.EnemyBulletGroupId, player.CachedTransform.position, player.CollisionRadius, _enemyBulletHitDamages);
+            bulletManager.ProcessDamage(enemyBulletHandler, player.CachedTransform.position, player.CollisionRadius, _enemyBulletHitDamages);
 
             while (_enemyBulletHitDamages.TryDequeue(out HitDamageInfo hit))
             {
@@ -261,7 +265,9 @@ public class GameManager : MonoBehaviour
         if (boss == null || boss.IsDead)
             return;
 
-        bulletManager.ProcessDamage(player.BulletGroupId, boss.Position, boss.CollisionRadius, _bossDamageQueue);
+        var playerBulletHandler = player.GetBulletHandler();
+        if (playerBulletHandler != null)
+            bulletManager.ProcessDamage(playerBulletHandler, boss.Position, boss.CollisionRadius, _bossDamageQueue);
 
         while (_bossDamageQueue.TryDequeue(out HitDamageInfo hit))
         {

@@ -28,6 +28,15 @@ public struct HitDamageInfo
     public bool isCritical;
 }
 
+/// <summary>弾グループへの操作を表すハンドル。Spawn やダメージ設定はこのインターフェース経由で行う。</summary>
+public interface IBulletGroupHandler
+{
+    void Spawn(Vector3 position, Vector3 direction, float speed, float lifeTime, float directionRotation = 0f);
+    int GetDamage();
+    void SetDamage(int damage);
+    void SetCritical(float criticalChance, float criticalMultiplier);
+}
+
 public class BulletManager : InitializeMonobehaviour
 {
     [Header("Settings")]
@@ -63,11 +72,12 @@ public class BulletManager : InitializeMonobehaviour
     /// <param name="criticalChance">クリティカル発生確率（0～1）。敵弾などで使わない場合は 0。</param>
     /// <param name="criticalMultiplier">クリティカル時のダメージ倍率。使わない場合は 1。</param>
     /// <param name="curveValue">弾の進行方向を回転させる速度（度/秒）。0で直進。</param>
-    public int AddBulletGroup(int damage, float scale, Mesh mesh, Material material, float criticalChance = 0f, float criticalMultiplier = 1f, float curveValue = 0f)
+    /// <returns>弾グループ操作用のハンドル。Spawn やダメージ設定はこのハンドル経由で行う。</returns>
+    public IBulletGroupHandler AddBulletGroup(int damage, float scale, Mesh mesh, Material material, float criticalChance = 0f, float criticalMultiplier = 1f, float curveValue = 0f)
     {
         if (IsInitialized == false)
         {
-            return -1;
+            return null;
         }
 
         var groupId = _bulletGroupIdCounter++;
@@ -75,25 +85,26 @@ public class BulletManager : InitializeMonobehaviour
         group.SetCriticalParams(criticalChance, criticalMultiplier);
         group.SetCurveValue(curveValue);
         _bulletGroups.Add(groupId, group);
-        return groupId;
+        return new BulletGroupHandler(this, groupId);
     }
 
-    public void RemoveBulletGroup(int groupId)
+    /// <summary>指定した弾グループを削除する。ハンドルは以降使用不可。</summary>
+    public void RemoveBulletGroup(IBulletGroupHandler handler)
     {
-        if (IsInitialized == false)
+        if (IsInitialized == false || handler == null)
         {
             return;
         }
 
-        if (_bulletGroups.TryGetValue(groupId, out var group))
+        if (handler is BulletGroupHandler h && _bulletGroups.TryGetValue(h.GroupId, out var group))
         {
             group.Dispose();
-            _bulletGroups.Remove(groupId);
+            _bulletGroups.Remove(h.GroupId);
         }
     }
 
-    /// <summary>指定した弾グループのダメージを取得する。</summary>
-    public int GetBulletGroupDamage(int bulletGroupId)
+    /// <summary>指定した弾グループのダメージを取得する（内部・Handler 用）。</summary>
+    private int GetBulletGroupDamage(int bulletGroupId)
     {
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group))
         {
@@ -102,8 +113,8 @@ public class BulletManager : InitializeMonobehaviour
         return 0;
     }
 
-    /// <summary>指定した弾グループのダメージを設定する。</summary>
-    public void SetBulletGroupDamage(int bulletGroupId, int damage)
+    /// <summary>指定した弾グループのダメージを設定する（内部・Handler 用）。</summary>
+    private void SetBulletGroupDamage(int bulletGroupId, int damage)
     {
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group))
         {
@@ -111,8 +122,8 @@ public class BulletManager : InitializeMonobehaviour
         }
     }
 
-    /// <summary>指定した弾グループのクリティカル用パラメータを設定する（Player の弾グループ用）。</summary>
-    public void SetBulletGroupCritical(int bulletGroupId, float criticalChance, float criticalMultiplier)
+    /// <summary>指定した弾グループのクリティカル用パラメータを設定する（内部・Handler 用）。</summary>
+    private void SetBulletGroupCritical(int bulletGroupId, float criticalChance, float criticalMultiplier)
     {
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group))
         {
@@ -121,7 +132,7 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <param name="directionRotation">発射時に指定方向を回転させる角度（度）。0で回転なし。</param>
-    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime, float directionRotation = 0f)
+    private void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime, float directionRotation = 0f)
     {
         if (IsInitialized == false)
         {
@@ -162,6 +173,26 @@ public class BulletManager : InitializeMonobehaviour
     /// targetCollisionRadius はメソッド内で二乗して Job に渡す。
     /// </summary>
     public JobHandle ProcessDamage(
+        IBulletGroupHandler bulletGroup,
+        float targetCellSize,
+        float targetCollisionRadius,
+        NativeParallelMultiHashMap<int, int> targetSpatialMap,
+        NativeArray<float3> targetPositions,
+        NativeArray<bool> targetActive,
+        NativeQueue<BulletDamageInfo>.ParallelWriter targetDamageQueue,
+        JobHandle dependency = default)
+    {
+        if (bulletGroup is BulletGroupHandler h)
+        {
+            return ProcessDamageByGroupId(h.GroupId, targetCellSize, targetCollisionRadius, targetSpatialMap, targetPositions, targetActive, targetDamageQueue, dependency);
+        }
+        return dependency;
+    }
+
+    /// <summary>
+    /// 指定した弾グループとターゲットグループの当たり判定 Job をスケジュールする（内部用）。
+    /// </summary>
+    private JobHandle ProcessDamageByGroupId(
         int bulletGroupId,
         float targetCellSize,
         float targetCollisionRadius,
@@ -234,11 +265,18 @@ public class BulletManager : InitializeMonobehaviour
     /// <summary>
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。ヒットした弾のダメージとクリティカル有無を damageQueueOut に Enqueue する。
     /// </summary>
-    /// <param name="bulletGroupId">弾グループ ID</param>
-    /// <param name="targetPosition">当たり判定の中心</param>
-    /// <param name="targetCollisionRadius">当たり判定の半径</param>
-    /// <param name="damageQueueOut">ヒットした弾のダメージ・クリティカル有無を格納するキュー（呼び出し側で用意）</param>
-    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<HitDamageInfo> damageQueueOut)
+    public void ProcessDamage(IBulletGroupHandler bulletGroup, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<HitDamageInfo> damageQueueOut)
+    {
+        if (bulletGroup is BulletGroupHandler h)
+        {
+            ProcessDamageByGroupId(h.GroupId, targetPosition, targetCollisionRadius, damageQueueOut);
+        }
+    }
+
+    /// <summary>
+    /// 指定円（中心・半径）と当たった弾を収集する（内部用）。
+    /// </summary>
+    private void ProcessDamageByGroupId(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<HitDamageInfo> damageQueueOut)
     {
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
         {
@@ -246,5 +284,29 @@ public class BulletManager : InitializeMonobehaviour
         }
 
         group.CollectHitsAgainstCircle((float3)targetPosition, targetCollisionRadius, damageQueueOut);
+    }
+
+    /// <summary>弾グループの内部ハンドル。BulletManager 外には IBulletGroupHandler として公開する。</summary>
+    private sealed class BulletGroupHandler : IBulletGroupHandler
+    {
+        private readonly BulletManager _manager;
+        private readonly int _groupId;
+
+        internal int GroupId => _groupId;
+
+        public BulletGroupHandler(BulletManager manager, int groupId)
+        {
+            _manager = manager;
+            _groupId = groupId;
+        }
+
+        public void Spawn(Vector3 position, Vector3 direction, float speed, float lifeTime, float directionRotation = 0f)
+        {
+            _manager.SpawnBullet(_groupId, position, direction, speed, lifeTime, directionRotation);
+        }
+
+        public int GetDamage() => _manager.GetBulletGroupDamage(_groupId);
+        public void SetDamage(int damage) => _manager.SetBulletGroupDamage(_groupId, damage);
+        public void SetCritical(float criticalChance, float criticalMultiplier) => _manager.SetBulletGroupCritical(_groupId, criticalChance, criticalMultiplier);
     }
 }
