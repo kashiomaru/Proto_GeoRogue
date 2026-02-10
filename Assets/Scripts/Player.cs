@@ -288,6 +288,7 @@ public class Player : InitializeMonobehaviour
         _fireRate = bulletData.FireInterval;
         _bulletSpeed = bulletData.Speed;
         _bulletCountPerShot = bulletData.CountPerShot;
+        SetBulletDamage(bulletData.Damage);
 
         _playerShotTimer = 0f;
 
@@ -360,6 +361,10 @@ public class Player : InitializeMonobehaviour
     public void SetBulletCountPerShot(int value) { _bulletCountPerShot = value; }
     public float GetMagnetDist() => magnetDist;
     public void SetMagnetDist(float value) { magnetDist = value; }
+    /// <summary>プレイヤー弾のダメージ（BulletManager のグループから取得）。</summary>
+    public int GetBulletDamage() => bulletManager != null ? bulletManager.GetBulletGroupDamage(_cachedBulletGroupId) : 0;
+    /// <summary>プレイヤー弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
+    public void SetBulletDamage(int value) { bulletManager?.SetBulletGroupDamage(_cachedBulletGroupId, value); }
     
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()

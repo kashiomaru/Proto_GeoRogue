@@ -46,6 +46,8 @@ public class BulletGroup
     private readonly RenderParams _renderParams;
 
     public int Damage => _damage;
+    /// <summary>弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
+    public void SetDamage(int value) { _damage = value; }
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
     /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>

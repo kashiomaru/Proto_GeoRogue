@@ -5,5 +5,6 @@ public enum UpgradeType
     BulletSpeedUp, // 弾速アップ
     MoveSpeedUp,   // 移動速度アップ
     MultiShot,     // 弾数増加（Way数を増やすなど）
-    MagnetRange    // 吸い寄せ範囲拡大
+    MagnetRange,   // 吸い寄せ範囲拡大
+    DamageUp       // ダメージアップ
 }

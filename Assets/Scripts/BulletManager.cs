@@ -78,6 +78,25 @@ public class BulletManager : InitializeMonobehaviour
         }
     }
 
+    /// <summary>指定した弾グループのダメージを取得する。</summary>
+    public int GetBulletGroupDamage(int bulletGroupId)
+    {
+        if (_bulletGroups.TryGetValue(bulletGroupId, out var group))
+        {
+            return group.Damage;
+        }
+        return 0;
+    }
+
+    /// <summary>指定した弾グループのダメージを設定する。</summary>
+    public void SetBulletGroupDamage(int bulletGroupId, int damage)
+    {
+        if (_bulletGroups.TryGetValue(bulletGroupId, out var group))
+        {
+            group.SetDamage(damage);
+        }
+    }
+
     public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime)
     {
         if (IsInitialized == false)

@@ -15,6 +15,7 @@ public class LevelUpManager : MonoBehaviour
         new UpgradeData { type = UpgradeType.MoveSpeedUp, title = "Move Speed" },
         new UpgradeData { type = UpgradeType.MagnetRange, title = "Magnet" },
         new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot" },
+        new UpgradeData { type = UpgradeType.DamageUp, title = "Damage" },
     };
 
     // 外部（GameManager）から経験値が溜まったら呼ばれる（互換性のため残す）
@@ -84,6 +85,9 @@ public class LevelUpManager : MonoBehaviour
                 break;
             case UpgradeType.MultiShot:
                 player.SetBulletCountPerShot(player.GetBulletCountPerShot() + 1);
+                break;
+            case UpgradeType.DamageUp:
+                player.SetBulletDamage(player.GetBulletDamage() + 1);
                 break;
         }
     }
