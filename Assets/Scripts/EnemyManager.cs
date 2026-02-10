@@ -203,13 +203,13 @@ public class EnemyManager : InitializeMonobehaviour
     /// <summary>
     /// 弾を撃つ敵の発射処理。各グループの ProcessFiring を呼ぶ。BulletManager の Job 完了後に GameManager から呼ぶ。
     /// </summary>
-    public void ProcessEnemyBulletFiring(float3 playerPos)
+    public void ProcessEnemyBulletFiring()
     {
         // ボスステート時は通常敵を無効化しているため、通常敵の弾発射は行わない
         if (_normalEnemiesEnabled == false || _groups == null || bulletManager == null) return;
 
         foreach (var g in _groups)
-            g.ProcessFiring(playerPos, bulletManager);
+            g.ProcessFiring(bulletManager);
     }
 
     void RenderEnemies()
@@ -315,7 +315,7 @@ public class EnemyManager : InitializeMonobehaviour
     /// <summary>通常敵・ボスの弾発射処理をまとめて実行。GameManager から呼ばれる。</summary>
     public void ProcessFiring(float3 playerPos)
     {
-        ProcessEnemyBulletFiring(playerPos);
+        ProcessEnemyBulletFiring();
         ProcessBossBulletFiring(playerPos);
     }
 

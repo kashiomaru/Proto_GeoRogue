@@ -42,6 +42,8 @@ public class BulletGroup
     private float _criticalChance;
     /// <summary>クリティカル時のダメージ倍率。</summary>
     private float _criticalMultiplier;
+    /// <summary>弾の進行方向を回転させる速度（度/秒）。0で直進。</summary>
+    private float _curveValue;
     /// <summary>毎フレームの new を避けるため RunMatrixJob で再利用するスケール。</summary>
     private Vector3 _cachedScale;
     private DrawMatrixJob _matrixJob;
@@ -56,6 +58,8 @@ public class BulletGroup
     public float CriticalMultiplier => _criticalMultiplier;
     /// <summary>クリティカル用パラメータを設定する（Player の弾グループ用）。</summary>
     public void SetCriticalParams(float chance, float multiplier) { _criticalChance = chance; _criticalMultiplier = multiplier; }
+    /// <summary>カーブ値（度/秒）を設定する。弾の進行中に進行方向を回転させる。</summary>
+    public void SetCurveValue(float value) { _curveValue = value; }
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
     /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>
@@ -96,6 +100,7 @@ public class BulletGroup
         _cachedMoveJob.bulletVelocities = _velocities;
         _cachedMoveJob.bulletActive = _active;
         _cachedMoveJob.bulletLifeTime = _lifeTime;
+        _cachedMoveJob.curveDegreesPerSecond = _curveValue;
 
         _indexHead = 0;
 
@@ -165,6 +170,7 @@ public class BulletGroup
             return dependency;
         }
         _cachedMoveJob.deltaTime = Time.deltaTime;
+        _cachedMoveJob.curveDegreesPerSecond = _curveValue;
         return _cachedMoveJob.Schedule(_maxCount, 64, dependency);
     }
 

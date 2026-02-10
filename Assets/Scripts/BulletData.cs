@@ -1,17 +1,6 @@
 using UnityEngine;
 
 /// <summary>
-/// 弾の飛ぶ方向の種類。
-/// </summary>
-public enum BulletDirectionType
-{
-    /// <summary>発射元の向いている方向に飛ばす。</summary>
-    Forward,
-    /// <summary>発射時にプレイヤー方向へ向けて飛ばす。</summary>
-    TowardPlayer
-}
-
-/// <summary>
 /// 弾 1 種類分の設定を定義する ScriptableObject。
 /// 敵・ボスが撃つ弾の速度・ダメージ・ライフタイムなどを保持し、EnemyData や Boss から参照できる。
 /// </summary>
@@ -19,8 +8,10 @@ public enum BulletDirectionType
 public class BulletData : ScriptableObject
 {
     [Header("Direction")]
-    [Tooltip("弾の飛ぶ方向。Forward=発射元の向き、TowardPlayer=プレイヤー方向")]
-    [SerializeField] private BulletDirectionType directionType = BulletDirectionType.Forward;
+    [Tooltip("発射時に指定方向を回転させる角度（度）。0で回転なし。")]
+    [SerializeField] private float directionRotation = 0f;
+    [Tooltip("弾の進行中に進行方向を回転させる速度（度/秒）。0で直進。")]
+    [SerializeField] private float curveValue = 0f;
 
     [Header("Stats")]
     [Tooltip("弾の飛ぶ速度")]
@@ -52,7 +43,10 @@ public class BulletData : ScriptableObject
     [Tooltip("複数発時のみ有効。弾同士の間の角度（度）")]
     [SerializeField] private float spreadAngle = 10f;
 
-    public BulletDirectionType DirectionType => directionType;
+    /// <summary>発射時に指定方向を回転させる角度（度）。</summary>
+    public float DirectionRotation => directionRotation;
+    /// <summary>弾の進行中に進行方向を回転させる速度（度/秒）。</summary>
+    public float CurveValue => curveValue;
     public Mesh Mesh => mesh;
     public Material Material => material;
     public float Scale => scale;

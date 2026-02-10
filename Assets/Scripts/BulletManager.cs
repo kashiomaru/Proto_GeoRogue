@@ -62,7 +62,8 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <param name="criticalChance">クリティカル発生確率（0～1）。敵弾などで使わない場合は 0。</param>
     /// <param name="criticalMultiplier">クリティカル時のダメージ倍率。使わない場合は 1。</param>
-    public int AddBulletGroup(int damage, float scale, Mesh mesh, Material material, float criticalChance = 0f, float criticalMultiplier = 1f)
+    /// <param name="curveValue">弾の進行方向を回転させる速度（度/秒）。0で直進。</param>
+    public int AddBulletGroup(int damage, float scale, Mesh mesh, Material material, float criticalChance = 0f, float criticalMultiplier = 1f, float curveValue = 0f)
     {
         if (IsInitialized == false)
         {
@@ -72,6 +73,7 @@ public class BulletManager : InitializeMonobehaviour
         var groupId = _bulletGroupIdCounter++;
         var group = new BulletGroup(maxBullets, damage, scale, mesh, material);
         group.SetCriticalParams(criticalChance, criticalMultiplier);
+        group.SetCurveValue(curveValue);
         _bulletGroups.Add(groupId, group);
         return groupId;
     }
@@ -118,7 +120,8 @@ public class BulletManager : InitializeMonobehaviour
         }
     }
 
-    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime)
+    /// <param name="directionRotation">発射時に指定方向を回転させる角度（度）。0で回転なし。</param>
+    public void SpawnBullet(int bulletGroupId, Vector3 position, Vector3 direction, float speed, float lifeTime, float directionRotation = 0f)
     {
         if (IsInitialized == false)
         {
@@ -130,7 +133,10 @@ public class BulletManager : InitializeMonobehaviour
             return;
         }
 
-        group.Spawn(position, direction, speed, lifeTime);
+        Vector3 dir = direction;
+        if (directionRotation != 0f)
+            dir = Quaternion.AngleAxis(directionRotation, Vector3.up) * direction.normalized;
+        group.Spawn(position, dir, speed, lifeTime);
     }
 
     /// <summary>

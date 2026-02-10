@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: PlayerBullet
   m_EditorClassIdentifier: Assembly-CSharp::BulletData
   directionType: 0
+  directionRotation: 0
+  curveValue: 0
   speed: 20
   damage: 1
   lifeTime: 2

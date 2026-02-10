@@ -4,15 +4,17 @@ using Unity.Jobs;
 using Unity.Mathematics;
 
 /// <summary>
-/// 弾の移動とライフタイム減算のみを行う Job。1フレームに1回だけスケジュールする。
+/// 弾の移動とライフタイム減算を行う Job。カーブ値がある場合は進行方向を毎フレーム回転させる。1フレームに1回だけスケジュールする。
 /// </summary>
 [BurstCompile]
 public struct BulletMoveJob : IJobParallelFor
 {
     public float deltaTime;
+    /// <summary>弾の進行方向を回転させる速度（度/秒）。0で直進。</summary>
+    public float curveDegreesPerSecond;
 
     public NativeArray<float3> bulletPositions;
-    [ReadOnly] public NativeArray<float3> bulletVelocities;
+    public NativeArray<float3> bulletVelocities;
     public NativeArray<bool> bulletActive;
     public NativeArray<float> bulletLifeTime;
 
@@ -32,8 +34,15 @@ public struct BulletMoveJob : IJobParallelFor
             return;
         }
 
-        float3 pos = bulletPositions[index];
         float3 velocity = bulletVelocities[index];
+        if (math.abs(curveDegreesPerSecond) > 1e-6f)
+        {
+            float angleRad = math.radians(curveDegreesPerSecond * deltaTime);
+            velocity = math.rotate(quaternion.Euler(0f, angleRad, 0f), velocity);
+            bulletVelocities[index] = velocity;
+        }
+
+        float3 pos = bulletPositions[index];
         pos += velocity * deltaTime;
         bulletPositions[index] = pos;
     }

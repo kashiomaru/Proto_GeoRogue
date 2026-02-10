@@ -128,7 +128,7 @@ public class Player : InitializeMonobehaviour
         _criticalChance = bulletData.CriticalChance;
 
         bulletManager.Initialize();
-        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, bulletData.CriticalChance, bulletData.CriticalMultiplier);
+        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, bulletData.CriticalChance, bulletData.CriticalMultiplier, bulletData.CurveValue);
 
         _inputModeStateMachine = new StateMachine<PlayerInputMode, Player>(this);
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
@@ -352,7 +352,7 @@ public class Player : InitializeMonobehaviour
         }
 
         float speed = GetBulletSpeed();
-        bulletManager.SpawnBullet(_cachedBulletGroupId, position, direction, speed, bulletData.LifeTime);
+        bulletManager.SpawnBullet(_cachedBulletGroupId, position, direction, speed, bulletData.LifeTime, bulletData.DirectionRotation);
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>

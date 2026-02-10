@@ -29,8 +29,6 @@ public struct EnemyBulletSpawnRequest
 [BurstCompile]
 public struct EnemyBulletFireJob : IJobParallelFor
 {
-    public float3 playerPos;
-    public bool towardPlayer;
     public float interval;
     public float deltaTime;
     public float speed;
@@ -58,19 +56,9 @@ public struct EnemyBulletFireJob : IJobParallelFor
         fireTimers[i] = 0f;
 
         float3 pos = positions[i];
-        float3 baseDir;
-        if (towardPlayer)
-        {
-            baseDir = math.normalize(playerPos - pos);
-            if (math.lengthsq(baseDir) < 0.0001f)
-                baseDir = directions[i];
-        }
-        else
-        {
-            baseDir = directions[i];
-            if (math.lengthsq(baseDir) < 0.0001f)
-                baseDir = new float3(0f, 0f, 1f);
-        }
+        float3 baseDir = directions[i];
+        if (math.lengthsq(baseDir) < 0.0001f)
+            baseDir = new float3(0f, 0f, 1f);
 
         for (int j = 0; j < countPerShot; j++)
         {

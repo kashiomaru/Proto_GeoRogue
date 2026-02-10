@@ -213,7 +213,6 @@ public class EnemyGroup
 
         if (_bulletData != null)
         {
-            _cachedBulletFireJob.towardPlayer = _bulletData.DirectionType == BulletDirectionType.TowardPlayer;
             _cachedBulletFireJob.interval = _bulletData.FireInterval;
             _cachedBulletFireJob.speed = _bulletData.Speed;
             _cachedBulletFireJob.damage = _bulletData.Damage;
@@ -310,16 +309,15 @@ public class EnemyGroup
 
     /// <summary>
     /// 弾を撃つ敵について発射タイマーを進め、間隔が来たら BulletManager に弾を生成させる。BulletManager の Job 完了後に GameManager から呼ぶ。
-    /// 発射判定とリクエスト出力は Job で行い、メインスレッドでキューをドレインして SpawnEnemyBullet を呼ぶ。
+    /// 発射判定とリクエスト出力は Job で行い、メインスレッドでキューをドレインして SpawnBullet を呼ぶ。弾は発射元の向き（Forward）で飛ばす。
     /// </summary>
-    public void ProcessFiring(float3 playerPos, BulletManager bulletManager)
+    public void ProcessFiring(BulletManager bulletManager)
     {
         if (_bulletData == null || bulletManager == null || _enemyBulletGroupId < 0 || !_bulletSpawnQueue.IsCreated)
         {
             return;
         }
 
-        _cachedBulletFireJob.playerPos = playerPos;
         _cachedBulletFireJob.deltaTime = Time.deltaTime;
         _cachedBulletFireJob.spawnQueue = _bulletSpawnQueue.AsParallelWriter();
 
@@ -327,7 +325,8 @@ public class EnemyGroup
 
         while (_bulletSpawnQueue.TryDequeue(out EnemyBulletSpawnRequest req))
         {
-            bulletManager.SpawnBullet(_enemyBulletGroupId, (Vector3)req.position, (Vector3)req.direction, req.speed, req.lifeTime);
+            float dirRot = (_bulletData != null) ? _bulletData.DirectionRotation : 0f;
+            bulletManager.SpawnBullet(_enemyBulletGroupId, (Vector3)req.position, (Vector3)req.direction, req.speed, req.lifeTime, dirRot);
         }
     }
 
