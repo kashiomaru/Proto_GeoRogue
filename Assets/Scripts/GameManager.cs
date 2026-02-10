@@ -405,11 +405,11 @@ public class GameManager : MonoBehaviour
         enemyManager?.SetBossActive(mode == GameMode.Boss);
     }
     
-    // カメラ切り替え処理
-    // immediate: true のときブレンドなしで即時切り替え、false のときはブレンド補間
-    public void SwitchCamera(int cameraIndex, bool immediate = false)
+    // カメラ切り替え処理（モード指定のみ。インデックス指定は外部から使用不可）
+    /// <summary>カメラをモード（クオータービュー / TPS）で切り替える</summary>
+    public void SwitchCamera(CameraMode mode, bool immediate = false)
     {
-        cameraManager?.SwitchCamera(cameraIndex, immediate);
+        cameraManager?.SwitchCamera(mode, immediate);
     }
     
     public void SwitchCameraByName(string cameraName)
@@ -432,7 +432,7 @@ public class GameManager : MonoBehaviour
         {
             player.CachedTransform.position = titlePlayerPosition;
         }
-        SwitchCamera(0, immediate: true);
+        SwitchCamera(CameraMode.QuarterView, immediate: true);
     }
 
     /// <summary>

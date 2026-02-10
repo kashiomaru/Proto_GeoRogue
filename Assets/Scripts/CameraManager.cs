@@ -3,17 +3,39 @@ using Unity.Cinemachine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 
+/// <summary>カメラの表示モード</summary>
+public enum CameraMode
+{
+    /// <summary>クオータービュー（斜め上から見下ろし）</summary>
+    QuarterView,
+    /// <summary>TPS（第三人称視点）</summary>
+    TPS
+}
+
 public class CameraManager : InitializeMonobehaviour
 {
     [Header("Cinemachine Cameras")]
     [SerializeField] private CinemachineCamera[] virtualCameras; // 切り替え可能なカメラの配列
     
     [Header("Settings")]
-    [SerializeField] private int defaultCameraIndex = 0; // デフォルトのカメラインデックス
+    [SerializeField] private CameraMode defaultCameraMode = CameraMode.QuarterView; // デフォルトのカメラモード
+    [SerializeField] private int quarterViewCameraIndex = 0; // クオータービューに対応するカメラのインデックス
+    [SerializeField] private int tpsCameraIndex = 1; // TPSに対応するカメラのインデックス
     [SerializeField] private LookAtController lookAtController; // 回転処理を行うLookAtControllerへの参照
     [SerializeField] private CinemachineBrain cinemachineBrain; // 即時切り替え時に使用（未設定ならシーンから取得）
     
     private int _currentCameraIndex = -1;
+
+    /// <summary>モードからカメラインデックスを取得する</summary>
+    private int GetCameraIndexForMode(CameraMode mode)
+    {
+        return mode switch
+        {
+            CameraMode.QuarterView => quarterViewCameraIndex,
+            CameraMode.TPS => tpsCameraIndex,
+            _ => quarterViewCameraIndex
+        };
+    }
 
     protected override void InitializeInternal()
     {
@@ -24,10 +46,10 @@ public class CameraManager : InitializeMonobehaviour
             brain.IgnoreTimeScale = true;
         }
 
-        // デフォルトカメラを設定
+        // デフォルトモードのカメラを設定
         if (virtualCameras != null && virtualCameras.Length > 0)
         {
-            SwitchCamera(defaultCameraIndex);
+            SwitchCamera(defaultCameraMode);
         }
     }
 
@@ -41,9 +63,9 @@ public class CameraManager : InitializeMonobehaviour
         // クリーンアップ処理が必要な場合はここに実装
     }
     
-    // カメラを切り替える（インデックス指定）
+    // カメラを切り替える（インデックス指定・内部用。外部からはモード指定のみ使用する）
     // immediate: true のときブレンドなしで即時切り替え、false のときはブレンド補間
-    public void SwitchCamera(int cameraIndex, bool immediate = false)
+    private void SwitchCamera(int cameraIndex, bool immediate = false)
     {
         if (virtualCameras == null || cameraIndex < 0 || cameraIndex >= virtualCameras.Length)
         {
@@ -77,6 +99,15 @@ public class CameraManager : InitializeMonobehaviour
         {
             GetBrain()?.ResetState();
         }
+    }
+
+    /// <summary>カメラをモードで切り替える（クオータービュー / TPS）</summary>
+    /// <param name="mode">切り替え先のカメラモード</param>
+    /// <param name="immediate">true のときブレンドなしで即時切り替え</param>
+    public void SwitchCamera(CameraMode mode, bool immediate = false)
+    {
+        int index = GetCameraIndexForMode(mode);
+        SwitchCamera(index, immediate);
     }
 
     /// <summary>
@@ -119,6 +150,16 @@ public class CameraManager : InitializeMonobehaviour
     public int GetCurrentCameraIndex()
     {
         return _currentCameraIndex;
+    }
+
+    /// <summary>現在のカメラモードを取得する</summary>
+    public CameraMode GetCurrentCameraMode()
+    {
+        if (_currentCameraIndex == tpsCameraIndex)
+        {
+            return CameraMode.TPS;
+        }
+        return CameraMode.QuarterView;
     }
     
     // カメラの数を取得

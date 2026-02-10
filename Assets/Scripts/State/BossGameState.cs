@@ -36,7 +36,7 @@ public class BossGameState : GameStateBase
         GameObject boss = context.EnemyManager?.GetCurrentBoss();
         if (boss != null)
         {
-            context.CameraManager?.SwitchCamera(1);
+            context.CameraManager?.SwitchCamera(CameraMode.TPS);
             context.CameraManager?.SetBossLookAtTarget(boss.transform);
         }
 

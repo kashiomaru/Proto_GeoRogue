@@ -10,7 +10,7 @@ public class NormalGameState : GameStateBase
     {
         UnityEngine.Time.timeScale = 1f;
         context.PrepareForNormalStage();
-        context.SwitchCamera(0, immediate: true);
+        context.SwitchCamera(CameraMode.QuarterView, immediate: true);
         context.UIManager?.ShowStatus();
         context.UIManager?.ShowCountdownTimer();
 
