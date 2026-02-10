@@ -6,5 +6,7 @@ public enum UpgradeType
     MoveSpeedUp,   // 移動速度アップ
     MultiShot,     // 弾数増加（Way数を増やすなど）
     MagnetRange,   // 吸い寄せ範囲拡大
-    DamageUp       // ダメージアップ
+    DamageUp,      // ダメージアップ
+    CriticalDamage, // クリティカルダメージ（確率で倍率適用、獲得ごとに確率+10%）
+    CriticalRate    // クリティカル率（選択で+1%）
 }

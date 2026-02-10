@@ -38,6 +38,12 @@ public class BulletData : ScriptableObject
     [Tooltip("描画スケール（BulletGroup の scale に渡す）")]
     [SerializeField] private float scale = 0.5f;
 
+    [Header("Critical")]
+    [Tooltip("クリティカル発生確率（0～1）。例: 0 = 0%")]
+    [SerializeField] [Range(0f, 1f)] private float criticalChance = 0f;
+    [Tooltip("クリティカル時のダメージ倍率。例: 2 = 200%")]
+    [SerializeField] [Min(1f)] private float criticalMultiplier = 2f;
+
     [Header("Shot Pattern")]
     [Tooltip("発射間隔（秒）。この間隔で弾を撃つ")]
     [SerializeField] private float fireInterval = 1f;
@@ -56,4 +62,8 @@ public class BulletData : ScriptableObject
     public float FireInterval => Mathf.Max(0.01f, fireInterval);
     public int CountPerShot => Mathf.Max(1, countPerShot);
     public float SpreadAngle => spreadAngle;
+    /// <summary>クリティカル発生確率（0～1）。BulletGroup の初期値に使う。</summary>
+    public float CriticalChance => criticalChance;
+    /// <summary>クリティカル時のダメージ倍率。BulletGroup の初期値に使う。</summary>
+    public float CriticalMultiplier => Mathf.Max(1f, criticalMultiplier);
 }

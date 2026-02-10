@@ -38,6 +38,10 @@ public class BulletGroup
     private NativeReference<int> _matrixCounter;
     private int _damage;
     private float _scale;
+    /// <summary>クリティカル発生確率（0～1）。0のときは適用しない。</summary>
+    private float _criticalChance;
+    /// <summary>クリティカル時のダメージ倍率。</summary>
+    private float _criticalMultiplier;
     /// <summary>毎フレームの new を避けるため RunMatrixJob で再利用するスケール。</summary>
     private Vector3 _cachedScale;
     private DrawMatrixJob _matrixJob;
@@ -48,6 +52,10 @@ public class BulletGroup
     public int Damage => _damage;
     /// <summary>弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
     public void SetDamage(int value) { _damage = value; }
+    public float CriticalChance => _criticalChance;
+    public float CriticalMultiplier => _criticalMultiplier;
+    /// <summary>クリティカル用パラメータを設定する（Player の弾グループ用）。</summary>
+    public void SetCriticalParams(float chance, float multiplier) { _criticalChance = chance; _criticalMultiplier = multiplier; }
     /// <summary>描画用。RunMatrixJob 後に RenderManager に渡す。</summary>
     public NativeArray<Matrix4x4> Matrices => _matrices;
     /// <summary>描画数。RunMatrixJob 後に _matrixCounter.Value を参照する。</summary>
@@ -95,6 +103,8 @@ public class BulletGroup
         _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _damage = damage;
         _scale = scale;
+        _criticalChance = 0f;
+        _criticalMultiplier = 1f;
         _cachedScale = new Vector3(_scale, _scale, _scale);
         _mesh = mesh;
         _material = material;
@@ -173,6 +183,9 @@ public class BulletGroup
         _cachedCollectHitsJob.radiusSq = radius * radius;
         _cachedCollectHitsJob.positions = _positions;
         _cachedCollectHitsJob.damage = _damage;
+        _cachedCollectHitsJob.criticalChance = _criticalChance;
+        _cachedCollectHitsJob.criticalMultiplier = _criticalMultiplier;
+        _cachedCollectHitsJob.seed = (uint)UnityEngine.Time.frameCount;
         _cachedCollectHitsJob.active = _active;
         _cachedCollectHitsJob.damageOut = damageQueueOut.AsParallelWriter();
         _cachedCollectHitsJob.Schedule(_maxCount, 64).Complete();

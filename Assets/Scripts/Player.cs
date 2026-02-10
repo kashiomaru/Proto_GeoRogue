@@ -81,6 +81,8 @@ public class Player : InitializeMonobehaviour
     private float _fireRate;
     private float _bulletSpeed;
     private int _bulletCountPerShot;
+    /// <summary>クリティカル発生確率（0～1）。LevelUp で増加。</summary>
+    private float _criticalChance;
 
     public int CurrentHp => _currentHp;
     public int MaxHp => maxHp;
@@ -123,9 +125,10 @@ public class Player : InitializeMonobehaviour
         _fireRate = bulletData.FireInterval;
         _bulletSpeed = bulletData.Speed;
         _bulletCountPerShot = bulletData.CountPerShot;
+        _criticalChance = bulletData.CriticalChance;
 
         bulletManager.Initialize();
-        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material);
+        _cachedBulletGroupId = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, bulletData.CriticalChance, bulletData.CriticalMultiplier);
 
         _inputModeStateMachine = new StateMachine<PlayerInputMode, Player>(this);
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
@@ -289,6 +292,8 @@ public class Player : InitializeMonobehaviour
         _bulletSpeed = bulletData.Speed;
         _bulletCountPerShot = bulletData.CountPerShot;
         SetBulletDamage(bulletData.Damage);
+        _criticalChance = bulletData.CriticalChance;
+        bulletManager?.SetBulletGroupCritical(_cachedBulletGroupId, _criticalChance, bulletData.CriticalMultiplier);
 
         _playerShotTimer = 0f;
 
@@ -365,7 +370,17 @@ public class Player : InitializeMonobehaviour
     public int GetBulletDamage() => bulletManager != null ? bulletManager.GetBulletGroupDamage(_cachedBulletGroupId) : 0;
     /// <summary>プレイヤー弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
     public void SetBulletDamage(int value) { bulletManager?.SetBulletGroupDamage(_cachedBulletGroupId, value); }
-    
+    /// <summary>クリティカル発生確率（0～1）。</summary>
+    public float GetCriticalChance() => _criticalChance;
+    /// <summary>クリティカル発生確率を設定する。獲得ごとに+10%などで使用。最大1でクランプ。</summary>
+    public void SetCriticalChance(float value)
+    {
+        _criticalChance = Mathf.Clamp01(value);
+        bulletManager?.SetBulletGroupCritical(_cachedBulletGroupId, _criticalChance, bulletData != null ? bulletData.CriticalMultiplier : 1f);
+    }
+    /// <summary>クリティカル時のダメージ倍率（BulletData から取得）。</summary>
+    public float GetCriticalMultiplier() => bulletData != null ? bulletData.CriticalMultiplier : 1f;
+
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()
     {

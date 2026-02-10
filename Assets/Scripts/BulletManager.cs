@@ -51,7 +51,9 @@ public class BulletManager : InitializeMonobehaviour
         _bulletGroups = null;
     }
 
-    public int AddBulletGroup(int damage, float scale, Mesh mesh, Material material)
+    /// <param name="criticalChance">クリティカル発生確率（0～1）。敵弾などで使わない場合は 0。</param>
+    /// <param name="criticalMultiplier">クリティカル時のダメージ倍率。使わない場合は 1。</param>
+    public int AddBulletGroup(int damage, float scale, Mesh mesh, Material material, float criticalChance = 0f, float criticalMultiplier = 1f)
     {
         if (IsInitialized == false)
         {
@@ -60,6 +62,7 @@ public class BulletManager : InitializeMonobehaviour
 
         var groupId = _bulletGroupIdCounter++;
         var group = new BulletGroup(maxBullets, damage, scale, mesh, material);
+        group.SetCriticalParams(criticalChance, criticalMultiplier);
         _bulletGroups.Add(groupId, group);
         return groupId;
     }
@@ -94,6 +97,15 @@ public class BulletManager : InitializeMonobehaviour
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group))
         {
             group.SetDamage(damage);
+        }
+    }
+
+    /// <summary>指定した弾グループのクリティカル用パラメータを設定する（Player の弾グループ用）。</summary>
+    public void SetBulletGroupCritical(int bulletGroupId, float criticalChance, float criticalMultiplier)
+    {
+        if (_bulletGroups.TryGetValue(bulletGroupId, out var group))
+        {
+            group.SetCriticalParams(criticalChance, criticalMultiplier);
         }
     }
 
@@ -157,6 +169,9 @@ public class BulletManager : InitializeMonobehaviour
         _cachedCollideJob.bulletPositions = bulletGroup.Positions;
         _cachedCollideJob.bulletActive = bulletGroup.Active;
         _cachedCollideJob.bulletDamage = bulletGroup.Damage;
+        _cachedCollideJob.criticalChance = bulletGroup.CriticalChance;
+        _cachedCollideJob.criticalMultiplier = bulletGroup.CriticalMultiplier;
+        _cachedCollideJob.seed = (uint)Time.frameCount;
 
         _cachedCollideJob.targetCellSize = targetCellSize;
         _cachedCollideJob.targetCollisionRadiusSq = targetCollisionRadius * targetCollisionRadius;

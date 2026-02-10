@@ -3,7 +3,7 @@ using Unity.Burst;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-/// <summary>指定円（中心・半径の2乗）と当たった弾のダメージを NativeQueue に集め、該当弾を無効化する Job。</summary>
+/// <summary>指定円（中心・半径の2乗）と当たった弾のダメージを NativeQueue に集め、該当弾を無効化する Job。クリティカル判定あり。</summary>
 [BurstCompile]
 public struct BulletCollectHitsCircleJob : IJobParallelFor
 {
@@ -12,6 +12,9 @@ public struct BulletCollectHitsCircleJob : IJobParallelFor
 
     [ReadOnly] public NativeArray<float3> positions;
     public int damage;
+    public float criticalChance;
+    public float criticalMultiplier;
+    public uint seed;
 
     public NativeArray<bool> active;
     public NativeQueue<int>.ParallelWriter damageOut;
@@ -27,7 +30,16 @@ public struct BulletCollectHitsCircleJob : IJobParallelFor
         {
             return;
         }
-        damageOut.Enqueue(damage);
+        int finalDamage = damage;
+        if (criticalChance > 1e-6f)
+        {
+            var rng = Random.CreateFromIndex(seed + (uint)index);
+            if (rng.NextFloat() < criticalChance)
+            {
+                finalDamage = (int)(damage * criticalMultiplier);
+            }
+        }
+        damageOut.Enqueue(finalDamage);
         active[index] = false;
     }
 }

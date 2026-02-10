@@ -16,6 +16,8 @@ public class LevelUpManager : MonoBehaviour
         new UpgradeData { type = UpgradeType.MagnetRange, title = "Magnet" },
         new UpgradeData { type = UpgradeType.MultiShot, title = "Multi Shot" },
         new UpgradeData { type = UpgradeType.DamageUp, title = "Damage" },
+        new UpgradeData { type = UpgradeType.CriticalDamage, title = "Critical Damage" },
+        new UpgradeData { type = UpgradeType.CriticalRate, title = "Critical Rate" },
     };
 
     // 外部（GameManager）から経験値が溜まったら呼ばれる（互換性のため残す）
@@ -88,6 +90,12 @@ public class LevelUpManager : MonoBehaviour
                 break;
             case UpgradeType.DamageUp:
                 player.SetBulletDamage(player.GetBulletDamage() + 1);
+                break;
+            case UpgradeType.CriticalDamage:
+                player.SetCriticalChance(player.GetCriticalChance() + 0.1f);
+                break;
+            case UpgradeType.CriticalRate:
+                player.SetCriticalChance(player.GetCriticalChance() + 0.01f);
                 break;
         }
     }

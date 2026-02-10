@@ -22,6 +22,9 @@ public struct BulletCollideJob : IJobParallelFor
     public NativeArray<bool> bulletActive;
 
     public int bulletDamage;
+    public float criticalChance;
+    public float criticalMultiplier;
+    public uint seed;
 
     public NativeQueue<BulletDamageInfo>.ParallelWriter targetDamageQueue;
 
@@ -57,7 +60,16 @@ public struct BulletCollideJob : IJobParallelFor
 
                         if (distSq < targetCollisionRadiusSq)
                         {
-                            targetDamageQueue.Enqueue(new BulletDamageInfo(enemyPos, bulletDamage, targetIndex));
+                            int finalDamage = bulletDamage;
+                            if (criticalChance > 1e-6f)
+                            {
+                                var rng = Random.CreateFromIndex(seed + (uint)index);
+                                if (rng.NextFloat() < criticalChance)
+                                {
+                                    finalDamage = (int)(bulletDamage * criticalMultiplier);
+                                }
+                            }
+                            targetDamageQueue.Enqueue(new BulletDamageInfo(enemyPos, finalDamage, targetIndex));
                             bulletActive[index] = false;
                             return;
                         }
