@@ -1,8 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections.Generic;
 using System;
+using Cysharp.Threading.Tasks;
 
 public class UIManager : MonoBehaviour
 {
@@ -189,6 +191,7 @@ public class UIManager : MonoBehaviour
     {
         _onStartClicked = onStartClicked;
         titlePanel?.SetActive(true);
+        SetSelectedGameObjectAfterOneFrameAsync(startButton?.gameObject).Forget();
     }
 
     private void OnStartButtonClicked()
@@ -211,6 +214,7 @@ public class UIManager : MonoBehaviour
     {
         _onGameClearOkClicked = onOkClicked;
         gameClearPanel?.SetActive(true);
+        SetSelectedGameObjectAfterOneFrameAsync(gameClearOkButton?.gameObject).Forget();
     }
 
     private void OnGameClearOkButtonClicked()
@@ -297,7 +301,9 @@ public class UIManager : MonoBehaviour
         
         // パネルを表示
         levelUpPanel.SetActive(true);
-        
+        GameObject firstOption = (optionButtons != null && optionButtons.Length > 0) ? optionButtons[0]?.gameObject : null;
+        SetSelectedGameObjectAfterOneFrameAsync(firstOption).Forget();
+
         // オプションをUIに反映
         for (int i = 0; i < optionButtons.Length && i < optionTexts.Length && i < upgradeOptions.Count; i++)
         {
@@ -341,6 +347,8 @@ public class UIManager : MonoBehaviour
         Time.timeScale = 0f;
         
         levelUpPanel?.SetActive(true);
+        GameObject firstOption = (optionButtons != null && optionButtons.Length > 0) ? optionButtons[0]?.gameObject : null;
+        SetSelectedGameObjectAfterOneFrameAsync(firstOption).Forget();
 
         // オプションをUIに反映
         for (int i = 0; i < optionButtons.Length && i < optionTexts.Length && i < upgradeOptions.Count; i++)
@@ -360,6 +368,7 @@ public class UIManager : MonoBehaviour
     {
         _onRetryClicked = onRetryClicked;
         gameOverPanel?.SetActive(true);
+        SetSelectedGameObjectAfterOneFrameAsync(retryButton?.gameObject).Forget();
     }
     
     public void HideGameOver()
@@ -373,5 +382,17 @@ public class UIManager : MonoBehaviour
 
         // コールバックを呼び出し
         _onRetryClicked?.Invoke();
+    }
+
+    /// <summary>
+    /// UIをアクティブにした後、1フレーム待ってから EventSystem の選択対象を設定する。
+    /// </summary>
+    private async UniTaskVoid SetSelectedGameObjectAfterOneFrameAsync(GameObject target)
+    {
+        await UniTask.Yield();
+        if (target != null && EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(target);
+        }
     }
 }

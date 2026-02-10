@@ -308,7 +308,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Slider
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 0
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
@@ -535,7 +535,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Slider
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 0
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
@@ -773,7 +773,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.44313726, g: 0.9098039, b: 0.972549, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -2903,7 +2903,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.44313726, g: 0.9098039, b: 0.972549, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -3889,7 +3889,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Slider
   m_Navigation:
-    m_Mode: 3
+    m_Mode: 0
     m_WrapAround: 0
     m_SelectOnUp: {fileID: 0}
     m_SelectOnDown: {fileID: 0}
@@ -4404,6 +4404,47 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelUpManager
   uiManager: {fileID: 614781147}
   player: {fileID: 322285198}
+  _upgradeDatabase:
+  - type: 0
+    title: Fire Rate
+    icon: {fileID: 0}
+    weight: 1
+  - type: 1
+    title: Bullet Speed
+    icon: {fileID: 0}
+    weight: 1
+  - type: 2
+    title: Move Speed
+    icon: {fileID: 0}
+    weight: 1
+  - type: 4
+    title: Magnet
+    icon: {fileID: 0}
+    weight: 1
+  - type: 3
+    title: Multi Shot
+    icon: {fileID: 0}
+    weight: 1
+  - type: 5
+    title: Damage
+    icon: {fileID: 0}
+    weight: 1
+  - type: 6
+    title: Critical Damage
+    icon: {fileID: 0}
+    weight: 1
+  - type: 7
+    title: Critical Rate
+    icon: {fileID: 0}
+    weight: 1
+  - type: 8
+    title: Bullet Life
+    icon: {fileID: 0}
+    weight: 1
+  - type: 9
+    title: Player HP
+    icon: {fileID: 0}
+    weight: 1
 --- !u!4 &1420325301
 Transform:
   m_ObjectHideFlags: 0
@@ -5235,7 +5276,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.44313726, g: 0.9098039, b: 0.972549, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
