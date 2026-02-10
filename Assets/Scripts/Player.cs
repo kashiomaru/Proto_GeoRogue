@@ -32,9 +32,9 @@ public class Player : InitializeMonobehaviour
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
     [Tooltip("レベル2に上がるために必要な経験値（初期値）。Reset 時にもこの値に戻る")]
-    [SerializeField] private int initialNextLevelExp = 5;
+    [SerializeField] private int initialNextLevelExp = 6;
     [Tooltip("レベルアップごとに「次のレベル必要EXP」にかける倍率（例: 1.2 で毎回20%増）")]
-    [SerializeField] private float nextLevelExpMultiplier = 1.1f;
+    [SerializeField] private float nextLevelExpMultiplier = 1.15f;
 
     [Header("References")]
     [SerializeField] private BulletManager bulletManager;
