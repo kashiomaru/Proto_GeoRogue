@@ -30,16 +30,22 @@ public struct DrawMatrixJob : IJobParallelFor
     /// <summary>描画スケール（XYZ 別指定可）。</summary>
     public Vector3 scale;
 
+    /// <summary>要素ごとのスケール倍率。Length > 0 のとき scale * scaleMultipliers[index] を使用。</summary>
+    [ReadOnly] public NativeArray<float> scaleMultipliers;
+
     public unsafe void Execute(int index)
     {
         if (!activeFlags[index])
             return;
 
         Assert.IsFalse(scale == Vector3.zero, "DrawMatrixJob.scale must not be zero.");
+        float mult = scaleMultipliers.Length > 0 ? scaleMultipliers[index] : 1f;
+        Vector3 finalScale = scale * mult;
+
         Vector3 dir = (Vector3)directions[index];
         Assert.IsTrue(dir.sqrMagnitude > 0.0001f, "Direction must not be zero.");
         int writeIndex = Interlocked.Increment(ref UnsafeUtility.AsRef<int>(NativeReferenceUnsafeUtility.GetUnsafePtr(counter))) - 1;
         Quaternion rot = Quaternion.LookRotation(dir);
-        matrices[writeIndex] = Matrix4x4.TRS((Vector3)positions[index], rot, scale);
+        matrices[writeIndex] = Matrix4x4.TRS((Vector3)positions[index], rot, finalScale);
     }
 }

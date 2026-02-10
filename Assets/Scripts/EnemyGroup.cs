@@ -29,6 +29,7 @@ public class EnemyGroup
     private readonly Material _material;
     private readonly Vector3 _scale;
     private readonly BulletData _bulletData;
+    private readonly int _gemDropAmount;
     /// <summary>1発あたりの拡散用 Y 軸回転（CountPerShot 分）。初期化時に計算。Job に渡すため NativeArray。</summary>
     private NativeArray<quaternion> _bulletSpreadRotations;
     /// <summary>発射リクエストを Job から溜め、メインスレッドでドレインして SpawnEnemyBullet に渡す。</summary>
@@ -47,6 +48,8 @@ public class EnemyGroup
     private NativeArray<Matrix4x4> _matrices;
     private NativeArray<Vector4> _emissionColors;
     private NativeReference<int> _drawCounter;
+    /// <summary>DrawMatrixJob 用。敵は要素別スケールを使わないため長さ0の配列を渡す。</summary>
+    private NativeArray<float> _emptyScaleMultipliers;
     private NativeParallelMultiHashMap<int, int> _spatialMap;
     private List<Vector3> _deadPositions;
     private NativeQueue<BulletDamageInfo> _damageQueue;
@@ -122,6 +125,7 @@ public class EnemyGroup
         _material = data.Material;
         _scale = data.Scale;
         _bulletData = data.BulletData;
+        _gemDropAmount = data.GemDropAmount;
         _bulletManager = bulletManager;
 
         // 弾の拡散方向用 Y 軸回転を事前計算（countPerShot / spreadAngle はグループ固定のため）。Job に渡すため NativeArray。
@@ -163,6 +167,7 @@ public class EnemyGroup
         _matrices = new NativeArray<Matrix4x4>(_maxCount, Allocator.Persistent);
         _emissionColors = new NativeArray<Vector4>(_maxCount, Allocator.Persistent);
         _drawCounter = new NativeReference<int>(0, Allocator.Persistent);
+        _emptyScaleMultipliers = new NativeArray<float>(0, Allocator.Persistent);
 
         _spatialMap = new NativeParallelMultiHashMap<int, int>(_maxCount, Allocator.Persistent);
         _deadPositions = new List<Vector3>();
@@ -187,6 +192,7 @@ public class EnemyGroup
         _cachedMatrixJob.matrices = _matrices;
         _cachedMatrixJob.counter = _drawCounter;
         _cachedMatrixJob.scale = _scale;
+        _cachedMatrixJob.scaleMultipliers = _emptyScaleMultipliers;
 
         _cachedEmissionJob.activeFlags = _active;
         _cachedEmissionJob.flashTimers = _flashTimers;
@@ -240,6 +246,7 @@ public class EnemyGroup
         if (_matrices.IsCreated) _matrices.Dispose();
         if (_emissionColors.IsCreated) _emissionColors.Dispose();
         if (_drawCounter.IsCreated) _drawCounter.Dispose();
+        if (_emptyScaleMultipliers.IsCreated) _emptyScaleMultipliers.Dispose();
         if (_spatialMap.IsCreated) _spatialMap.Dispose();
         if (_damageQueue.IsCreated) _damageQueue.Dispose();
         if (_bulletSpreadRotations.IsCreated) _bulletSpreadRotations.Dispose();
@@ -265,7 +272,7 @@ public class EnemyGroup
     {
         foreach (var position in _deadPositions)
         {
-            gemManager?.SpawnGem(position);
+            gemManager?.SpawnGem(position, _gemDropAmount);
         }
         _deadPositions.Clear();
     }

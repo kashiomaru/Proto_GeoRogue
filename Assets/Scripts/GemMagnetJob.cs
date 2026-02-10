@@ -14,9 +14,11 @@ public struct GemMagnetJob : IJobParallelFor
     public NativeArray<float3> positions;
     public NativeArray<bool> activeFlags;
     public NativeArray<bool> flyingFlags;
-    
+    /// <summary>各ジェムの加算値。回収時にこの値をキューへ enqueue する。</summary>
+    [ReadOnly] public NativeArray<int> gemAddValues;
+
     // 回収されたジェムを記録するキュー（並列書き込み用）
-    // 各ジェムごとに1を追加して、メインスレッドでカウントする
+    // 各ジェムの加算値（gemAddValues[index]）を enqueue し、メインスレッドで合計する
     public NativeQueue<int>.ParallelWriter collectedGemQueue;
 
     public void Execute(int index)
@@ -53,7 +55,7 @@ public struct GemMagnetJob : IJobParallelFor
                     flyingFlags[index] = false;
                     
                     // 回収されたジェムをキューに追加（メインスレッドでカウントするため）
-                    collectedGemQueue.Enqueue(1);
+                    collectedGemQueue.Enqueue(gemAddValues[index]);
                 }
             }
         }

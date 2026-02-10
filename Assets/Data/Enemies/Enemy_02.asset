@@ -17,7 +17,9 @@ MonoBehaviour:
   scale: {x: 1, y: 1, z: 1}
   speed: 4
   maxHp: 2
-  flashDuration: 0.1
+  damageAmount: 1
   damageRadius: 1
-  cellSize: 2
+  collisionRadius: 1
   spawnCount: 15
+  bulletData: {fileID: 0}
+  gemDropAmount: 2

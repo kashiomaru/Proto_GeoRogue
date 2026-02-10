@@ -29,6 +29,10 @@ public class EnemyData : ScriptableObject
     [Tooltip("弾を撃つ場合に設定。null のときは弾を撃たない")]
     [SerializeField] private BulletData bulletData;
 
+    [Header("Reward")]
+    [Tooltip("撃破時にプレイヤーに加算するジェム数")]
+    [SerializeField] private int gemDropAmount = 1;
+
     public Mesh Mesh => mesh;
     public Material Material => material;
     public Vector3 Scale => scale;
@@ -39,4 +43,5 @@ public class EnemyData : ScriptableObject
     public float CollisionRadius => collisionRadius;
     public int SpawnCount => spawnCount;
     public BulletData BulletData => bulletData;
+    public int GemDropAmount => gemDropAmount;
 }

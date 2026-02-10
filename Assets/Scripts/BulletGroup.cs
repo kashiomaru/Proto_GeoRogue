@@ -36,6 +36,8 @@ public class BulletGroup
     // --- 描画用 ---
     private NativeArray<Matrix4x4> _matrices;
     private NativeReference<int> _matrixCounter;
+    /// <summary>DrawMatrixJob 用。弾は要素別スケールを使わないため長さ0の配列を渡す。</summary>
+    private NativeArray<float> _emptyScaleMultipliers;
     private int _damage;
     private float _scale;
     /// <summary>クリティカル発生確率（0～1）。0のときは適用しない。</summary>
@@ -106,6 +108,7 @@ public class BulletGroup
 
         _matrices = new NativeArray<Matrix4x4>(maxCount, Allocator.Persistent);
         _matrixCounter = new NativeReference<int>(0, Allocator.Persistent);
+        _emptyScaleMultipliers = new NativeArray<float>(0, Allocator.Persistent);
         _damage = damage;
         _scale = scale;
         _criticalChance = 0f;
@@ -133,7 +136,8 @@ public class BulletGroup
             activeFlags = _active,
             matrices = _matrices,
             counter = _matrixCounter,
-            scale = _cachedScale
+            scale = _cachedScale,
+            scaleMultipliers = _emptyScaleMultipliers
         };
     }
 
@@ -223,6 +227,7 @@ public class BulletGroup
         _matrixJob.matrices = _matrices;
         _matrixJob.counter = _matrixCounter;
         _matrixJob.scale = _cachedScale;
+        _matrixJob.scaleMultipliers = _emptyScaleMultipliers;
         _matrixCounter.Value = 0;
         _matrixJob.Schedule(_matrices.Length, 64).Complete();
     }
@@ -256,6 +261,7 @@ public class BulletGroup
         if (_lifeTime.IsCreated) _lifeTime.Dispose();
         if (_matrices.IsCreated) _matrices.Dispose();
         if (_matrixCounter.IsCreated) _matrixCounter.Dispose();
+        if (_emptyScaleMultipliers.IsCreated) _emptyScaleMultipliers.Dispose();
         _disposed = true;
     }
 }
