@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using TMPro;
 using System.Collections.Generic;
 using System;
@@ -78,6 +79,8 @@ public class UIManager : MonoBehaviour
         
         // 経験値バーの初期化
         UpdateExpBar();
+
+        LockCursor();
     }
     
     void Update()
@@ -394,5 +397,30 @@ public class UIManager : MonoBehaviour
         {
             EventSystem.current.SetSelectedGameObject(target);
         }
+    }
+
+    void UpdateCursorState()
+    {
+        if (Keyboard.current == null)
+        {
+            return;
+        }
+
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            UnlockCursor();
+        }
+    }
+
+    void LockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }
