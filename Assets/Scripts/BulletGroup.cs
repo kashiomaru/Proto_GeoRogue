@@ -170,9 +170,9 @@ public class BulletGroup
 
     /// <summary>
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。
-    /// ヒットした弾のダメージを damageQueueOut に Enqueue する。呼び出し側で NativeQueue を用意すること。
+    /// ヒットした弾のダメージとクリティカル有無を damageQueueOut に Enqueue する。呼び出し側で NativeQueue を用意すること。
     /// </summary>
-    public void CollectHitsAgainstCircle(float3 center, float radius, NativeQueue<int> damageQueueOut)
+    public void CollectHitsAgainstCircle(float3 center, float radius, NativeQueue<HitDamageInfo> damageQueueOut)
     {
         if (_disposed || !_positions.IsCreated || !damageQueueOut.IsCreated)
         {

@@ -22,7 +22,8 @@ public class DamageTextManager : MonoBehaviour
     }
 
     /// <param name="collisionRadius">表示位置をワールド座標でランダムにオフセットする範囲の半径（XZ平面）。ボスなどは CollisionRadius を渡す。0 ならオフセットなし。</param>
-    public void ShowDamage(Vector3 worldPos, int damage, float collisionRadius = 1f)
+    /// <param name="isCritical">クリティカル時は true。ダメージ数値を黄色で表示する。</param>
+    public void ShowDamage(Vector3 worldPos, int damage, float collisionRadius = 1f, bool isCritical = false)
     {
         if (_pool.Count == 0 || mainCamera == null) return;
 
@@ -30,7 +31,7 @@ public class DamageTextManager : MonoBehaviour
 
         var text = _pool[_nextIndex];
         _nextIndex = (_nextIndex + 1) % _pool.Count;
-        text.Initialize(worldPos, damage, mainCamera);
+        text.Initialize(worldPos, damage, mainCamera, isCritical);
     }
 
     /// <summary>

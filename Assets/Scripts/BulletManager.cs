@@ -10,13 +10,22 @@ public struct BulletDamageInfo
     public float3 position;
     public int damage;
     public int index;
+    public bool isCritical;
 
-    public BulletDamageInfo(float3 pos, int dmg, int idx)
+    public BulletDamageInfo(float3 pos, int dmg, int idx, bool critical = false)
     {
         position = pos;
         damage = dmg;
         index = idx;
+        isCritical = critical;
     }
+}
+
+/// <summary>円との当たり判定でヒットした弾のダメージ情報（ボス用など）。</summary>
+public struct HitDamageInfo
+{
+    public int damage;
+    public bool isCritical;
 }
 
 public class BulletManager : InitializeMonobehaviour
@@ -217,13 +226,13 @@ public class BulletManager : InitializeMonobehaviour
     }
 
     /// <summary>
-    /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。ヒットした弾のダメージを damageQueueOut に Enqueue する。
+    /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。ヒットした弾のダメージとクリティカル有無を damageQueueOut に Enqueue する。
     /// </summary>
     /// <param name="bulletGroupId">弾グループ ID</param>
     /// <param name="targetPosition">当たり判定の中心</param>
     /// <param name="targetCollisionRadius">当たり判定の半径</param>
-    /// <param name="damageQueueOut">ヒットした弾のダメージを格納するキュー（呼び出し側で用意）</param>
-    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<int> damageQueueOut)
+    /// <param name="damageQueueOut">ヒットした弾のダメージ・クリティカル有無を格納するキュー（呼び出し側で用意）</param>
+    public void ProcessDamage(int bulletGroupId, Vector3 targetPosition, float targetCollisionRadius, NativeQueue<HitDamageInfo> damageQueueOut)
     {
         if (_bulletGroups.TryGetValue(bulletGroupId, out var group) == false)
         {

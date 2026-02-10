@@ -18,6 +18,9 @@ MonoBehaviour:
   lifeTime: 2
   mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
-  fireInterval: 0.1
+  scale: 0.5
+  criticalChance: 0.01
+  criticalMultiplier: 2
+  fireInterval: 0.2
   countPerShot: 1
   spreadAngle: 10

@@ -46,10 +46,10 @@ public class GameManager : MonoBehaviour
 
     // プレイヤーへのダメージを記録するキュー（敵移動 Job 内からメインスレッドへ通知）
     private NativeQueue<int> _playerDamageQueue;
-    /// <summary>プレイヤー弾vsボスの当たり判定でヒットした弾のダメージを格納するキュー。</summary>
-    private NativeQueue<int> _bossDamageQueue;
+    /// <summary>プレイヤー弾vsボスの当たり判定でヒットした弾のダメージ・クリティカル有無を格納するキュー。</summary>
+    private NativeQueue<HitDamageInfo> _bossDamageQueue;
     /// <summary>敵弾vsプレイヤーの当たり判定でヒットした弾のダメージを格納するキュー。</summary>
-    private NativeQueue<int> _enemyBulletHitDamages;
+    private NativeQueue<HitDamageInfo> _enemyBulletHitDamages;
 
     private float _countdownTimer;
 
@@ -109,8 +109,8 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         _playerDamageQueue = new NativeQueue<int>(Allocator.Persistent);
-        _bossDamageQueue = new NativeQueue<int>(Allocator.Persistent);
-        _enemyBulletHitDamages = new NativeQueue<int>(Allocator.Persistent);
+        _bossDamageQueue = new NativeQueue<HitDamageInfo>(Allocator.Persistent);
+        _enemyBulletHitDamages = new NativeQueue<HitDamageInfo>(Allocator.Persistent);
 
         // カウントダウンタイマーを初期化
         _countdownTimer = GetEffectiveCountdownDuration();
@@ -245,9 +245,9 @@ public class GameManager : MonoBehaviour
 
             bulletManager.ProcessDamage(group.EnemyBulletGroupId, player.CachedTransform.position, player.CollisionRadius, _enemyBulletHitDamages);
 
-            while (_enemyBulletHitDamages.TryDequeue(out int damage))
+            while (_enemyBulletHitDamages.TryDequeue(out HitDamageInfo hit))
             {
-                _playerDamageQueue.Enqueue(damage);
+                _playerDamageQueue.Enqueue(hit.damage);
             }
         }
     }
@@ -263,12 +263,12 @@ public class GameManager : MonoBehaviour
 
         bulletManager.ProcessDamage(player.BulletGroupId, boss.Position, boss.CollisionRadius, _bossDamageQueue);
 
-        while (_bossDamageQueue.TryDequeue(out int damage))
+        while (_bossDamageQueue.TryDequeue(out HitDamageInfo hit))
         {
-            int actualDamage = boss.TakeDamage(damage);
+            int actualDamage = boss.TakeDamage(hit.damage);
             if (actualDamage > 0)
             {
-                damageTextManager.ShowDamage(boss.GetDamageTextPosition(), actualDamage, boss.CollisionRadius);
+                damageTextManager.ShowDamage(boss.GetDamageTextPosition(), actualDamage, boss.CollisionRadius, hit.isCritical);
             }
             if (boss.IsDead)
                 break;

@@ -294,7 +294,7 @@ public class EnemyGroup
             }
 
             if (damageInfo.damage > 0)
-                damageTextManager?.ShowDamage(damageInfo.position, damageInfo.damage, _collisionRadius);
+                damageTextManager?.ShowDamage(damageInfo.position, damageInfo.damage, _collisionRadius, damageInfo.isCritical);
         }
     }
 

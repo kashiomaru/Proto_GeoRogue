@@ -17,7 +17,7 @@ public struct BulletCollectHitsCircleJob : IJobParallelFor
     public uint seed;
 
     public NativeArray<bool> active;
-    public NativeQueue<int>.ParallelWriter damageOut;
+    public NativeQueue<HitDamageInfo>.ParallelWriter damageOut;
 
     public void Execute(int index)
     {
@@ -31,15 +31,17 @@ public struct BulletCollectHitsCircleJob : IJobParallelFor
             return;
         }
         int finalDamage = damage;
+        bool isCritical = false;
         if (criticalChance > 1e-6f)
         {
             var rng = Random.CreateFromIndex(seed + (uint)index);
             if (rng.NextFloat() < criticalChance)
             {
                 finalDamage = (int)(damage * criticalMultiplier);
+                isCritical = true;
             }
         }
-        damageOut.Enqueue(finalDamage);
+        damageOut.Enqueue(new HitDamageInfo { damage = finalDamage, isCritical = isCritical });
         active[index] = false;
     }
 }

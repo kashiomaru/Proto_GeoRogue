@@ -11,15 +11,14 @@ public class DamageText : MonoBehaviour
     private Vector3 _worldPos;
     private Camera _cam;
 
-    public void Initialize(Vector3 worldPos, int damage, Camera cam)
+    public void Initialize(Vector3 worldPos, int damage, Camera cam, bool isCritical = false)
     {
         _timer = 0;
         _worldPos = worldPos;
         _cam = cam;
         tmp.text = damage.ToString();
-
-        // 色を変える（クリティカルなら赤、とか）
-        tmp.color = Color.white;
+        // クリティカル色: 黄色(薄い)とオレンジ(濃い)の中間のゴールド
+        tmp.color = isCritical ? new Color(1f, 0.85f, 0.25f) : Color.white;
         tmp.alpha = 0.0f;
 
         gameObject.SetActive(true);
