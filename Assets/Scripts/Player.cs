@@ -31,6 +31,10 @@ public class Player : InitializeMonobehaviour
     
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
+    [Tooltip("レベル2に上がるために必要な経験値（初期値）。Reset 時にもこの値に戻る")]
+    [SerializeField] private int initialNextLevelExp = 5;
+    [Tooltip("レベルアップごとに「次のレベル必要EXP」にかける倍率（例: 1.2 で毎回20%増）")]
+    [SerializeField] private float nextLevelExpMultiplier = 1.1f;
 
     [Header("References")]
     [SerializeField] private BulletManager bulletManager;
@@ -124,6 +128,7 @@ public class Player : InitializeMonobehaviour
         _cachedTransform = transform;
         _maxHp = maxHp;
         _currentHp = maxHp;
+        _nextLevelExp = initialNextLevelExp;
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
 
@@ -263,7 +268,7 @@ public class Player : InitializeMonobehaviour
         
         // レベルを上げる
         _currentLevel++;
-        _nextLevelExp = (int)(_nextLevelExp * 1.2f); // 必要経験値を増やす（カーブは要調整）
+        _nextLevelExp = Mathf.CeilToInt(_nextLevelExp * nextLevelExpMultiplier);
         
         // フラグをリセット
         _canLevelUp = false;
@@ -286,7 +291,7 @@ public class Player : InitializeMonobehaviour
         _invincibleTimer = 0f;
         _initialFlashTimer = 0f;
         _currentExp = 0;
-        _nextLevelExp = 10;
+        _nextLevelExp = initialNextLevelExp;
         _currentLevel = 1;
         _canLevelUp = false;
 
