@@ -42,6 +42,8 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float collisionRadius = 1f;
 
     private int _currentHp;
+    /// <summary>現在の最大HP。LevelUp のプレイヤーHPアップで増加。Reset で initial に戻る。</summary>
+    private int _maxHp;
     private float _invincibleTimer = 0f;
     private bool _isInvincible = false;
     private float _initialFlashTimer = 0f; // 最初の点滅タイマー
@@ -87,7 +89,7 @@ public class Player : InitializeMonobehaviour
     private float _bulletLifeTimeBonus;
 
     public int CurrentHp => _currentHp;
-    public int MaxHp => maxHp;
+    public int MaxHp => _maxHp;
     public bool IsInvincible => _isInvincible;
 
     public bool IsDead => _currentHp <= 0;
@@ -120,6 +122,7 @@ public class Player : InitializeMonobehaviour
         Debug.Assert(bulletData != null, "[Player] bulletData が未設定です。インスペクターで Bullet Data を指定してください。");
 
         _cachedTransform = transform;
+        _maxHp = maxHp;
         _currentHp = maxHp;
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
@@ -277,6 +280,7 @@ public class Player : InitializeMonobehaviour
     /// </summary>
     public void Reset()
     {
+        _maxHp = maxHp;
         _currentHp = maxHp;
         _isInvincible = false;
         _invincibleTimer = 0f;
@@ -388,6 +392,13 @@ public class Player : InitializeMonobehaviour
     public float GetBulletLifeTimeBonus() => _bulletLifeTimeBonus;
     /// <summary>弾の寿命ボーナスを設定する（LevelUp の弾の寿命アップなどで使用）。</summary>
     public void SetBulletLifeTimeBonus(float value) { _bulletLifeTimeBonus = Mathf.Max(0f, value); }
+    /// <summary>最大HPと現在HPを同じ量だけ増やす（LevelUp のプレイヤーHPアップで使用）。減った分は回復しない。</summary>
+    public void AddMaxHpAndCurrent(int amount)
+    {
+        if (amount <= 0) return;
+        _maxHp += amount;
+        _currentHp += amount;
+    }
 
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()

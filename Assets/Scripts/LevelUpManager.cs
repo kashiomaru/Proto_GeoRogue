@@ -19,6 +19,7 @@ public class LevelUpManager : MonoBehaviour
         new UpgradeData { type = UpgradeType.CriticalDamage, title = "Critical Damage" },
         new UpgradeData { type = UpgradeType.CriticalRate, title = "Critical Rate" },
         new UpgradeData { type = UpgradeType.BulletLifeTimeUp, title = "Bullet Life" },
+        new UpgradeData { type = UpgradeType.PlayerHpUp, title = "Player HP" },
     };
 
     // 外部（GameManager）から経験値が溜まったら呼ばれる（互換性のため残す）
@@ -100,6 +101,9 @@ public class LevelUpManager : MonoBehaviour
                 break;
             case UpgradeType.BulletLifeTimeUp:
                 player.SetBulletLifeTimeBonus(player.GetBulletLifeTimeBonus() + 0.1f);
+                break;
+            case UpgradeType.PlayerHpUp:
+                player.AddMaxHpAndCurrent(1);
                 break;
         }
     }
