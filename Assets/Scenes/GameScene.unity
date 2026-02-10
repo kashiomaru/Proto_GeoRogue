@@ -1344,7 +1344,7 @@ MonoBehaviour:
   initialMoveSpeed: 5
   initialMagnetDist: 5
   playerCamera: {fileID: 330585545}
-  maxHp: 10
+  maxHp: 3
   invincibleDuration: 1
   flashIntensity: 0.8
   initialFlashInterval: 0.1

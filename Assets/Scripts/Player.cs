@@ -24,7 +24,7 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private Camera playerCamera; // カメラ参照（未設定の場合はMainCameraを自動取得）
     
     [Header("Health")]
-    [SerializeField] private int maxHp = 10;
+    [SerializeField] private int maxHp = 3;
     [SerializeField] private float invincibleDuration = 1.0f; // 無敵時間（秒）
     [SerializeField] private float flashIntensity = 0.8f; // フラッシュの最大強度
     [SerializeField] private float initialFlashInterval = 0.1f; // 最初の点滅の間隔（秒）
