@@ -127,6 +127,17 @@ public class CameraManager : InitializeMonobehaviour
         Debug.LogWarning($"CameraManager: Camera with name '{cameraName}' not found");
     }
 
+    /// <summary>ノーマル（クオータービュー）カメラの距離を設定する。CinemachineFollow の FollowOffset.z を -distance に設定。</summary>
+    public void SetNormalCameraDistance(float distance)
+    {
+        if (normalCamera == null) return;
+        var follow = normalCamera.GetComponent<CinemachineFollow>();
+        if (follow == null) return;
+        var offset = follow.FollowOffset;
+        offset.z = -Mathf.Abs(distance);
+        follow.FollowOffset = offset;
+    }
+
     // ボスのTransformをLookAtターゲットに設定
     public void SetBossLookAtTarget(Transform bossTransform)
     {

@@ -95,13 +95,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /// <summary>Normal 開始時に現在ステージの通常敵設定とカウントダウンを適用する。</summary>
+    /// <summary>Normal 開始時に現在ステージの通常敵設定・カウントダウン・ノーマルカメラ距離を適用する。</summary>
     public void PrepareForNormalStage()
     {
         StageData stage = GetCurrentStageData();
         if (stage != null)
         {
             enemyManager?.ApplyNormalEnemyConfig(stage);
+            cameraManager?.SetNormalCameraDistance(stage.CameraDistance);
         }
         _countdownTimer = GetEffectiveCountdownDuration();
     }
