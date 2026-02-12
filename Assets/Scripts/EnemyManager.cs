@@ -13,13 +13,10 @@ public class EnemyManager : InitializeMonobehaviour
     [Tooltip("ダメージ受けた際のヒットフラッシュ表示時間（全敵共通）。ステージからは上書きしない。")]
     [SerializeField] private float enemyFlashDuration = 0.1f;
 
-    [Header("Respawn (一律)")]
-    [Tooltip("プレイヤーからこの距離以上離れた敵を削除し、リスポーン候補にする")]
-    [SerializeField] private float respawnDistance = 50f;
-    [Tooltip("リスポーン位置のプレイヤーからの最小半径")]
-    [SerializeField] private float respawnMinRadius = 20f;
-    [Tooltip("リスポーン位置のプレイヤーからの最大半径")]
-    [SerializeField] private float respawnMaxRadius = 30f;
+    [Header("Respawn")]
+    [Tooltip("SpawnRadius からの余裕。リスポーン削除距離 = SpawnRadius+margin、リスポーン範囲 = SpawnRadius ～ SpawnRadius+margin")]
+    [SerializeField] private float respawnMargin = 10f;
+
     private GameObject bossPrefab;
     [Header("References")]
     [SerializeField] private RenderManager renderManager;
@@ -32,6 +29,9 @@ public class EnemyManager : InitializeMonobehaviour
     private GameObject _currentBoss; // 現在のボスインスタンス
     private BossBase _currentBossComponent; // 毎フレーム GetComponent しないようキャッシュ
     private GameObject _bossPrefabOverride; // ステージ適用時のボス Prefab（null なら上記 bossPrefab を使用）
+
+    /// <summary>ApplyNormalEnemyConfig で渡されたスポーン半径をキャッシュ。敵リスポーン・ボス出現距離に使用。</summary>
+    private float _cachedSpawnRadius;
 
     // 通常敵・ボスの有効フラグ（GameManager が SetNormalEnemiesEnabled / SetBossActive で設定）
     private bool _normalEnemiesEnabled;
@@ -246,9 +246,9 @@ public class EnemyManager : InitializeMonobehaviour
             _currentBossComponent = null;
         }
         
-        // ボスを生成（プレイヤーの真後ろ、指定距離の位置）
+        // ボスを生成（プレイヤーの真後ろ、SpawnRadius の距離の位置）
         GameObject prefabToUse = _bossPrefabOverride != null ? _bossPrefabOverride : bossPrefab;
-        float distanceToUse = respawnMinRadius;
+        float distanceToUse = _cachedSpawnRadius;
         Vector3 playerBackward = -playerForward; // プレイヤーの後ろ方向
         Vector3 bossPosition = playerPosition + playerBackward * distanceToUse; // 指定距離の位置
         bossPosition.y = 0f; // Y座標を0に固定
@@ -373,13 +373,22 @@ public class EnemyManager : InitializeMonobehaviour
     /// <summary>
     /// ステージの通常敵設定を適用する。既存のグループを破棄し、ステージの敵データスロット（最大5種類）のうち
     /// 非 null のものそれぞれで EnemyGroup を作成する。各グループの最大数は maxEnemyCountPerGroup。
+    /// 渡された spawnRadius をキャッシュし、respawnMargin からリスポーン距離・範囲を算出する。
     /// </summary>
-    public void ApplyNormalEnemyConfig(StageData stage)
+    /// <param name="stage">ステージデータ。</param>
+    /// <param name="spawnRadius">スポーン半径（画面端＋余裕）。GameManager.ComputeSpawnRadius で求めた値。</param>
+    public void ApplyNormalEnemyConfig(StageData stage, float spawnRadius)
     {
         if (stage is null)
         {
             return;
         }
+
+        _cachedSpawnRadius = spawnRadius;
+        float respawnDistance = _cachedSpawnRadius + respawnMargin;
+        float respawnMinRadius = _cachedSpawnRadius;
+        float respawnMaxRadius = _cachedSpawnRadius + respawnMargin;
+
         // 既存グループを破棄
         foreach (var g in _groups)
             g.Dispose();

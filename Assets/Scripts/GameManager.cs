@@ -41,6 +41,8 @@ public class GameManager : MonoBehaviour
     [Header("Stages")]
     [Tooltip("ステージの並び。各ステージの通常敵・ボス・カウントダウンが適用される")]
     [SerializeField] private StageData[] stages;
+    [Tooltip("spawnRadius 計算時の画面端からの余裕距離")]
+    [SerializeField] private float spawnRadiusMargin = 5f;
 
     private int _currentStageIndex;
 
@@ -95,14 +97,34 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /// <summary>Normal 開始時に現在ステージの通常敵設定・カウントダウン・ノーマルカメラ距離を適用する。</summary>
+    /// <summary>
+    /// StageData.CameraDistance とメインカメラの FOV/Aspect からスポーン半径（画面端の角までの距離＋余裕）を求める。
+    /// </summary>
+    /// <param name="stage">ステージデータ（CameraDistance に使用）。null の場合は 0 を返す。</param>
+    /// <returns>スポーン半径。カメラが取得できない場合も 0。</returns>
+    private float ComputeSpawnRadius(StageData stage)
+    {
+        if (stage == null) return 0f;
+        Camera mainCamera = player != null ? player.GetPlayerCamera() : Camera.main;
+        if (mainCamera == null) return 0f;
+
+        float h = stage.CameraDistance;
+        float halfFovRad = mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad;
+        float dv = h * Mathf.Tan(halfFovRad);
+        float dh = dv * mainCamera.aspect;
+        float cornerDistance = Mathf.Sqrt(dv * dv + dh * dh);
+        return cornerDistance + spawnRadiusMargin;
+    }
+
+    /// <summary>Normal 開始時に現在ステージの通常敵設定・カウントダウン・ノーマルカメラ距離・スポーン半径を適用する。</summary>
     public void PrepareForNormalStage()
     {
         StageData stage = GetCurrentStageData();
         if (stage != null)
         {
-            enemyManager?.ApplyNormalEnemyConfig(stage);
             cameraManager?.SetNormalCameraDistance(stage.CameraDistance);
+            float spawnRadius = ComputeSpawnRadius(stage);
+            enemyManager?.ApplyNormalEnemyConfig(stage, spawnRadius);
         }
         _countdownTimer = GetEffectiveCountdownDuration();
     }
