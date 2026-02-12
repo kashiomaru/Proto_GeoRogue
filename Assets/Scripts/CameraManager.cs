@@ -15,30 +15,32 @@ public enum CameraMode
 public class CameraManager : InitializeMonobehaviour
 {
     [Header("Cinemachine Cameras")]
-    [SerializeField] private CinemachineCamera[] virtualCameras; // 切り替え可能なカメラの配列
-    
+    [SerializeField] private CinemachineCamera normalCamera;   // Normal（クオータービュー）用
+    [SerializeField] private CinemachineCamera bossCamera;     // Boss（TPS）用
+
     [Header("Settings")]
     [SerializeField] private CameraMode defaultCameraMode = CameraMode.QuarterView; // デフォルトのカメラモード
-    [SerializeField] private int quarterViewCameraIndex = 0; // クオータービューに対応するカメラのインデックス
-    [SerializeField] private int tpsCameraIndex = 1; // TPSに対応するカメラのインデックス
     [SerializeField] private LookAtController lookAtController; // 回転処理を行うLookAtControllerへの参照
     [SerializeField] private CinemachineBrain cinemachineBrain; // 即時切り替え時に使用（未設定ならシーンから取得）
-    
-    private int _currentCameraIndex = -1;
 
-    /// <summary>モードからカメラインデックスを取得する</summary>
-    private int GetCameraIndexForMode(CameraMode mode)
+    private CameraMode? _currentCameraMode;
+
+    /// <summary>モードに対応するカメラを取得する</summary>
+    private CinemachineCamera GetCameraByMode(CameraMode mode)
     {
         return mode switch
         {
-            CameraMode.QuarterView => quarterViewCameraIndex,
-            CameraMode.TPS => tpsCameraIndex,
-            _ => quarterViewCameraIndex
+            CameraMode.QuarterView => normalCamera,
+            CameraMode.TPS => bossCamera,
+            _ => normalCamera
         };
     }
 
     protected override void InitializeInternal()
     {
+        UnityEngine.Debug.Assert(normalCamera != null, "CameraManager: Normal カメラが未設定です");
+        UnityEngine.Debug.Assert(bossCamera != null, "CameraManager: Boss カメラが未設定です");
+
         // 時間停止時でもカメラブレンドが動くようにする
         var brain = GetBrain();
         if (brain != null)
@@ -47,10 +49,7 @@ public class CameraManager : InitializeMonobehaviour
         }
 
         // デフォルトモードのカメラを設定
-        if (virtualCameras != null && virtualCameras.Length > 0)
-        {
-            SwitchCamera(defaultCameraMode);
-        }
+        SwitchCamera(defaultCameraMode);
     }
 
     private CinemachineBrain GetBrain()
@@ -63,51 +62,37 @@ public class CameraManager : InitializeMonobehaviour
         // クリーンアップ処理が必要な場合はここに実装
     }
     
-    // カメラを切り替える（インデックス指定・内部用。外部からはモード指定のみ使用する）
-    // immediate: true のときブレンドなしで即時切り替え、false のときはブレンド補間
-    private void SwitchCamera(int cameraIndex, bool immediate = false)
-    {
-        if (virtualCameras == null || cameraIndex < 0 || cameraIndex >= virtualCameras.Length)
-        {
-            Debug.LogWarning($"CameraManager: Invalid camera index {cameraIndex}");
-            return;
-        }
-        
-        // 現在のカメラのPriorityを下げる
-        if (_currentCameraIndex >= 0 && _currentCameraIndex < virtualCameras.Length)
-        {
-            if (virtualCameras[_currentCameraIndex] != null)
-            {
-                virtualCameras[_currentCameraIndex].Priority = 0;
-            }
-        }
-        
-        // 新しいカメラのPriorityを上げる
-        if (virtualCameras[cameraIndex] != null)
-        {
-            virtualCameras[cameraIndex].Priority = 10;
-            _currentCameraIndex = cameraIndex;
-        }
-        else
-        {
-            Debug.LogWarning($"CameraManager: Camera at index {cameraIndex} is null");
-            return;
-        }
-        
-        // 即時切り替えのときはブレンドをキャンセルして即座に反映
-        if (immediate)
-        {
-            GetBrain()?.ResetState();
-        }
-    }
-
     /// <summary>カメラをモードで切り替える（クオータービュー / TPS）</summary>
     /// <param name="mode">切り替え先のカメラモード</param>
     /// <param name="immediate">true のときブレンドなしで即時切り替え</param>
     public void SwitchCamera(CameraMode mode, bool immediate = false)
     {
-        int index = GetCameraIndexForMode(mode);
-        SwitchCamera(index, immediate);
+        var target = GetCameraByMode(mode);
+        if (target == null)
+        {
+            Debug.LogWarning($"CameraManager: モード {mode} に対応するカメラがありません");
+            return;
+        }
+
+        // 現在のカメラのPriorityを下げる
+        if (_currentCameraMode.HasValue)
+        {
+            var current = GetCameraByMode(_currentCameraMode.Value);
+            if (current != null)
+            {
+                current.Priority = 0;
+            }
+        }
+
+        // 新しいカメラのPriorityを上げる
+        target.Priority = 10;
+        _currentCameraMode = mode;
+
+        // 即時切り替えのときはブレンドをキャンセルして即座に反映
+        if (immediate)
+        {
+            GetBrain()?.ResetState();
+        }
     }
 
     /// <summary>
@@ -129,45 +114,19 @@ public class CameraManager : InitializeMonobehaviour
     // カメラを名前で切り替える
     public void SwitchCameraByName(string cameraName)
     {
-        if (virtualCameras == null)
+        if (normalCamera != null && normalCamera.name == cameraName)
         {
+            SwitchCamera(CameraMode.QuarterView);
             return;
         }
-
-        for (int i = 0; i < virtualCameras.Length; i++)
+        if (bossCamera != null && bossCamera.name == cameraName)
         {
-            if (virtualCameras[i] != null && virtualCameras[i].name == cameraName)
-            {
-                SwitchCamera(i);
-                return;
-            }
+            SwitchCamera(CameraMode.TPS);
+            return;
         }
-        
         Debug.LogWarning($"CameraManager: Camera with name '{cameraName}' not found");
     }
-    
-    // 現在のカメラインデックスを取得
-    public int GetCurrentCameraIndex()
-    {
-        return _currentCameraIndex;
-    }
 
-    /// <summary>現在のカメラモードを取得する</summary>
-    public CameraMode GetCurrentCameraMode()
-    {
-        if (_currentCameraIndex == tpsCameraIndex)
-        {
-            return CameraMode.TPS;
-        }
-        return CameraMode.QuarterView;
-    }
-    
-    // カメラの数を取得
-    public int GetCameraCount()
-    {
-        return virtualCameras != null ? virtualCameras.Length : 0;
-    }
-    
     // ボスのTransformをLookAtターゲットに設定
     public void SetBossLookAtTarget(Transform bossTransform)
     {
