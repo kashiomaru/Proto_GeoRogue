@@ -440,12 +440,7 @@ public class GameManager : MonoBehaviour
     {
         cameraManager?.SwitchCamera(mode, immediate);
     }
-    
-    public void SwitchCameraByName(string cameraName)
-    {
-        cameraManager?.SwitchCameraByName(cameraName);
-    }
-    
+
     // プレイヤーの位置を取得（ボス用）
     public Vector3 GetPlayerPosition()
     {
