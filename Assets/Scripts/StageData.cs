@@ -15,6 +15,8 @@ public class StageData : ScriptableObject
     [SerializeField] private string stageDisplayName;
     [Tooltip("カウントダウン時間（秒）。0 以下なら GameManager のデフォルトを使用")]
     [SerializeField] private float countdownDuration = 60f;
+    [Tooltip("カメラとプレイヤーとの距離")]
+    [SerializeField] private float cameraDistance = 18f;
 
     [Header("Normal Enemy")]
     [Tooltip("このステージで出現させる敵データ（最大5種類）。先頭の非nullが現在の適用対象（複数対応は今後拡張）")]
@@ -31,6 +33,7 @@ public class StageData : ScriptableObject
 
     public string StageDisplayName => stageDisplayName;
     public float CountdownDuration => countdownDuration;
+    public float CameraDistance => cameraDistance;
 
     /// <summary>指定スロットの敵データを取得する（0～4）。範囲外は null。</summary>
     public EnemyData GetEnemyData(int index)
