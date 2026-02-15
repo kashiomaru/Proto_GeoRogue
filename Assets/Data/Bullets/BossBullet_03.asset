@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7bb0fbef67bd4b0ab732b80c7d56902, type: 3}
-  m_Name: PlayerBullet
+  m_Name: BossBullet_03
   m_EditorClassIdentifier: Assembly-CSharp::BulletData
   directionRotation: 0
-  curveValue: 0
-  speed: 20
+  curveValue: 20
+  speed: 8
   damage: 1
-  lifeTime: 1
-  mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
-  material: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
+  lifeTime: 15
+  mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  material: {fileID: 2100000, guid: 556a1e60458b64ed3979020300f4c0dd, type: 2}
   scale: 0.5
-  criticalChance: 0.1
+  criticalChance: 0
   criticalMultiplier: 1.5
-  fireInterval: 0.2
-  countPerShot: 1
+  fireInterval: 4
+  countPerShot: 4
   spreadAngle: 10

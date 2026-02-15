@@ -109,14 +109,14 @@ MonoBehaviour:
   rotationSpeed: 3
   damageRadius: 1
   damageAmount: 1
-  maxHp: 2800
+  maxHp: 51200
   collisionRadius: 1.5
   flashDuration: 0.1
   flashInterval: 0.1
   flashIntensity: 0.4
   bossRenderer: {fileID: 8381658876499619347}
   damageTextPositionAnchor: {fileID: 696193238501255003}
-  bulletData: {fileID: 11400000, guid: 4c6099b25170e4f28a6589488a093c24, type: 2}
+  bulletData: {fileID: 11400000, guid: abddff0b56a67482493fae3d25b3a57b, type: 2}
 --- !u!1 &2625414291489487663
 GameObject:
   m_ObjectHideFlags: 0
