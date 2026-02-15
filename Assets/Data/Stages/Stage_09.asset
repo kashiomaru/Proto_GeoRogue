@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfb6f46c292324f4bbdbb145e3c9f405, type: 3}
+  m_Name: Stage_09
+  m_EditorClassIdentifier: Assembly-CSharp::StageData
+  stageDisplayName: Stage 9
+  countdownDuration: 60
+  enemyData0: {fileID: 11400000, guid: cc1fd56bdb5c6409a8fb692fc176a953, type: 2}
+  enemyData1: {fileID: 0}
+  enemyData2: {fileID: 0}
+  enemyData3: {fileID: 0}
+  enemyData4: {fileID: 0}
+  bossPrefab: {fileID: 1309990021478730655, guid: 6e16e97244c5649bd88f0a234774caba, type: 3}
