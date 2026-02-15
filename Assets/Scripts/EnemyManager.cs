@@ -298,6 +298,12 @@ public class EnemyManager : InitializeMonobehaviour
         return _currentBossComponent;
     }
 
+    /// <summary>現在のボスの弾グループハンドルを取得（弾を撃たないボスは null）。</summary>
+    public IBulletGroupHandler GetCurrentBossBulletHandler()
+    {
+        return _currentBossComponent?.GetBulletHandler();
+    }
+
     /// <summary>ボスの移動処理。プレイヤーへの接触ダメージは playerDamageQueue に登録する。</summary>
     public void ProcessBossMovement(float3 playerPos, NativeQueue<int> playerDamageQueue)
     {

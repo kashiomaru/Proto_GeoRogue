@@ -26,6 +26,9 @@ public abstract class BossBase : MonoBehaviour
     [SerializeField] protected Renderer bossRenderer;
     [SerializeField] protected Transform damageTextPositionAnchor;
 
+    [Header("Bullet（弾を撃つボス用）")]
+    [SerializeField] protected BulletData bulletData;
+
     protected int _currentHp;
     protected int _effectiveMaxHp;
     protected Func<Vector3> getPlayerPosition;
@@ -35,6 +38,7 @@ public abstract class BossBase : MonoBehaviour
     protected float _flashTotalTime;
     protected MaterialPropertyBlock _mpb;
     protected int _propertyID_EmissionColor;
+    protected IBulletGroupHandler _bulletHandler;
 
     /// <summary>
     /// ボスの初期化（生成時に呼び出す）
@@ -45,11 +49,31 @@ public abstract class BossBase : MonoBehaviour
         _bulletManager = bulletManager;
         _effectiveMaxHp = maxHp;
         _currentHp = _effectiveMaxHp;
+        _bulletHandler = null;
+
+        if (bulletData != null && bulletManager != null)
+        {
+            _bulletHandler = bulletManager.AddBulletGroup(
+                bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material,
+                bulletData.CriticalChance, bulletData.CriticalMultiplier, bulletData.CurveValue);
+        }
 
         if (bossRenderer != null)
         {
             _mpb = new MaterialPropertyBlock();
             _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+        }
+    }
+
+    /// <summary>弾を撃つボスの場合、その弾グループのハンドルを返す。撃たない場合は null。</summary>
+    public virtual IBulletGroupHandler GetBulletHandler() => _bulletHandler;
+
+    void OnDestroy()
+    {
+        if (_bulletHandler != null && _bulletManager != null)
+        {
+            _bulletManager.RemoveBulletGroup(_bulletHandler);
+            _bulletHandler = null;
         }
     }
 

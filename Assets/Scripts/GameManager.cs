@@ -277,6 +277,17 @@ public class GameManager : MonoBehaviour
                 _playerDamageQueue.Enqueue(hit.damage);
             }
         }
+
+        // ボス弾とプレイヤーの当たり判定（ボス戦時）
+        var bossBulletHandler = enemyManager.GetCurrentBossBulletHandler();
+        if (bossBulletHandler != null)
+        {
+            bulletManager.ProcessDamage(bossBulletHandler, player.CachedTransform.position, player.CollisionRadius, _enemyBulletHitDamages);
+            while (_enemyBulletHitDamages.TryDequeue(out HitDamageInfo hit))
+            {
+                _playerDamageQueue.Enqueue(hit.damage);
+            }
+        }
     }
 
     /// <summary>
