@@ -33,7 +33,7 @@ public class BulletData : ScriptableObject
     [Tooltip("クリティカル発生確率（0～1）。例: 0 = 0%")]
     [SerializeField] [Range(0f, 1f)] private float criticalChance = 0f;
     [Tooltip("クリティカル時のダメージ倍率。例: 2 = 200%")]
-    [SerializeField] [Min(1f)] private float criticalMultiplier = 2f;
+    [SerializeField] [Min(1f)] private float criticalMultiplier = 1.5f;
 
     [Header("Shot Pattern")]
     [Tooltip("発射間隔（秒）。この間隔で弾を撃つ")]

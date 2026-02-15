@@ -15,7 +15,7 @@ MonoBehaviour:
   stageDisplayName: Stage 8
   countdownDuration: 60
   enemyData0: {fileID: 11400000, guid: f708192a3b4c5d6e7f80912233445566, type: 2}
-  enemyData1: {fileID: 11400000, guid: d5e6f708192a3b4c5d6e7f8091223344, type: 2}
+  enemyData1: {fileID: 11400000, guid: 2a3b4c5d6e7f80912233445566778899, type: 2}
   enemyData2: {fileID: 0}
   enemyData3: {fileID: 0}
   enemyData4: {fileID: 0}
