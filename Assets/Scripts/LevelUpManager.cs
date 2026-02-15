@@ -116,10 +116,10 @@ public class LevelUpManager : MonoBehaviour
                 player.SetBulletDamage(player.GetBulletDamage() + 1);
                 break;
             case UpgradeType.CriticalDamage:
-                player.SetCriticalChance(player.GetCriticalChance() + 0.1f);
+                player.SetCriticalMultiplier(player.GetCriticalMultiplier() + 0.5f);
                 break;
             case UpgradeType.CriticalRate:
-                player.SetCriticalChance(player.GetCriticalChance() + 0.01f);
+                player.SetCriticalChance(player.GetCriticalChance() + 0.05f);
                 break;
             case UpgradeType.BulletLifeTimeUp:
                 player.SetBulletLifeTimeBonus(player.GetBulletLifeTimeBonus() + 0.1f);

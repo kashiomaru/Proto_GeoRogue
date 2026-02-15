@@ -89,6 +89,8 @@ public class Player : InitializeMonobehaviour
     private int _bulletCountPerShot;
     /// <summary>クリティカル発生確率（0～1）。LevelUp で増加。</summary>
     private float _criticalChance;
+    /// <summary>クリティカル時のダメージ倍率。LevelUp で増加。</summary>
+    private float _criticalMultiplier;
     /// <summary>弾の寿命ボーナス（秒）。LevelUp で増加。発射時に BulletData.LifeTime に加算する。</summary>
     private float _bulletLifeTimeBonus;
 
@@ -137,9 +139,10 @@ public class Player : InitializeMonobehaviour
         _bulletSpeed = bulletData.Speed;
         _bulletCountPerShot = bulletData.CountPerShot;
         _criticalChance = bulletData.CriticalChance;
+        _criticalMultiplier = bulletData != null ? bulletData.CriticalMultiplier : 1f;
 
         bulletManager.Initialize();
-        _bulletHandler = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, bulletData.CriticalChance, bulletData.CriticalMultiplier, bulletData.CurveValue);
+        _bulletHandler = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, _criticalChance, _criticalMultiplier, bulletData.CurveValue);
 
         _inputModeStateMachine = new StateMachine<PlayerInputMode, Player>(this);
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
@@ -305,7 +308,8 @@ public class Player : InitializeMonobehaviour
         _bulletCountPerShot = bulletData.CountPerShot;
         SetBulletDamage(bulletData.Damage);
         _criticalChance = bulletData.CriticalChance;
-        _bulletHandler?.SetCritical(_criticalChance, bulletData.CriticalMultiplier);
+        _criticalMultiplier = bulletData != null ? bulletData.CriticalMultiplier : 1f;
+        _bulletHandler?.SetCritical(_criticalChance, _criticalMultiplier);
         _bulletLifeTimeBonus = 0f;
 
         _playerShotTimer = 0f;
@@ -390,10 +394,16 @@ public class Player : InitializeMonobehaviour
     public void SetCriticalChance(float value)
     {
         _criticalChance = Mathf.Clamp01(value);
-        _bulletHandler?.SetCritical(_criticalChance, bulletData != null ? bulletData.CriticalMultiplier : 1f);
+        _bulletHandler?.SetCritical(_criticalChance, _criticalMultiplier);
     }
-    /// <summary>クリティカル時のダメージ倍率（BulletData から取得）。</summary>
-    public float GetCriticalMultiplier() => bulletData != null ? bulletData.CriticalMultiplier : 1f;
+    /// <summary>クリティカル時のダメージ倍率。</summary>
+    public float GetCriticalMultiplier() => _criticalMultiplier;
+    /// <summary>クリティカル時のダメージ倍率を設定する（LevelUp のクリティカルダメージアップで使用）。</summary>
+    public void SetCriticalMultiplier(float value)
+    {
+        _criticalMultiplier = Mathf.Max(1f, value);
+        _bulletHandler?.SetCritical(_criticalChance, _criticalMultiplier);
+    }
     /// <summary>弾の寿命ボーナス（秒）。発射時に BulletData.LifeTime に加算される。</summary>
     public float GetBulletLifeTimeBonus() => _bulletLifeTimeBonus;
     /// <summary>弾の寿命ボーナスを設定する（LevelUp の弾の寿命アップなどで使用）。</summary>
