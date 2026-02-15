@@ -19,4 +19,4 @@ MonoBehaviour:
   enemyData2: {fileID: 0}
   enemyData3: {fileID: 0}
   enemyData4: {fileID: 0}
-  bossPrefab: {fileID: 1309990021478730655, guid: 6e16e97244c5649bd88f0a234774caba, type: 3}
+  bossPrefab: {fileID: 1309990021478730655, guid: 293a4b5c6d7e8f901223344556677889, type: 3}
