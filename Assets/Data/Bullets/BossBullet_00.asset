@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7bb0fbef67bd4b0ab732b80c7d56902, type: 3}
+  m_Name: BossBullet_00
+  m_EditorClassIdentifier: Assembly-CSharp::BulletData
+  directionType: 0
+  speed: 5
+  damage: 1
+  lifeTime: 10
+  mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  material: {fileID: 2100000, guid: 556a1e60458b64ed3979020300f4c0dd, type: 2}
+  fireInterval: 5
+  countPerShot: 1
+  spreadAngle: 10
