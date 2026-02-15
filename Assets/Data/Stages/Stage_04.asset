@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageData
   stageDisplayName: Stage 1
   countdownDuration: 60
-  enemyData0: {fileID: 11400000, guid: cc1fd56bdb5c6409a8fb692fc176a953, type: 2}
-  enemyData1: {fileID: 0}
+  enemyData0: {fileID: 11400000, guid: afcd96046c1554f8e89b6f771db42eb2, type: 2}
+  enemyData1: {fileID: 11400000, guid: 3ef501967bea6453c85810198bf7b719, type: 2}
   enemyData2: {fileID: 0}
   enemyData3: {fileID: 0}
   enemyData4: {fileID: 0}

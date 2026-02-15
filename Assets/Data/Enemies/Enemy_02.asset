@@ -16,10 +16,10 @@ MonoBehaviour:
   material: {fileID: 2100000, guid: 5e60ad6f09f7d4fdaa8594399ff2bcd8, type: 2}
   scale: {x: 1, y: 1, z: 1}
   speed: 4
-  maxHp: 2
+  maxHp: 3
   damageAmount: 1
   damageRadius: 1
   collisionRadius: 1
-  spawnCount: 15
+  spawnCount: 18
   bulletData: {fileID: 0}
   gemDropAmount: 2

@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2acb72eb190ea47eb9293dbf221dcad7, type: 3}
-  m_Name: Enemy_04
+  m_Name: Enemy_06
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
   mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 5e60ad6f09f7d4fdaa8594399ff2bcd8, type: 2}
   scale: {x: 1, y: 1, z: 1}
   speed: 2.5
-  maxHp: 2
+  maxHp: 3
   damageAmount: 1
   damageRadius: 1
   collisionRadius: 1
-  spawnCount: 12
-  bulletData: {fileID: 11400000, guid: 3b3414c638894472b9302942caf3e851, type: 2}
-  gemDropAmount: 2
+  spawnCount: 14
+  bulletData: {fileID: 11400000, guid: a2b3c4d5e6f708192a3b4c5d6e7f8091, type: 2}
+  gemDropAmount: 3

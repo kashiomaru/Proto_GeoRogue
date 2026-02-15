@@ -15,11 +15,11 @@ MonoBehaviour:
   mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 5e60ad6f09f7d4fdaa8594399ff2bcd8, type: 2}
   scale: {x: 1, y: 1, z: 1}
-  speed: 2
-  maxHp: 1
+  speed: 2.5
+  maxHp: 2
   damageAmount: 1
   damageRadius: 1
   collisionRadius: 1
-  spawnCount: 10
+  spawnCount: 12
   bulletData: {fileID: 11400000, guid: 4042353be6163441688176725bb0b249, type: 2}
   gemDropAmount: 3
