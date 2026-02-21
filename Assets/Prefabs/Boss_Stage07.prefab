@@ -116,7 +116,7 @@ MonoBehaviour:
   flashIntensity: 0.4
   bossRenderer: {fileID: 8381658876499619347}
   damageTextPositionAnchor: {fileID: 696193238501255003}
-  bulletData: {fileID: 0}
+  bulletData: {fileID: 11400000, guid: 5d3313f7c7a6e475b91de24f9b1e3cc1, type: 2}
 --- !u!1 &2625414291489487663
 GameObject:
   m_ObjectHideFlags: 0

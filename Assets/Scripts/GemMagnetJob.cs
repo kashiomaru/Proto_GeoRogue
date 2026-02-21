@@ -9,11 +9,14 @@ public struct GemMagnetJob : IJobParallelFor
     public float deltaTime;
     public float3 playerPos;
     public float magnetDistSq;
-    public float moveSpeed;
+    public float acceleration;  // 毎秒の加速度
+    public float maxSpeed;
 
     public NativeArray<float3> positions;
     public NativeArray<bool> activeFlags;
     public NativeArray<bool> flyingFlags;
+    /// <summary>各ジェムの現在速度。吸い寄せ中に毎フレーム加速する。</summary>
+    public NativeArray<float> speeds;
     /// <summary>各ジェムの加算値。回収時にこの値をキューへ enqueue する。</summary>
     [ReadOnly] public NativeArray<int> gemAddValues;
 
@@ -39,10 +42,11 @@ public struct GemMagnetJob : IJobParallelFor
             // 吸い寄せモードON
             flyingFlags[index] = true;
 
-            // プレイヤーに向かって移動
+            // プレイヤーに向かって移動（毎フレーム加速）
             float3 dir = math.normalize(playerPos - currentPos);
-            // 加速させると気持ちいいが、まずは等速で
-            float3 newPos = currentPos + (dir * moveSpeed * deltaTime);
+            float currentSpeed = math.min(speeds[index] + acceleration * deltaTime, maxSpeed);
+            speeds[index] = currentSpeed;
+            float3 newPos = currentPos + (dir * currentSpeed * deltaTime);
             positions[index] = newPos;
 
             // プレイヤーに到達（回収）

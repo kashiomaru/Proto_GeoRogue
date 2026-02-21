@@ -7,7 +7,10 @@ public class GemManager : InitializeMonobehaviour
 {
     [SerializeField] private int maxGems = 1000;
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private float gemSpeed = 15.0f;  // 吸い寄せ速度
+    [SerializeField] private float gemSpeed = 15.0f;  // 吸い寄せの最大速度（後方互換・参照用）
+    [SerializeField] private float initialGemSpeed = 5.0f;   // 吸い寄せ開始時の初速
+    [SerializeField] private float maxGemSpeed = 30.0f;       // 吸い寄せ中の最大速度
+    [SerializeField] private float gemAcceleration = 25.0f;  // 吸い寄せ中の加速度（/秒）
     [SerializeField] private float gemScale = 0.4f;  // 描画スケール（Matrix4x4 用）
 
     [Header("References")]
@@ -27,6 +30,8 @@ public class GemManager : InitializeMonobehaviour
     private NativeArray<int> _gemAddValues;
     /// <summary>描画スケール倍率。加算値 n に対して 1 + 0.1*n（1→1.1, 2→1.2）。</summary>
     private NativeArray<float> _gemScaleMultipliers;
+    /// <summary>各ジェムの現在速度。吸い寄せ中に加速する。</summary>
+    private NativeArray<float> _gemSpeeds;
     /// <summary>DrawMatrixJob の書き込みインデックス用。毎フレーム 0 にリセット。</summary>
     private NativeReference<int> _gemMatrixCounter;
 
@@ -58,6 +63,7 @@ public class GemManager : InitializeMonobehaviour
         _gemAddValues[id] = addValue;
         _gemScaleMultipliers[id] = 1f + 0.1f * addValue;
         _gemDirections[id] = new float3(0f, 0f, 1f); // 回転なし（LookRotation で identity 相当）
+        _gemSpeeds[id] = initialGemSpeed;
     }
 
     protected override void InitializeInternal()
@@ -70,8 +76,12 @@ public class GemManager : InitializeMonobehaviour
         _gemDirections = new NativeArray<float3>(maxGems, Allocator.Persistent);
         _gemAddValues = new NativeArray<int>(maxGems, Allocator.Persistent);
         _gemScaleMultipliers = new NativeArray<float>(maxGems, Allocator.Persistent);
+        _gemSpeeds = new NativeArray<float>(maxGems, Allocator.Persistent);
         _gemMatrixCounter = new NativeReference<int>(0, Allocator.Persistent);
         _collectedGemQueue = new NativeQueue<int>(Allocator.Persistent);
+
+        for (int i = 0; i < maxGems; i++)
+            _gemSpeeds[i] = initialGemSpeed;
 
         _cachedInitJob.active = _gemActive;
         _cachedInitJob.flying = _gemIsFlying;
@@ -79,11 +89,13 @@ public class GemManager : InitializeMonobehaviour
         _cachedInitJob.Schedule(maxGems, 64).Complete();
 
         // フレーム共通の Job フィールドを一度だけ設定
-        _gemMagnetJob.moveSpeed = gemSpeed;
         _gemMagnetJob.positions = _gemPositions;
         _gemMagnetJob.activeFlags = _gemActive;
         _gemMagnetJob.flyingFlags = _gemIsFlying;
         _gemMagnetJob.gemAddValues = _gemAddValues;
+        _gemMagnetJob.speeds = _gemSpeeds;
+        _gemMagnetJob.acceleration = gemAcceleration;
+        _gemMagnetJob.maxSpeed = maxGemSpeed;
 
         _gemMatrixJob.positions = _gemPositions;
         _gemMatrixJob.directions = _gemDirections;
@@ -105,6 +117,8 @@ public class GemManager : InitializeMonobehaviour
         _gemMagnetJob.deltaTime = Time.deltaTime;
         _gemMagnetJob.playerPos = (float3)playerTransform.position;
         _gemMagnetJob.magnetDistSq = magnetDist * magnetDist;
+        _gemMagnetJob.acceleration = gemAcceleration;
+        _gemMagnetJob.maxSpeed = maxGemSpeed;
         _gemMagnetJob.collectedGemQueue = _collectedGemQueue.AsParallelWriter();
         _gemMagnetJob.Schedule(maxGems, 64).Complete();
 
@@ -132,6 +146,8 @@ public class GemManager : InitializeMonobehaviour
             _gemAddValues.Dispose();
         if (_gemScaleMultipliers.IsCreated)
             _gemScaleMultipliers.Dispose();
+        if (_gemSpeeds.IsCreated)
+            _gemSpeeds.Dispose();
         if (_gemMatrixCounter.IsCreated)
             _gemMatrixCounter.Dispose();
         if (_collectedGemQueue.IsCreated)
