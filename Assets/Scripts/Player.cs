@@ -104,6 +104,8 @@ public class Player : InitializeMonobehaviour
     public int CurrentExp => _currentExp;
     public int NextLevelExp => _nextLevelExp;
     public int CurrentLevel => _currentLevel;
+    /// <summary>最大レベル。デバッグ表示などに使用。</summary>
+    public int MaxLevel => maxLevel;
     public bool CanLevelUp => _canLevelUp;
 
     /// <summary>プレイヤー弾グループのハンドル（当たり判定などで BulletManager に渡す）。</summary>

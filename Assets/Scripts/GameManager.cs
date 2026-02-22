@@ -93,6 +93,12 @@ public class GameManager : MonoBehaviour
     /// <summary>プレイヤーがレベルアップ可能か。Normal/Boss の OnUpdate で LevelUp 遷移の判定に使用。</summary>
     public bool PlayerCanLevelUp => player != null && player.CanLevelUp;
 
+    /// <summary>現在のステージインデックス（0始まり）。デバッグ表示などに使用。</summary>
+    public int CurrentStageIndex => _currentStageIndex;
+
+    /// <summary>ステージ総数。デバッグ表示などに使用。</summary>
+    public int TotalStageCount => stages != null ? stages.Length : 0;
+
     /// <summary>現在プレイ中のステージデータ。ステージ未設定の場合は null。</summary>
     public StageData GetCurrentStageData()
     {
