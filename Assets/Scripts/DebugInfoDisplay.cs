@@ -12,11 +12,23 @@ public class DebugInfoDisplay : MonoBehaviour
     [SerializeField] private Player player;
     [SerializeField] private TextMeshProUGUI debugText;
 
+    [Header("Display")]
+    [Tooltip("デバッグ情報の表示をオンにする。インスペクターで切り替え可能。")]
+    [SerializeField] private bool showDebugInfo = false;
+
     void Update()
     {
         if (debugText == null)
             return;
 
+        // トグルキーが押されたら表示を反転
+        if (!showDebugInfo)
+        {
+            debugText.enabled = false;
+            return;
+        }
+
+        debugText.enabled = true;
         var sb = new System.Text.StringBuilder();
 
         // ゲームステート
