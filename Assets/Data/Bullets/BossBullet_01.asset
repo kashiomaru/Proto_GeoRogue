@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BulletData
   directionRotation: 0
   curveValue: 0
-  speed: 6
+  speed: 10
   damage: 1
   lifeTime: 15
   mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
