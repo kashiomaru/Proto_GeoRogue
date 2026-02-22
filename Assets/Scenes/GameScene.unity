@@ -1876,17 +1876,7 @@ MonoBehaviour:
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
   renderManager: {fileID: 454398054}
-  stages:
-  - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
-  - {fileID: 11400000, guid: 82e23f7fd44e045fea0179e46e34b497, type: 2}
-  - {fileID: 11400000, guid: dec9a3ceb584449eaa32734dcfea13f1, type: 2}
-  - {fileID: 11400000, guid: 90dbf098d7d1743ba972eca11fcfed72, type: 2}
-  - {fileID: 11400000, guid: 9158c821bb3f343c48e947b1a172e563, type: 2}
-  - {fileID: 11400000, guid: 1e88816efd89c45688552e9ec4b0592c, type: 2}
-  - {fileID: 11400000, guid: 547e7a3b486024a88adf45f3d4ff0c55, type: 2}
-  - {fileID: 11400000, guid: a7944ca3b205541a896a36351a88b236, type: 2}
-  - {fileID: 11400000, guid: 85c3bb93ac73b4b0bbb66b0f2aa3b24b, type: 2}
-  - {fileID: 11400000, guid: c4285e951e75e4ed28059b62aa45bc8d, type: 2}
+  stageSet: {fileID: 11400000, guid: 4938f932d80ff1b4796b2023b43c63cd, type: 2}
   spawnRadiusMargin: 5
 --- !u!4 &379471279
 Transform:

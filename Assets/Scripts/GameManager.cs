@@ -41,8 +41,8 @@ public class GameManager : MonoBehaviour
     private const float DefaultCountdownDuration = 60f;
 
     [Header("Stages")]
-    [Tooltip("ステージの並び。各ステージの通常敵・ボス・カウントダウンが適用される")]
-    [SerializeField] private StageData[] stages;
+    [Tooltip("ステージセット（複数ステージをまとめたデータ）。ここに設定した順にステージが進行する")]
+    [SerializeField] private StageSetData stageSet;
     [Tooltip("spawnRadius 計算時の画面端からの余裕距離")]
     [SerializeField] private float spawnRadiusMargin = 5f;
 
@@ -97,26 +97,25 @@ public class GameManager : MonoBehaviour
     public int CurrentStageIndex => _currentStageIndex;
 
     /// <summary>ステージ総数。デバッグ表示などに使用。</summary>
-    public int TotalStageCount => stages != null ? stages.Length : 0;
+    public int TotalStageCount => stageSet != null ? stageSet.StageCount : 0;
 
     /// <summary>現在プレイ中のステージデータ。ステージ未設定の場合は null。</summary>
     public StageData GetCurrentStageData()
     {
-        if (stages == null || stages.Length == 0) return null;
-        if (_currentStageIndex < 0 || _currentStageIndex >= stages.Length) return null;
-        return stages[_currentStageIndex];
+        if (stageSet == null) return null;
+        return stageSet.GetStage(_currentStageIndex);
     }
 
     /// <summary>次のステージが存在するか。</summary>
     public bool HasNextStage()
     {
-        return stages != null && stages.Length > 0 && _currentStageIndex + 1 < stages.Length;
+        return stageSet != null && stageSet.StageCount > 0 && _currentStageIndex + 1 < stageSet.StageCount;
     }
 
     /// <summary>次のステージへ進める（GameClear で次ステージへ行くときに呼ぶ）。</summary>
     public void AdvanceToNextStage()
     {
-        if (stages != null && _currentStageIndex + 1 < stages.Length)
+        if (stageSet != null && _currentStageIndex + 1 < stageSet.StageCount)
         {
             _currentStageIndex++;
         }
