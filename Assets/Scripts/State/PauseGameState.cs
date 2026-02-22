@@ -1,8 +1,9 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// ポーズモードのステート
-/// Normal / Boss 中に Esc で進入。Continue でポーズ前のモードに復帰する。
+/// Normal / Boss 中に Esc で進入。Continue ボタンまたは Esc でポーズ前のモードに復帰する。
 /// </summary>
 public class PauseGameState : GameStateBase
 {
@@ -19,7 +20,11 @@ public class PauseGameState : GameStateBase
 
     public override void OnUpdate(GameManager context)
     {
-        // 何もしない（Continue ボタンで復帰）
+        // Esc でゲームに戻る（Continue ボタンと同様）
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            context.ChangeGameMode(context.GetPreviousMode());
+        }
     }
 
     public override void OnExit(GameManager context)
