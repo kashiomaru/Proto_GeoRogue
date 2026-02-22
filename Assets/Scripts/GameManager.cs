@@ -425,14 +425,17 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// ノーマルステートで使用するカウントダウン時間を取得。現在ステージの値 → DefaultCountdownDuration の順で採用。
+    /// ノーマルステートで使用するカウントダウン時間を取得。ステージ秒数 → カウントダウン時間 → DefaultCountdownDuration の順で採用。
     /// </summary>
     private float GetEffectiveCountdownDuration()
     {
         StageData stage = GetCurrentStageData();
-        if (stage != null && stage.CountdownDuration > 0f)
+        if (stage != null)
         {
-            return stage.CountdownDuration;
+            if (stage.StageDurationSeconds > 0f)
+                return stage.StageDurationSeconds;
+            if (stage.CountdownDuration > 0f)
+                return stage.CountdownDuration;
         }
         return DefaultCountdownDuration;
     }

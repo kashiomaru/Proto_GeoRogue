@@ -13,7 +13,9 @@ public class StageData : ScriptableObject
     [Header("Stage Info")]
     [Tooltip("ステージ表示名（UI 用）。未使用の場合は空でよい")]
     [SerializeField] private string stageDisplayName;
-    [Tooltip("カウントダウン時間（秒）。0 以下なら GameManager のデフォルトを使用")]
+    [Tooltip("ステージ秒数（通常フェーズの制限時間・秒）。0 以下ならカウントダウン時間またはデフォルトを使用")]
+    [SerializeField] private float stageDurationSeconds = 0f;
+    [Tooltip("カウントダウン時間（秒）。ステージ秒数が 0 以下のときのみ使用。0 以下なら GameManager のデフォルトを使用")]
     [SerializeField] private float countdownDuration = 60f;
     [Tooltip("カメラとプレイヤーとの距離")]
     [SerializeField] private float cameraDistance = 18f;
@@ -32,6 +34,8 @@ public class StageData : ScriptableObject
     // --- プロパティ（読み取り専用、他スクリプトから参照用）---
 
     public string StageDisplayName => stageDisplayName;
+    /// <summary>ステージ秒数（通常フェーズの制限時間）。0 以下は未設定。</summary>
+    public float StageDurationSeconds => stageDurationSeconds;
     public float CountdownDuration => countdownDuration;
     public float CameraDistance => cameraDistance;
 
