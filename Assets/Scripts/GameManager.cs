@@ -15,6 +15,7 @@ public enum GameMode
     Title,      // タイトル
     Normal,     // 通常モード
     Boss,       // ボスモード
+    Pause,      // ポーズ中（Normal/Boss から遷移、Continue で復帰）
     GameClear,  // ゲームクリア
     GameOver    // ゲームオーバー
 }
@@ -61,7 +62,19 @@ public class GameManager : MonoBehaviour
     /// <summary>予約された遷移先。Update の末尾（現在ステートの OnUpdate 後）に実際に遷移する。</summary>
     private GameMode? _pendingGameMode;
 
+    /// <summary>直前のモード（遷移元）。ポーズからの復帰先や、OnEnter での「ポーズから戻ったか」の判定に使用。</summary>
+    private GameMode _previousMode;
+
+    /// <summary>このフレームで遷移する先のモード。OnExit 実行中に参照され、ポーズへ遷移する場合は UI を隠さない判定に使用。</summary>
+    private GameMode? _nextMode;
+
     public GameMode CurrentMode => _stateMachine?.CurrentStateKey ?? GameMode.None;
+
+    /// <summary>直前のモードを返す。ポーズの Continue で復帰先に使うほか、Normal/Boss の OnEnter でポーズ復帰判定に使用。</summary>
+    public GameMode GetPreviousMode() => _previousMode;
+
+    /// <summary>このフレームで遷移する先のモード。OnExit 内でのみ有効。ポーズへ遷移するときは UI を隠さない判定に使用。</summary>
+    public GameMode? GetNextMode() => _nextMode;
 
     /// <summary>
     /// プレイ中（弾・敵の処理を行う）かどうか。現在のステートの IsPlaying を返す。
@@ -161,6 +174,7 @@ public class GameManager : MonoBehaviour
         _stateMachine.RegisterState(GameMode.Title, new TitleGameState());
         _stateMachine.RegisterState(GameMode.Normal, new NormalGameState());
         _stateMachine.RegisterState(GameMode.Boss, new BossGameState());
+        _stateMachine.RegisterState(GameMode.Pause, new PauseGameState());
         _stateMachine.RegisterState(GameMode.GameClear, new GameClearGameState());
         _stateMachine.RegisterState(GameMode.GameOver, new GameOverGameState());
 
@@ -182,7 +196,13 @@ public class GameManager : MonoBehaviour
         {
             GameMode next = _pendingGameMode.Value;
             _pendingGameMode = null;
+            GameMode currentKey = _stateMachine?.CurrentStateKey ?? GameMode.None;
+
+            _previousMode = currentKey;
+            _nextMode = next;
             _stateMachine?.ChangeState(next);
+            _nextMode = null;
+
             ApplyEnemyManagerFlags(next);
         }
 
@@ -441,6 +461,8 @@ public class GameManager : MonoBehaviour
 
     private void ApplyEnemyManagerFlags(GameMode mode)
     {
+        if (mode == GameMode.Pause)
+            return; // ポーズ中は敵の有効状態を変更しない（復帰先で再設定される）
         enemyManager?.SetNormalEnemiesEnabled(mode == GameMode.Normal);
         enemyManager?.SetBossActive(mode == GameMode.Boss);
     }

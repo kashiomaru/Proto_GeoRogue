@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Cysharp.Threading.Tasks;
 
 /// <summary>
@@ -11,6 +12,12 @@ public class BossGameState : GameStateBase
 
     public override void OnEnter(GameManager context)
     {
+        UnityEngine.Time.timeScale = 1f;
+
+        // ポーズから復帰した場合は再初期化せず、状態を継続する（ボス・弾・カメラはそのまま）
+        if (context.GetPreviousMode() == GameMode.Pause)
+            return;
+
         // カメラブレンド中は時間を止める（ブレンド完了後に再開）
         UnityEngine.Time.timeScale = 0f;
         context.ResetBullets();
@@ -54,6 +61,13 @@ public class BossGameState : GameStateBase
     
     public override void OnUpdate(GameManager context)
     {
+        // Esc でポーズへ
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            context.ChangeGameMode(GameMode.Pause);
+            return;
+        }
+
         // ボスと弾の当たり判定
         if (context.EnemyManager != null)
         {
@@ -68,6 +82,9 @@ public class BossGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
+        // ポーズへ遷移するときはボスHPバー等は非表示にしない（そのまま表示）
+        if (context.GetNextMode() == GameMode.Pause)
+            return;
         context.UIManager?.HideBossHpBar();
     }
 }

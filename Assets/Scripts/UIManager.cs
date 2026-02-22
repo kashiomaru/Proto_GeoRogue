@@ -25,6 +25,10 @@ public class UIManager : MonoBehaviour
     [Header("Game Clear UI")]
     [SerializeField] private GameObject gameClearPanel; // ゲームクリアのベースパネル
     [SerializeField] private Button gameClearOkButton; // タイトルに戻るOKボタン
+
+    [Header("Pause UI")]
+    [SerializeField] private GameObject pausePanel;   // ポーズ画面のベースパネル
+    [SerializeField] private Button continueButton;   // Continue ボタン
     
     [Header("Status (HP / EXP Bar)")]
     [SerializeField] private GameObject statusParent; // HPバーとEXPバーの親
@@ -53,6 +57,8 @@ public class UIManager : MonoBehaviour
     private Action _onGameClearOkClicked;
     // スタートボタンクリック時のコールバック
     private Action _onStartClicked;
+    // ポーズ画面の Continue クリック時のコールバック
+    private Action _onContinueClicked;
 
     private bool _isLevelUpUIOpen = false; // レベルアップUIが開いているか
 
@@ -61,6 +67,7 @@ public class UIManager : MonoBehaviour
         // パネルを隠す
         levelUpPanel?.SetActive(false);
         gameOverPanel?.SetActive(false);
+        pausePanel?.SetActive(false);
 
         // リトライボタンのイベントを設定
         retryButton?.onClick.RemoveAllListeners();
@@ -73,6 +80,10 @@ public class UIManager : MonoBehaviour
         // スタートボタンのイベントを設定
         startButton?.onClick.RemoveAllListeners();
         startButton?.onClick.AddListener(OnStartButtonClicked);
+
+        // ポーズの Continue ボタンのイベントを設定
+        continueButton?.onClick.RemoveAllListeners();
+        continueButton?.onClick.AddListener(OnContinueButtonClicked);
 
         // HPバーの初期化
         UpdateHpBar();
@@ -139,44 +150,26 @@ public class UIManager : MonoBehaviour
     
     void UpdateCountdownTimer()
     {
+        // 表示判定は行わず、値の更新のみ。表示・非表示は ShowCountdownTimer / HideCountdownTimer の呼び出しで制御する。
         if (countdownText != null && gameManager != null)
         {
-            if (gameManager.CurrentMode != GameMode.Normal)
-            {
-                if (countdownText.gameObject.activeSelf)
-                {
-                    countdownText.gameObject.SetActive(false);
-                }
-                
-                return;
-            }
-            
-            // タイマーが表示されていない場合は表示
-            if (countdownText.gameObject.activeSelf == false)
-            {
-                countdownText.gameObject.SetActive(true);
-            }
-            
             float remainingTime = gameManager.GetCountdownTime();
-            
-            // MM:SS形式で表示
             int minutes = Mathf.FloorToInt(remainingTime / 60f);
             int seconds = Mathf.FloorToInt(remainingTime % 60f);
-            
             countdownText.text = $"{minutes:00}:{seconds:00}";
         }
     }
-    
-    // タイマーを非表示にする
-    public void HideCountdownTimer()
-    {
-        countdownText?.gameObject.SetActive(false);
-    }
-    
-    // タイマーを表示する
+
+    /// <summary>タイマーを表示する。呼び出し元（ステート等）で表示タイミングを制御する。</summary>
     public void ShowCountdownTimer()
     {
         countdownText?.gameObject.SetActive(true);
+    }
+
+    /// <summary>タイマーを非表示にする。呼び出し元（ステート等）で非表示タイミングを制御する。</summary>
+    public void HideCountdownTimer()
+    {
+        countdownText?.gameObject.SetActive(false);
     }
 
     /// <summary>
@@ -377,6 +370,29 @@ public class UIManager : MonoBehaviour
     public void HideGameOver()
     {
         gameOverPanel?.SetActive(false);
+    }
+
+    /// <summary>
+    /// ポーズ画面を表示する。Continue ボタン押下時に onContinueClicked が呼ばれる。
+    /// </summary>
+    public void ShowPause(Action onContinueClicked)
+    {
+        _onContinueClicked = onContinueClicked;
+        pausePanel?.SetActive(true);
+        SetSelectedGameObjectAfterOneFrameAsync(continueButton?.gameObject).Forget();
+    }
+
+    /// <summary>
+    /// ポーズ画面を非表示にする。
+    /// </summary>
+    public void HidePause()
+    {
+        pausePanel?.SetActive(false);
+    }
+
+    private void OnContinueButtonClicked()
+    {
+        _onContinueClicked?.Invoke();
     }
 
     private void OnRetryButtonClicked()

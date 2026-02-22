@@ -1,3 +1,5 @@
+using UnityEngine.InputSystem;
+
 /// <summary>
 /// Normalモードのステート
 /// 通常のゲームプレイ状態
@@ -9,6 +11,11 @@ public class NormalGameState : GameStateBase
     public override void OnEnter(GameManager context)
     {
         UnityEngine.Time.timeScale = 1f;
+
+        // ポーズから復帰した場合は初期化せず、状態を継続する（タイマー・敵・カメラはそのまま）
+        if (context.GetPreviousMode() == GameMode.Pause)
+            return;
+
         context.PrepareForNormalStage();
         context.SwitchCamera(CameraMode.QuarterView, immediate: true);
         context.UIManager?.ShowStatus();
@@ -20,6 +27,13 @@ public class NormalGameState : GameStateBase
     
     public override void OnUpdate(GameManager context)
     {
+        // Esc でポーズへ
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            context.ChangeGameMode(GameMode.Pause);
+            return;
+        }
+
         // カウントダウンタイマーの更新
         if (context.GetCountdownTime() > 0f)
         {
@@ -43,6 +57,10 @@ public class NormalGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
+        // ポーズへ遷移するときはステータス・タイマーは非表示にしない（そのまま表示）
+        if (context.GetNextMode() == GameMode.Pause)
+            return;
         context.UIManager?.HideStatus();
+        context.UIManager?.HideCountdownTimer();
     }
 }
