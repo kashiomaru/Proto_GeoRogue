@@ -7,7 +7,6 @@ public class GemManager : InitializeMonobehaviour
 {
     [SerializeField] private int maxGems = 1000;
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private float gemSpeed = 15.0f;  // 吸い寄せの最大速度（後方互換・参照用）
     [SerializeField] private float initialGemSpeed = 5.0f;   // 吸い寄せ開始時の初速
     [SerializeField] private float maxGemSpeed = 30.0f;       // 吸い寄せ中の最大速度
     [SerializeField] private float gemAcceleration = 25.0f;  // 吸い寄せ中の加速度（/秒）
