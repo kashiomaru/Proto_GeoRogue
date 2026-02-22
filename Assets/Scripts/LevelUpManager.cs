@@ -21,6 +21,7 @@ public class LevelUpManager : MonoBehaviour
         new UpgradeData { type = UpgradeType.CriticalRate, title = "Critical Rate", weight = 1 },
         new UpgradeData { type = UpgradeType.BulletLifeTimeUp, title = "Bullet Life", weight = 1 },
         new UpgradeData { type = UpgradeType.PlayerHpUp, title = "Player HP", weight = 1 },
+        new UpgradeData { type = UpgradeType.GrowthMultiplierUp, title = "Growth", weight = 1 },
     };
 
     // 外部（GameManager）から経験値が溜まったら呼ばれる（互換性のため残す）
@@ -126,6 +127,9 @@ public class LevelUpManager : MonoBehaviour
                 break;
             case UpgradeType.PlayerHpUp:
                 player.AddMaxHpAndCurrent(1);
+                break;
+            case UpgradeType.GrowthMultiplierUp:
+                player.AddGrowthMultiplier(1);
                 break;
         }
     }

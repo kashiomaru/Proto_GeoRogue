@@ -62,6 +62,8 @@ public class Player : InitializeMonobehaviour
     private int _nextLevelExp = 10;
     private int _currentLevel = 1;
     private bool _canLevelUp = false; // レベルアップ可能フラグ
+    /// <summary>成長倍率。ジェム取得時の経験値に乗算する。レベルアップごとに+1（初期1→2→3…）。</summary>
+    private int _growthMultiplier = 1;
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
     private Vector3 _currentVelocity; // 慣性用の現在速度
@@ -107,6 +109,15 @@ public class Player : InitializeMonobehaviour
     /// <summary>最大レベル。デバッグ表示などに使用。</summary>
     public int MaxLevel => maxLevel;
     public bool CanLevelUp => _canLevelUp;
+    /// <summary>成長倍率。ジェム取得時の経験値に乗算する値（1, 2, 3…）。アップグレード「Growth」選択で増加。</summary>
+    public int GrowthMultiplier => _growthMultiplier;
+
+    /// <summary>成長倍率を加算する。レベルアップ時のアップグレード「Growth」選択で呼ばれる。</summary>
+    public void AddGrowthMultiplier(int amount)
+    {
+        if (amount > 0)
+            _growthMultiplier += amount;
+    }
 
     /// <summary>プレイヤー弾グループのハンドル（当たり判定などで BulletManager に渡す）。</summary>
     public IBulletGroupHandler GetBulletHandler() => _bulletHandler;
@@ -251,8 +262,10 @@ public class Player : InitializeMonobehaviour
         {
             return;
         }
-        
-        _currentExp += amount;
+
+        // 成長倍率を経験値に乗算（ジェム取得時など）
+        int expGain = amount * _growthMultiplier;
+        _currentExp += expGain;
 
         // レベルアップ可能かチェック
         if (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
@@ -275,7 +288,7 @@ public class Player : InitializeMonobehaviour
         // レベルを上げる
         _currentLevel++;
         _nextLevelExp = Mathf.CeilToInt(_nextLevelExp * nextLevelExpMultiplier);
-        
+
         // フラグをリセット
         _canLevelUp = false;
         
@@ -300,6 +313,7 @@ public class Player : InitializeMonobehaviour
         _nextLevelExp = initialNextLevelExp;
         _currentLevel = 1;
         _canLevelUp = false;
+        _growthMultiplier = 1;
 
         moveSpeed = initialMoveSpeed;
         magnetDist = initialMagnetDist;

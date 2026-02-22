@@ -49,6 +49,8 @@ public class DebugInfoDisplay : MonoBehaviour
 
             // 経験値（現在/次のレベル必要）
             sb.AppendLine($"<b>EXP</b> {player.CurrentExp}/{player.NextLevelExp}");
+            // 成長倍率（ジェム取得時の経験値倍率）
+            sb.AppendLine($"<b>Growth</b> x{player.GrowthMultiplier}");
 
             // その他ステータス
             sb.AppendLine($"<b>MoveSpeed</b>: {player.GetMoveSpeed():F1}");

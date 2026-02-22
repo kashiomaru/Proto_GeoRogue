@@ -10,5 +10,6 @@ public enum UpgradeType
     CriticalDamage,  // クリティカルダメージ（確率で倍率適用、獲得ごとに確率+10%）
     CriticalRate,    // クリティカル率（選択で+1%）
     BulletLifeTimeUp, // 弾の寿命（選択で+0.1秒）
-    PlayerHpUp       // プレイヤーHP（最大HP+1、現在HP+1。減った分は回復しない）
+    PlayerHpUp,      // プレイヤーHP（最大HP+1、現在HP+1。減った分は回復しない）
+    GrowthMultiplierUp // 成長倍率（選択で+1。ジェム取得時の経験値倍率が上がる）
 }
