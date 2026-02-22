@@ -51,15 +51,15 @@ public class DebugInfoDisplay : MonoBehaviour
             sb.AppendLine($"<b>EXP</b> {player.CurrentExp}/{player.NextLevelExp}");
 
             // その他ステータス
-            sb.AppendLine($"<b>MoveSpeed</b>:{player.GetMoveSpeed():F1}");
-            sb.AppendLine($"<b>BulletSpeed</b>:{player.GetBulletSpeed():F1}");
-            sb.AppendLine($"<b>FireRate</b>:{player.GetFireRate():F2}");
-            sb.AppendLine($"<b>BulletCount</b>:{player.GetBulletCountPerShot()}");
-            sb.AppendLine($"<b>Damage</b>:{player.GetBulletDamage()}");
-            sb.AppendLine($"<b>CritRate</b>:{player.GetCriticalChance():P0}");
-            sb.AppendLine($"<b>CritMult</b>:{player.GetCriticalMultiplier():F1}x");
-            sb.AppendLine($"<b>Magnet</b>:{player.GetMagnetDist():F1}");
-            sb.AppendLine($"<b>BulletLife</b>:+{player.GetBulletLifeTimeBonus():F1}s");
+            sb.AppendLine($"<b>MoveSpeed</b>: {player.GetMoveSpeed():F1}");
+            sb.AppendLine($"<b>BulletSpeed</b>: {player.GetBulletSpeed():F1}");
+            sb.AppendLine($"<b>FireRate</b>: {player.GetFireRate():F2}");
+            sb.AppendLine($"<b>BulletCount</b>: {player.GetBulletCountPerShot()}");
+            sb.AppendLine($"<b>Damage</b>: {player.GetBulletDamage()}");
+            sb.AppendLine($"<b>CritRate</b>: {player.GetCriticalChance():P0}");
+            sb.AppendLine($"<b>CritMult</b>: {player.GetCriticalMultiplier():F1}x");
+            sb.AppendLine($"<b>Magnet</b>: {player.GetMagnetDist():F1}");
+            sb.AppendLine($"<b>BulletLife</b>: {player.GetBulletLifeTimeBase():F1} (+{player.GetBulletLifeTimeBonus():F1})s");
         }
         else
         {

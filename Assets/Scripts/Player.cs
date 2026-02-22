@@ -406,6 +406,8 @@ public class Player : InitializeMonobehaviour
         _criticalMultiplier = Mathf.Max(1f, value);
         _bulletHandler?.SetCritical(_criticalChance, _criticalMultiplier);
     }
+    /// <summary>弾の基本寿命（秒）。BulletData の値。発射時にボーナスを加算した値が使われる。</summary>
+    public float GetBulletLifeTimeBase() => bulletData != null ? bulletData.LifeTime : 0f;
     /// <summary>弾の寿命ボーナス（秒）。発射時に BulletData.LifeTime に加算される。</summary>
     public float GetBulletLifeTimeBonus() => _bulletLifeTimeBonus;
     /// <summary>弾の寿命ボーナスを設定する（LevelUp の弾の寿命アップなどで使用）。</summary>
