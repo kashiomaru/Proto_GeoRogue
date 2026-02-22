@@ -2171,7 +2171,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GemManager
   maxGems: 100
   playerTransform: {fileID: 322285197}
-  gemSpeed: 15
   initialGemSpeed: 5
   maxGemSpeed: 30
   gemAcceleration: 25
@@ -4917,6 +4916,10 @@ MonoBehaviour:
     weight: 1
   - type: 9
     title: Player HP
+    icon: {fileID: 0}
+    weight: 1
+  - type: 10
+    title: Growth
     icon: {fileID: 0}
     weight: 1
 --- !u!4 &1420325301
