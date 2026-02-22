@@ -231,9 +231,6 @@ public class BulletManager : InitializeMonobehaviour
 
     void LateUpdate()
     {
-        // 描画は LateUpdate で行う（Update で完了した Job の結果を描画）
-        if (IsInitialized == false) return;
-        if (gameManager.IsPlaying == false) return;
         RenderBullets();
     }
 
