@@ -104,10 +104,7 @@ public class UIManager : MonoBehaviour
         UpdateCountdownTimer();
 
         // ボスモード時はボスHPバーを更新
-        if (gameManager != null && gameManager.CurrentMode == GameMode.Boss)
-        {
-            UpdateBossHpBar();
-        }
+        UpdateBossHpBar();
     }
     
     void UpdateHpBar()
