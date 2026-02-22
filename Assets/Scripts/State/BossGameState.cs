@@ -14,8 +14,9 @@ public class BossGameState : GameStateBase
     {
         UnityEngine.Time.timeScale = 1f;
 
-        // ポーズから復帰した場合は再初期化せず、状態を継続する（ボス・弾・カメラはそのまま）
-        if (context.GetPreviousMode() == GameMode.Pause)
+        // ポーズまたはレベルアップから復帰した場合は再初期化せず、状態を継続する（ボス・弾・カメラはそのまま）
+        GameMode prev = context.GetPreviousMode();
+        if (prev == GameMode.Pause || prev == GameMode.LevelUp)
             return;
 
         // カメラブレンド中は時間を止める（ブレンド完了後に再開）
@@ -68,6 +69,13 @@ public class BossGameState : GameStateBase
             return;
         }
 
+        // レベルアップ可能ならレベルアップステートへ
+        if (context.PlayerCanLevelUp)
+        {
+            context.ChangeGameMode(GameMode.LevelUp);
+            return;
+        }
+
         // ボスと弾の当たり判定
         if (context.EnemyManager != null)
         {
@@ -82,8 +90,9 @@ public class BossGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
-        // ポーズへ遷移するときはボスHPバー等は非表示にしない（そのまま表示）
-        if (context.GetNextMode() == GameMode.Pause)
+        // ポーズまたはレベルアップへ遷移するときはボスHPバー等は非表示にしない（そのまま表示）
+        GameMode? next = context.GetNextMode();
+        if (next == GameMode.Pause || next == GameMode.LevelUp)
             return;
         context.UIManager?.HideBossHpBar();
     }

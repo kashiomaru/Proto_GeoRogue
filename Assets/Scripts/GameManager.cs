@@ -16,6 +16,7 @@ public enum GameMode
     Normal,     // 通常モード
     Boss,       // ボスモード
     Pause,      // ポーズ中（Normal/Boss から遷移、Continue で復帰）
+    LevelUp,    // レベルアップ選択中（Normal/Boss から遷移、選択で復帰）
     GameClear,  // ゲームクリア
     GameOver    // ゲームオーバー
 }
@@ -85,7 +86,12 @@ public class GameManager : MonoBehaviour
     public EnemyManager EnemyManager => enemyManager;
     public UIManager UIManager => uiManager;
     public CameraManager CameraManager => cameraManager;
+    public LevelUpManager LevelUpManager => levelUpManager;
+    public Player Player => player;
     public Transform PlayerTransform => player != null ? player.CachedTransform : null;
+
+    /// <summary>プレイヤーがレベルアップ可能か。Normal/Boss の OnUpdate で LevelUp 遷移の判定に使用。</summary>
+    public bool PlayerCanLevelUp => player != null && player.CanLevelUp;
 
     /// <summary>現在プレイ中のステージデータ。ステージ未設定の場合は null。</summary>
     public StageData GetCurrentStageData()
@@ -175,6 +181,7 @@ public class GameManager : MonoBehaviour
         _stateMachine.RegisterState(GameMode.Normal, new NormalGameState());
         _stateMachine.RegisterState(GameMode.Boss, new BossGameState());
         _stateMachine.RegisterState(GameMode.Pause, new PauseGameState());
+        _stateMachine.RegisterState(GameMode.LevelUp, new LevelUpGameState());
         _stateMachine.RegisterState(GameMode.GameClear, new GameClearGameState());
         _stateMachine.RegisterState(GameMode.GameOver, new GameOverGameState());
 
@@ -461,8 +468,8 @@ public class GameManager : MonoBehaviour
 
     private void ApplyEnemyManagerFlags(GameMode mode)
     {
-        if (mode == GameMode.Pause)
-            return; // ポーズ中は敵の有効状態を変更しない（復帰先で再設定される）
+        if (mode == GameMode.Pause || mode == GameMode.LevelUp)
+            return; // ポーズ・レベルアップ中は敵の有効状態を変更しない（復帰先で再設定される）
         enemyManager?.SetNormalEnemiesEnabled(mode == GameMode.Normal);
         enemyManager?.SetBossActive(mode == GameMode.Boss);
     }

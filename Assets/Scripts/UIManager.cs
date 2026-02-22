@@ -60,8 +60,6 @@ public class UIManager : MonoBehaviour
     // ポーズ画面の Continue クリック時のコールバック
     private Action _onContinueClicked;
 
-    private bool _isLevelUpUIOpen = false; // レベルアップUIが開いているか
-
     void Start()
     {
         // パネルを隠す
@@ -109,12 +107,6 @@ public class UIManager : MonoBehaviour
         if (gameManager != null && gameManager.CurrentMode == GameMode.Boss)
         {
             UpdateBossHpBar();
-        }
-        
-        // レベルアップ可能フラグをチェック
-        if (player != null && player.CanLevelUp && _isLevelUpUIOpen == false)
-        {
-            ShowLevelUpUI();
         }
     }
     
@@ -279,84 +271,53 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    // レベルアップUIを表示（内部メソッド）
-    private void ShowLevelUpUI()
+    /// <summary>レベルアップUIを表示する。オプション選択時に onSelected が呼ばれる。表示・非表示は呼び出し元（ステート等）で制御する。</summary>
+    public void ShowLevelUp(List<UpgradeData> upgradeOptions, Action<UpgradeType> onSelected)
     {
-        if (levelUpManager == null || levelUpPanel == null)
-        {
+        if (levelUpPanel == null)
             return;
-        }
 
-        _isLevelUpUIOpen = true;
-        
-        // ゲームを止める
-        Time.timeScale = 0f;
-        
-        // レベルアップオプションを取得
-        List<UpgradeData> upgradeOptions = levelUpManager.GetRandomUpgrades(3);
-        
-        // パネルを表示
+        _onUpgradeSelected = onSelected;
         levelUpPanel.SetActive(true);
         GameObject firstOption = (optionButtons != null && optionButtons.Length > 0) ? optionButtons[0]?.gameObject : null;
         SetSelectedGameObjectAfterOneFrameAsync(firstOption).Forget();
 
-        // オプションをUIに反映
         for (int i = 0; i < optionButtons.Length && i < optionTexts.Length && i < upgradeOptions.Count; i++)
         {
             UpgradeData data = upgradeOptions[i];
-            
-            // UI反映
             if (optionTexts[i] != null)
-            {
                 optionTexts[i].text = data.title;
-            }
-            
-            // ボタンのクリックイベントをリセットして登録
             if (optionButtons[i] != null)
             {
                 optionButtons[i].onClick.RemoveAllListeners();
-                int index = i; // クロージャ用
-                optionButtons[i].onClick.AddListener(() => OnUpgradeButtonClicked(data.type));
+                UpgradeType type = data.type;
+                optionButtons[i].onClick.AddListener(() => OnUpgradeButtonClicked(type));
             }
         }
     }
-    
+
+    /// <summary>レベルアップUIを非表示にする。呼び出し元（ステート等）で非表示タイミングを制御する。</summary>
+    public void HideLevelUp()
+    {
+        levelUpPanel?.SetActive(false);
+    }
+
     private void OnUpgradeButtonClicked(UpgradeType type)
     {
-        levelUpManager?.ApplyUpgrade(type);
-        player?.LevelUp();
-        levelUpPanel?.SetActive(false);
-        
-        // フラグをリセット
-        _isLevelUpUIOpen = false;
-        
-        // ゲーム再開
-        Time.timeScale = 1f;
+        _onUpgradeSelected?.Invoke(type);
     }
-    
-    // レベルアップUIを表示（外部から呼ばれる場合用、互換性のため残す）
+
+    /// <summary>レベルアップUIを表示（互換性のため残す。通常は LevelUpGameState から ShowLevelUp を使用する。）</summary>
     public void ShowLevelUpOptions(List<UpgradeData> upgradeOptions, Action<UpgradeType> onUpgradeSelected)
     {
-        _onUpgradeSelected = onUpgradeSelected;
-        
-        // ゲームを止める
         Time.timeScale = 0f;
-        
-        levelUpPanel?.SetActive(true);
-        GameObject firstOption = (optionButtons != null && optionButtons.Length > 0) ? optionButtons[0]?.gameObject : null;
-        SetSelectedGameObjectAfterOneFrameAsync(firstOption).Forget();
-
-        // オプションをUIに反映
-        for (int i = 0; i < optionButtons.Length && i < optionTexts.Length && i < upgradeOptions.Count; i++)
+        ShowLevelUp(upgradeOptions, (UpgradeType type) =>
         {
-            UpgradeData data = upgradeOptions[i];
-            if (optionTexts[i] != null)
-            {
-                optionTexts[i].text = data.title;
-            }
-            optionButtons[i]?.onClick.RemoveAllListeners();
-            optionButtons[i]?.onClick.AddListener(() => OnUpgradeButtonClicked(data.type));
-        }
+            onUpgradeSelected(type);
+            player?.LevelUp();
+            HideLevelUp();
+            Time.timeScale = 1f;
+        });
     }
     
     // ゲームオーバーUIを表示（タイムスケールは GameOverGameState.OnEnter で設定）

@@ -12,8 +12,9 @@ public class NormalGameState : GameStateBase
     {
         UnityEngine.Time.timeScale = 1f;
 
-        // ポーズから復帰した場合は初期化せず、状態を継続する（タイマー・敵・カメラはそのまま）
-        if (context.GetPreviousMode() == GameMode.Pause)
+        // ポーズまたはレベルアップから復帰した場合は初期化せず、状態を継続する（タイマー・敵・カメラはそのまま）
+        GameMode prev = context.GetPreviousMode();
+        if (prev == GameMode.Pause || prev == GameMode.LevelUp)
             return;
 
         context.PrepareForNormalStage();
@@ -31,6 +32,13 @@ public class NormalGameState : GameStateBase
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             context.ChangeGameMode(GameMode.Pause);
+            return;
+        }
+
+        // レベルアップ可能ならレベルアップステートへ
+        if (context.PlayerCanLevelUp)
+        {
+            context.ChangeGameMode(GameMode.LevelUp);
             return;
         }
 
@@ -57,8 +65,9 @@ public class NormalGameState : GameStateBase
     
     public override void OnExit(GameManager context)
     {
-        // ポーズへ遷移するときはステータス・タイマーは非表示にしない（そのまま表示）
-        if (context.GetNextMode() == GameMode.Pause)
+        // ポーズまたはレベルアップへ遷移するときはステータス・タイマーは非表示にしない（そのまま表示）
+        GameMode? next = context.GetNextMode();
+        if (next == GameMode.Pause || next == GameMode.LevelUp)
             return;
         context.UIManager?.HideStatus();
         context.UIManager?.HideCountdownTimer();
