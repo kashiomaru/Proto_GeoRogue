@@ -52,8 +52,12 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float boostConsumeRate = 0.5f;
     [Tooltip("非ブースト時のゲージ回復速度（/秒）")]
     [SerializeField] private float boostRecoverRate = 0.25f;
-    [Tooltip("ブースト中の上昇速度")]
-    [SerializeField] private float boostRiseSpeed = 4f;
+    [Tooltip("ブースト開始時の上昇速度（勢いをつける）")]
+    [SerializeField] private float boostRiseSpeedInitial = 8f;
+    [Tooltip("ブースト持続時の上昇速度（初速からこの値へ落ち着く）")]
+    [SerializeField] private float boostRiseSpeedSustain = 4f;
+    [Tooltip("初速から持続速度へ落ち着くまでの時間（秒）")]
+    [SerializeField] private float boostRiseEaseTime = 0.35f;
     [Tooltip("非ブースト時の下降速度")]
     [SerializeField] private float fallSpeed = 3f;
     [Tooltip("地面の高さ（Y）。これより下には行かない")]
@@ -89,6 +93,8 @@ public class Player : InitializeMonobehaviour
     private PlayerBoostGauge _boostGauge;
     private float _verticalVelocity; // Y方向の速度（上昇・下降）
     private bool _wantBoost; // 入力ステートから設定される「ブーストしたいか」
+    /// <summary>連続でブーストしている時間（秒）。初速→持続速度の緩急に使用。</summary>
+    private float _boostHoldTimer;
 
     /// <summary>入力モード用ステートマシン。ProcessMovement で更新される。</summary>
     private StateMachine<PlayerInputMode, Player> _inputModeStateMachine;
@@ -246,9 +252,17 @@ public class Player : InitializeMonobehaviour
         if (_boostGauge != null)
         {
             if (_boostGauge.IsBoosting)
-                _verticalVelocity = boostRiseSpeed;
+            {
+                _boostHoldTimer += dt;
+                float t = boostRiseEaseTime > 0f ? Mathf.Clamp01(_boostHoldTimer / boostRiseEaseTime) : 1f;
+                float riseSpeed = Mathf.Lerp(boostRiseSpeedInitial, boostRiseSpeedSustain, t);
+                _verticalVelocity = riseSpeed;
+            }
             else
+            {
+                _boostHoldTimer = 0f;
                 _verticalVelocity = -fallSpeed;
+            }
 
             Vector3 pos = _cachedTransform.position;
             pos.y += _verticalVelocity * dt;
@@ -384,6 +398,7 @@ public class Player : InitializeMonobehaviour
         _smoothDampVelocity = Vector3.zero;
         _verticalVelocity = 0f;
         _wantBoost = false;
+        _boostHoldTimer = 0f;
         _boostGauge?.Reset();
 
         UpdateFlashColor();

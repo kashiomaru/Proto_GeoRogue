@@ -49,8 +49,13 @@ public class PlayerBoostGauge
         }
         else
         {
-            _currentGauge += _recoverRatePerSecond * deltaTime;
-            _currentGauge = Mathf.Min(_maxGauge, _currentGauge);
+            // ゲージが空のときにキーを押し続けている間は回復しない。押していないときだけ回復する。
+            // これにより「ゲージ切れ＋スペース押下」でも落下速度が通常通りになる。
+            if (!wantBoost)
+            {
+                _currentGauge += _recoverRatePerSecond * deltaTime;
+                _currentGauge = Mathf.Min(_maxGauge, _currentGauge);
+            }
             _isBoosting = false;
         }
     }

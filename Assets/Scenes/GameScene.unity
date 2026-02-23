@@ -1494,7 +1494,7 @@ MonoBehaviour:
   bulletData: {fileID: 11400000, guid: e7ea6195fa84e460a8c976f25f0d1030, type: 2}
   collisionRadius: 1
   boostGaugeMax: 1
-  boostConsumeRate: 0.5
+  boostConsumeRate: 1
   boostRecoverRate: 0.25
   boostRiseSpeed: 2
   fallSpeed: 3
