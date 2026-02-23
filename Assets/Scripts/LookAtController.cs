@@ -11,12 +11,14 @@ public class LookAtController : MonoBehaviour
     private Transform _lookAtTarget;
 
     [Header("十字キーオフセット（ターゲット設定時のみ有効）")]
-    [SerializeField] [Min(0f)] private float _maxOffsetYaw = 30f;      // 左右の最大傾き（度）
-    [SerializeField] [Min(0f)] private float _maxOffsetPitch = 10f;     // 上下の最大傾き（度）
-    [SerializeField] [Min(0.1f)] private float _offsetChangeSpeed = 45f; // 傾きの変化速度（度/秒）
+    [SerializeField] [Min(0f)] private float _maxOffsetYaw = 30f;       // 左右の最大傾き（度）
+    [SerializeField] [Min(0f)] private float _maxOffsetPitch = 10f;      // 上下の最大傾き（度）
+    [SerializeField] [Min(0.01f)] private float _offsetSmoothTime = 0.12f; // 目標へ向かうイーズ時間（秒）※初速が速く、近づくとゆっくり
 
     private float _offsetYaw;   // 現在の左右オフセット（度）
     private float _offsetPitch; // 現在の上下オフセット（度）
+    private float _velocityYaw; // SmoothDamp用
+    private float _velocityPitch;
 
     void Update()
     {
@@ -42,8 +44,9 @@ public class LookAtController : MonoBehaviour
         }
 
         float dt = Time.deltaTime;
-        _offsetYaw = Mathf.MoveTowards(_offsetYaw, targetYaw, _offsetChangeSpeed * dt);
-        _offsetPitch = Mathf.MoveTowards(_offsetPitch, targetPitch, _offsetChangeSpeed * dt);
+        // SmoothDamp: 初速が速く、目標付近でゆっくりになるイーズアウト
+        _offsetYaw = Mathf.SmoothDamp(_offsetYaw, targetYaw, ref _velocityYaw, _offsetSmoothTime, Mathf.Infinity, dt);
+        _offsetPitch = Mathf.SmoothDamp(_offsetPitch, targetPitch, ref _velocityPitch, _offsetSmoothTime, Mathf.Infinity, dt);
 
         // 基準回転にローカルでオフセット（ピッチ・ヨー）を適用
         Quaternion offset = Quaternion.Euler(_offsetPitch, _offsetYaw, 0f);
@@ -60,6 +63,8 @@ public class LookAtController : MonoBehaviour
         {
             _offsetYaw = 0f;
             _offsetPitch = 0f;
+            _velocityYaw = 0f;
+            _velocityPitch = 0f;
         }
     }
 }
