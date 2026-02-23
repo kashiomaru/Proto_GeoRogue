@@ -4104,6 +4104,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a33103154a4df437897c340b90e54d1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LookAtController
+  _maxOffsetYaw: 30
+  _maxOffsetPitch: 10
+  _offsetChangeSpeed: 45
 --- !u!1 &1204864510
 GameObject:
   m_ObjectHideFlags: 0

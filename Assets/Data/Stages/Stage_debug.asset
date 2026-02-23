@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageData
   stageDisplayName: Debug
   stageDurationSeconds: 0
-  countdownDuration: 10
+  countdownDuration: 3
   cameraDistance: 18
   enemyData0: {fileID: 0}
   enemyData1: {fileID: 0}
