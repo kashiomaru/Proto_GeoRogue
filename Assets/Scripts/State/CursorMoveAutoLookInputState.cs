@@ -30,7 +30,10 @@ public class CursorMoveAutoLookInputState : IState<Player>
         if (_cachedCamera == null) return;
 
         Mouse mouse = Mouse.current;
+        Keyboard keyboard = Keyboard.current;
         if (mouse == null) return;
+
+        context.SetBoostInput(keyboard != null && keyboard.spaceKey.isPressed);
 
         Vector3 playerPos = context.CachedTransform.position;
         Vector2 mousePos = mouse.position.ReadValue();
