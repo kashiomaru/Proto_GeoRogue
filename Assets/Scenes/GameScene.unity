@@ -1876,7 +1876,7 @@ MonoBehaviour:
   damageTextManager: {fileID: 614781148}
   cameraManager: {fileID: 1642372745}
   renderManager: {fileID: 454398054}
-  stageSet: {fileID: 11400000, guid: 4938f932d80ff1b4796b2023b43c63cd, type: 2}
+  stageSet: {fileID: 11400000, guid: dfb3e3256aff4ec43b8a19e637143a95, type: 2}
   spawnRadiusMargin: 5
 --- !u!4 &379471279
 Transform:
