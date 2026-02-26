@@ -49,13 +49,13 @@ public class Player : InitializeMonobehaviour
     [Tooltip("ブーストゲージの最大値（正規化なら1）")]
     [SerializeField] private float boostGaugeMax = 1f;
     [Tooltip("ブースト中のゲージ消費速度（/秒）")]
-    [SerializeField] private float boostConsumeRate = 0.5f;
+    [SerializeField] private float boostConsumeRate = 1f;
     [Tooltip("非ブースト時のゲージ回復速度（/秒）")]
     [SerializeField] private float boostRecoverRate = 0.25f;
     [Tooltip("ブースト開始時の上昇速度（勢いをつける）")]
-    [SerializeField] private float boostRiseSpeedInitial = 8f;
+    [SerializeField] private float boostRiseSpeedInitial = 6f;
     [Tooltip("ブースト持続時の上昇速度（初速からこの値へ落ち着く）")]
-    [SerializeField] private float boostRiseSpeedSustain = 4f;
+    [SerializeField] private float boostRiseSpeedSustain = 3f;
     [Tooltip("初速から持続速度へ落ち着くまでの時間（秒）")]
     [SerializeField] private float boostRiseEaseTime = 0.35f;
     [Tooltip("非ブースト時の下降速度")]
@@ -63,7 +63,7 @@ public class Player : InitializeMonobehaviour
     [Tooltip("地面の高さ（Y）。これより下には行かない")]
     [SerializeField] private float groundLevel = 0f;
     [Tooltip("高度上限（Y）。これより上には行かない")]
-    [SerializeField] private float maxAltitude = 10f;
+    [SerializeField] private float maxAltitude = 2f;
 
     private int _currentHp;
     /// <summary>現在の最大HP。LevelUp のプレイヤーHPアップで増加。Reset で initial に戻る。</summary>
