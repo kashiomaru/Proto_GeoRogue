@@ -3,67 +3,44 @@ using Unity.Mathematics;
 
 public class Player : InitializeMonobehaviour
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 10f; // 回転速度
-    [Tooltip("慣性の強さ。目標速度に近づくまでの目安時間（秒）。大きいほど入力やめても滑る")]
-    [SerializeField] private float accelerationTime = 0.15f;
-    [Tooltip("ゲーム開始時の入力モード。インスペクターで切り替え可能")]
-    [SerializeField] private PlayerInputMode initialInputMode = PlayerInputMode.KeyboardWASD;
-    [Tooltip("ゲーム開始時の発射モード。インスペクターで切り替え可能")]
-    [SerializeField] private PlayerFiringMode initialFiringMode = PlayerFiringMode.Fan;
+    // データ未設定時に使う内部デフォルト値
+    private const float DefaultInitialMoveSpeed = 5f;
+    private const float DefaultInitialMagnetDist = 5f;
+    private const float DefaultRotationSpeed = 10f;
+    private const float DefaultAccelerationTime = 0.15f;
+    private const int DefaultMaxHp = 3;
+    private const float DefaultInvincibleDuration = 1f;
+    private const float DefaultFlashIntensity = 0.8f;
+    private const float DefaultInitialFlashInterval = 0.1f;
+    private const int DefaultMaxLevel = 99;
+    private const int DefaultInitialNextLevelExp = 6;
+    private const float DefaultNextLevelExpMultiplier = 1.15f;
+    private const float DefaultCollisionRadius = 1f;
+    private const float DefaultBoostGaugeMax = 1f;
+    private const float DefaultBoostConsumeRate = 1f;
+    private const float DefaultBoostRecoverRate = 0.25f;
+    private const float DefaultBoostRiseSpeedInitial = 6f;
+    private const float DefaultBoostRiseSpeedSustain = 3f;
+    private const float DefaultBoostRiseEaseTime = 0.35f;
+    private const float DefaultFallSpeed = 3f;
+    private const float DefaultGroundLevel = 0f;
+    private const float DefaultMaxAltitude = 2f;
 
-    [Header("Upgrade Params (LevelUp で変化)")]
-    [SerializeField] private float magnetDist = 5f;
-
-    [Header("Reset 時の復元値（上記の初期値。インスペクターで編集可）")]
-    [SerializeField] private float initialMoveSpeed = 5f;
-    [SerializeField] private float initialMagnetDist = 5f;
-
-    [Header("Camera Reference")]
-    [SerializeField] private Camera playerCamera; // カメラ参照（未設定の場合はMainCameraを自動取得）
-    
-    [Header("Health")]
-    [SerializeField] private int maxHp = 3;
-    [SerializeField] private float invincibleDuration = 1.0f; // 無敵時間（秒）
-    [SerializeField] private float flashIntensity = 0.8f; // フラッシュの最大強度
-    [SerializeField] private float initialFlashInterval = 0.1f; // 最初の点滅の間隔（秒）
-    
-    [Header("Level System")]
-    [SerializeField] private int maxLevel = 99;
-    [Tooltip("レベル2に上がるために必要な経験値（初期値）。Reset 時にもこの値に戻る")]
-    [SerializeField] private int initialNextLevelExp = 6;
-    [Tooltip("レベルアップごとに「次のレベル必要EXP」にかける倍率（例: 1.2 で毎回20%増）")]
-    [SerializeField] private float nextLevelExpMultiplier = 1.15f;
+    [Header("Data")]
+    [Tooltip("未設定時は内部デフォルト値を使用。弾は PlayerData の BulletData で指定。")]
+    [SerializeField] private PlayerData playerData;
 
     [Header("References")]
+    [SerializeField] private Camera playerCamera;
     [SerializeField] private BulletManager bulletManager;
     [SerializeField] private GameManager gameManager;
     [SerializeField] private EnemyManager enemyManager;
-    [Tooltip("プレイヤー弾の設定（メッシュ・マテリアルなど）。未設定の場合は BulletManager のデフォルトを使用。")]
-    [SerializeField] private BulletData bulletData;
-    [Tooltip("プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径")]
-    [SerializeField] private float collisionRadius = 1f;
+    [SerializeField] private Renderer playerRenderer;
 
-    [Header("Boost / Altitude")]
-    [Tooltip("ブーストゲージの最大値（正規化なら1）")]
-    [SerializeField] private float boostGaugeMax = 1f;
-    [Tooltip("ブースト中のゲージ消費速度（/秒）")]
-    [SerializeField] private float boostConsumeRate = 1f;
-    [Tooltip("非ブースト時のゲージ回復速度（/秒）")]
-    [SerializeField] private float boostRecoverRate = 0.25f;
-    [Tooltip("ブースト開始時の上昇速度（勢いをつける）")]
-    [SerializeField] private float boostRiseSpeedInitial = 6f;
-    [Tooltip("ブースト持続時の上昇速度（初速からこの値へ落ち着く）")]
-    [SerializeField] private float boostRiseSpeedSustain = 3f;
-    [Tooltip("初速から持続速度へ落ち着くまでの時間（秒）")]
-    [SerializeField] private float boostRiseEaseTime = 0.35f;
-    [Tooltip("非ブースト時の下降速度")]
-    [SerializeField] private float fallSpeed = 3f;
-    [Tooltip("地面の高さ（Y）。これより下には行かない")]
-    [SerializeField] private float groundLevel = 0f;
-    [Tooltip("高度上限（Y）。これより上には行かない")]
-    [SerializeField] private float maxAltitude = 2f;
+    /// <summary>現在の移動速度。LevelUp で変化し、Reset でデータの初期値に戻る。</summary>
+    private float _moveSpeed;
+    /// <summary>現在の吸い寄せ範囲。LevelUp で変化し、Reset でデータの初期値に戻る。</summary>
+    private float _magnetDist;
 
     private int _currentHp;
     /// <summary>現在の最大HP。LevelUp のプレイヤーHPアップで増加。Reset で initial に戻る。</summary>
@@ -73,7 +50,6 @@ public class Player : InitializeMonobehaviour
     private float _initialFlashTimer = 0f; // 最初の点滅タイマー
     
     // レンダリング関連
-    [SerializeField] private Renderer playerRenderer;
     private MaterialPropertyBlock _mpb;
     private int _propertyID_EmissionColor;
     
@@ -123,6 +99,32 @@ public class Player : InitializeMonobehaviour
     /// <summary>弾の寿命ボーナス（秒）。LevelUp で増加。発射時に BulletData.LifeTime に加算する。</summary>
     private float _bulletLifeTimeBonus;
 
+    // PlayerData または内部デフォルトから取得するヘルパー
+    private BulletData GetBulletData() => playerData != null ? playerData.BulletData : null;
+    private float GetInitialMoveSpeed() => playerData != null ? playerData.InitialMoveSpeed : DefaultInitialMoveSpeed;
+    private float GetInitialMagnetDist() => playerData != null ? playerData.InitialMagnetDist : DefaultInitialMagnetDist;
+    private float GetRotationSpeed() => playerData != null ? playerData.RotationSpeed : DefaultRotationSpeed;
+    private float GetAccelerationTime() => playerData != null ? playerData.AccelerationTime : DefaultAccelerationTime;
+    private PlayerInputMode GetInitialInputMode() => playerData != null ? playerData.InitialInputMode : PlayerInputMode.KeyboardWASD;
+    private PlayerFiringMode GetInitialFiringMode() => playerData != null ? playerData.InitialFiringMode : PlayerFiringMode.Fan;
+    private int GetMaxHp() => playerData != null ? playerData.MaxHp : DefaultMaxHp;
+    private float GetInvincibleDuration() => playerData != null ? playerData.InvincibleDuration : DefaultInvincibleDuration;
+    private float GetFlashIntensity() => playerData != null ? playerData.FlashIntensity : DefaultFlashIntensity;
+    private float GetInitialFlashInterval() => playerData != null ? playerData.InitialFlashInterval : DefaultInitialFlashInterval;
+    private int GetMaxLevel() => playerData != null ? playerData.MaxLevel : DefaultMaxLevel;
+    private int GetInitialNextLevelExp() => playerData != null ? playerData.InitialNextLevelExp : DefaultInitialNextLevelExp;
+    private float GetNextLevelExpMultiplier() => playerData != null ? playerData.NextLevelExpMultiplier : DefaultNextLevelExpMultiplier;
+    private float GetCollisionRadius() => playerData != null ? playerData.CollisionRadius : DefaultCollisionRadius;
+    private float GetBoostGaugeMax() => playerData != null ? playerData.BoostGaugeMax : DefaultBoostGaugeMax;
+    private float GetBoostConsumeRate() => playerData != null ? playerData.BoostConsumeRate : DefaultBoostConsumeRate;
+    private float GetBoostRecoverRate() => playerData != null ? playerData.BoostRecoverRate : DefaultBoostRecoverRate;
+    private float GetBoostRiseSpeedInitial() => playerData != null ? playerData.BoostRiseSpeedInitial : DefaultBoostRiseSpeedInitial;
+    private float GetBoostRiseSpeedSustain() => playerData != null ? playerData.BoostRiseSpeedSustain : DefaultBoostRiseSpeedSustain;
+    private float GetBoostRiseEaseTime() => playerData != null ? playerData.BoostRiseEaseTime : DefaultBoostRiseEaseTime;
+    private float GetFallSpeed() => playerData != null ? playerData.FallSpeed : DefaultFallSpeed;
+    private float GetGroundLevel() => playerData != null ? playerData.GroundLevel : DefaultGroundLevel;
+    private float GetMaxAltitude() => playerData != null ? playerData.MaxAltitude : DefaultMaxAltitude;
+
     public int CurrentHp => _currentHp;
     public int MaxHp => _maxHp;
     public bool IsInvincible => _isInvincible;
@@ -134,7 +136,7 @@ public class Player : InitializeMonobehaviour
     public int NextLevelExp => _nextLevelExp;
     public int CurrentLevel => _currentLevel;
     /// <summary>最大レベル。デバッグ表示などに使用。</summary>
-    public int MaxLevel => maxLevel;
+    public int MaxLevel => GetMaxLevel();
     public bool CanLevelUp => _canLevelUp;
     /// <summary>成長倍率。ジェム取得時の経験値に乗算する値（1, 2, 3…）。アップグレード「Growth」を選択したときのみ増加。</summary>
     public int GrowthMultiplier => _growthMultiplier;
@@ -151,9 +153,9 @@ public class Player : InitializeMonobehaviour
     /// <summary>キャッシュした Transform。GameManager など外部から参照する。</summary>
     public Transform CachedTransform => _cachedTransform;
     /// <summary>プレイヤー弾の設定（未設定の場合は null）。</summary>
-    public BulletData BulletData => bulletData;
+    public BulletData BulletData => GetBulletData();
     /// <summary>プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径。</summary>
-    public float CollisionRadius => collisionRadius;
+    public float CollisionRadius => GetCollisionRadius();
     /// <summary>現在の入力モード。</summary>
     public PlayerInputMode CurrentInputMode => _inputModeStateMachine?.CurrentStateKey ?? PlayerInputMode.KeyboardWASD;
     /// <summary>現在の発射モード。</summary>
@@ -166,23 +168,32 @@ public class Player : InitializeMonobehaviour
         Debug.Assert(bulletManager != null, "[Player] bulletManager が未設定です。インスペクターで BulletManager を指定してください。");
         Debug.Assert(gameManager != null, "[Player] gameManager が未設定です。インスペクターで GameManager を指定してください。");
         Debug.Assert(enemyManager != null, "[Player] enemyManager が未設定です。インスペクターで EnemyManager を指定してください。");
-        Debug.Assert(bulletData != null, "[Player] bulletData が未設定です。インスペクターで Bullet Data を指定してください。");
 
         _cachedTransform = transform;
-        _maxHp = maxHp;
-        _currentHp = maxHp;
-        _nextLevelExp = initialNextLevelExp;
+        _moveSpeed = GetInitialMoveSpeed();
+        _magnetDist = GetInitialMagnetDist();
+        _maxHp = GetMaxHp();
+        _currentHp = _maxHp;
+        _nextLevelExp = GetInitialNextLevelExp();
         _mpb = new MaterialPropertyBlock();
         _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
 
-        _fireRate = bulletData.FireInterval;
-        _bulletSpeed = bulletData.Speed;
-        _bulletCountPerShot = bulletData.CountPerShot;
-        _criticalChance = bulletData.CriticalChance;
-        _criticalMultiplier = bulletData != null ? bulletData.CriticalMultiplier : 1f;
-
-        bulletManager.Initialize();
-        _bulletHandler = bulletManager.AddBulletGroup(bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material, _criticalChance, _criticalMultiplier, bulletData.CurveValue);
+        BulletData dataBullet = GetBulletData();
+        if (dataBullet != null)
+        {
+            _fireRate = dataBullet.FireInterval;
+            _bulletSpeed = dataBullet.Speed;
+            _bulletCountPerShot = dataBullet.CountPerShot;
+            _criticalChance = dataBullet.CriticalChance;
+            _criticalMultiplier = dataBullet.CriticalMultiplier;
+            bulletManager.Initialize();
+            _bulletHandler = bulletManager.AddBulletGroup(dataBullet.Damage, dataBullet.Scale, dataBullet.Mesh, dataBullet.Material, _criticalChance, _criticalMultiplier, dataBullet.CurveValue);
+        }
+        else
+        {
+            bulletManager.Initialize();
+            _bulletHandler = null;
+        }
 
         _inputModeStateMachine = new StateMachine<PlayerInputMode, Player>(this);
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD, new KeyboardWASDInputState());
@@ -190,22 +201,22 @@ public class Player : InitializeMonobehaviour
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_ArrowLook, new KeyboardWASDArrowLookInputState());
         _inputModeStateMachine.RegisterState(PlayerInputMode.KeyboardWASD_Auto, new KeyboardWASDAutoInputState());
         _inputModeStateMachine.RegisterState(PlayerInputMode.CursorMove_AutoLook, new CursorMoveAutoLookInputState());
-        _inputModeStateMachine.Initialize(initialInputMode);
+        _inputModeStateMachine.Initialize(GetInitialInputMode());
 
         _boostGauge = new PlayerBoostGauge();
-        _boostGauge.Initialize(boostGaugeMax, boostConsumeRate, boostRecoverRate);
+        _boostGauge.Initialize(GetBoostGaugeMax(), GetBoostConsumeRate(), GetBoostRecoverRate());
 
         _firingStateMachine = new StateMachine<PlayerFiringMode, Player>(this);
         _firingStateMachine.RegisterState(PlayerFiringMode.Fan, new FanFiringState());
         _firingStateMachine.RegisterState(PlayerFiringMode.Straight, new StraightFiringState());
         _firingStateMachine.RegisterState(PlayerFiringMode.Omnidirectional, new OmnidirectionalFiringState());
-        _firingStateMachine.Initialize(initialFiringMode);
+        _firingStateMachine.Initialize(GetInitialFiringMode());
     }
 
     protected override void FinalizeInternal()
     {
-        // 特になし（Native 等の解放は行っていない）
-        bulletManager.RemoveBulletGroup(_bulletHandler);
+        if (_bulletHandler != null)
+            bulletManager.RemoveBulletGroup(_bulletHandler);
     }
     
     private void Update()
@@ -251,25 +262,26 @@ public class Player : InitializeMonobehaviour
 
         if (_boostGauge != null)
         {
+            float easeTime = GetBoostRiseEaseTime();
             if (_boostGauge.IsBoosting)
             {
                 _boostHoldTimer += dt;
-                float t = boostRiseEaseTime > 0f ? Mathf.Clamp01(_boostHoldTimer / boostRiseEaseTime) : 1f;
-                float riseSpeed = Mathf.Lerp(boostRiseSpeedInitial, boostRiseSpeedSustain, t);
+                float t = easeTime > 0f ? Mathf.Clamp01(_boostHoldTimer / easeTime) : 1f;
+                float riseSpeed = Mathf.Lerp(GetBoostRiseSpeedInitial(), GetBoostRiseSpeedSustain(), t);
                 _verticalVelocity = riseSpeed;
             }
             else
             {
                 _boostHoldTimer = 0f;
-                _verticalVelocity = -fallSpeed;
+                _verticalVelocity = -GetFallSpeed();
             }
 
             Vector3 pos = _cachedTransform.position;
             pos.y += _verticalVelocity * dt;
-            pos.y = Mathf.Clamp(pos.y, groundLevel, maxAltitude);
+            pos.y = Mathf.Clamp(pos.y, GetGroundLevel(), GetMaxAltitude());
             _cachedTransform.position = pos;
 
-            if (pos.y <= groundLevel || pos.y >= maxAltitude)
+            if (pos.y <= GetGroundLevel() || pos.y >= GetMaxAltitude())
                 _verticalVelocity = 0f;
         }
     }
@@ -311,9 +323,8 @@ public class Player : InitializeMonobehaviour
         if (_currentHp > 0)
         {
             _isInvincible = true;
-            _invincibleTimer = invincibleDuration;
-            // 最初の点滅を開始（2回の点滅 = ON/OFF）
-            _initialFlashTimer = initialFlashInterval * 2f;
+            _invincibleTimer = GetInvincibleDuration();
+            _initialFlashTimer = GetInitialFlashInterval() * 2f;
         }
         
         return actualDamage;
@@ -332,7 +343,7 @@ public class Player : InitializeMonobehaviour
         _currentExp += expGain;
 
         // レベルアップ可能かチェック
-        if (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
+        if (_currentExp >= _nextLevelExp && _currentLevel < GetMaxLevel())
         {
             _canLevelUp = true;
         }
@@ -341,23 +352,17 @@ public class Player : InitializeMonobehaviour
     // レベルアップ処理（UIで選択後に呼ばれる）
     public void LevelUp()
     {
-        if (_canLevelUp == false || _currentLevel >= maxLevel)
+        if (_canLevelUp == false || _currentLevel >= GetMaxLevel())
         {
             return;
         }
         
-        // 経験値をリセット
         _currentExp -= _nextLevelExp;
-        
-        // レベルを上げる
         _currentLevel++;
-        _nextLevelExp = Mathf.CeilToInt(_nextLevelExp * nextLevelExpMultiplier);
-
-        // フラグをリセット
+        _nextLevelExp = Mathf.CeilToInt(_nextLevelExp * GetNextLevelExpMultiplier());
         _canLevelUp = false;
         
-        // まだレベルアップ可能な場合はフラグを立てる
-        if (_currentExp >= _nextLevelExp && _currentLevel < maxLevel)
+        if (_currentExp >= _nextLevelExp && _currentLevel < GetMaxLevel())
         {
             _canLevelUp = true;
         }
@@ -368,28 +373,31 @@ public class Player : InitializeMonobehaviour
     /// </summary>
     public void Reset()
     {
-        _maxHp = maxHp;
-        _currentHp = maxHp;
+        _maxHp = GetMaxHp();
+        _currentHp = _maxHp;
         _isInvincible = false;
         _invincibleTimer = 0f;
         _initialFlashTimer = 0f;
         _currentExp = 0;
-        _nextLevelExp = initialNextLevelExp;
+        _nextLevelExp = GetInitialNextLevelExp();
         _currentLevel = 1;
         _canLevelUp = false;
         _growthMultiplier = 1;
 
-        moveSpeed = initialMoveSpeed;
-        magnetDist = initialMagnetDist;
+        _moveSpeed = GetInitialMoveSpeed();
+        _magnetDist = GetInitialMagnetDist();
 
-        Debug.Assert(bulletData != null, "[Player] Reset: bulletData が未設定です。インスペクターで Bullet Data を指定してください。");
-        _fireRate = bulletData.FireInterval;
-        _bulletSpeed = bulletData.Speed;
-        _bulletCountPerShot = bulletData.CountPerShot;
-        SetBulletDamage(bulletData.Damage);
-        _criticalChance = bulletData.CriticalChance;
-        _criticalMultiplier = bulletData != null ? bulletData.CriticalMultiplier : 1f;
-        _bulletHandler?.SetCritical(_criticalChance, _criticalMultiplier);
+        BulletData dataBullet = GetBulletData();
+        if (dataBullet != null)
+        {
+            _fireRate = dataBullet.FireInterval;
+            _bulletSpeed = dataBullet.Speed;
+            _bulletCountPerShot = dataBullet.CountPerShot;
+            SetBulletDamage(dataBullet.Damage);
+            _criticalChance = dataBullet.CriticalChance;
+            _criticalMultiplier = dataBullet.CriticalMultiplier;
+            _bulletHandler?.SetCritical(_criticalChance, _criticalMultiplier);
+        }
         _bulletLifeTimeBonus = 0f;
 
         _playerShotTimer = 0f;
@@ -427,7 +435,7 @@ public class Player : InitializeMonobehaviour
     /// <returns>発射してよいタイミングなら true</returns>
     public bool TryConsumeFireInterval()
     {
-        if (bulletManager == null || bulletData == null)
+        if (bulletManager == null || GetBulletData() == null)
         {
             return false;
         }
@@ -450,14 +458,15 @@ public class Player : InitializeMonobehaviour
     /// </summary>
     public void SpawnPlayerBullet(Vector3 position, Vector3 direction)
     {
-        if (bulletManager == null || bulletData == null)
+        BulletData dataBullet = GetBulletData();
+        if (bulletManager == null || dataBullet == null || _bulletHandler == null)
         {
             return;
         }
 
         float speed = GetBulletSpeed();
-        float lifeTime = (bulletData != null ? bulletData.LifeTime : 0f) + _bulletLifeTimeBonus;
-        _bulletHandler?.Spawn(position, direction, speed, lifeTime, bulletData.DirectionRotation);
+        float lifeTime = dataBullet.LifeTime + _bulletLifeTimeBonus;
+        _bulletHandler.Spawn(position, direction, speed, lifeTime, dataBullet.DirectionRotation);
     }
 
     /// <summary>発射間隔（秒）。マルチショット時は基準×発射数で単位時間あたりの弾数が一定になる。</summary>
@@ -469,8 +478,8 @@ public class Player : InitializeMonobehaviour
     public void SetBulletSpeed(float value) { _bulletSpeed = value; }
     public int GetBulletCountPerShot() => _bulletCountPerShot;
     public void SetBulletCountPerShot(int value) { _bulletCountPerShot = value; }
-    public float GetMagnetDist() => magnetDist;
-    public void SetMagnetDist(float value) { magnetDist = value; }
+    public float GetMagnetDist() => _magnetDist;
+    public void SetMagnetDist(float value) { _magnetDist = value; }
     /// <summary>プレイヤー弾のダメージ（BulletManager のグループから取得）。</summary>
     public int GetBulletDamage() => _bulletHandler != null ? _bulletHandler.GetDamage() : 0;
     /// <summary>プレイヤー弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
@@ -492,7 +501,11 @@ public class Player : InitializeMonobehaviour
         _bulletHandler?.SetCritical(_criticalChance, _criticalMultiplier);
     }
     /// <summary>弾の基本寿命（秒）。BulletData の値。発射時にボーナスを加算した値が使われる。</summary>
-    public float GetBulletLifeTimeBase() => bulletData != null ? bulletData.LifeTime : 0f;
+    public float GetBulletLifeTimeBase()
+    {
+        var b = GetBulletData();
+        return b != null ? b.LifeTime : 0f;
+    }
     /// <summary>弾の寿命ボーナス（秒）。発射時に BulletData.LifeTime に加算される。</summary>
     public float GetBulletLifeTimeBonus() => _bulletLifeTimeBonus;
     /// <summary>弾の寿命ボーナスを設定する（LevelUp の弾の寿命アップなどで使用）。</summary>
@@ -517,19 +530,19 @@ public class Player : InitializeMonobehaviour
         if (_isInvincible && _invincibleTimer > 0f)
         {
             // 最初の点滅中かどうか
+            float flashInterval = GetInitialFlashInterval();
             if (_initialFlashTimer > 0f)
             {
-                // 最初の点滅：ON/OFFを繰り返す
-                float timeSinceFlash = (initialFlashInterval * 2f) - _initialFlashTimer;
-                int flashCycle = Mathf.FloorToInt(timeSinceFlash / initialFlashInterval);
-                bool isFlashing = (flashCycle % 2 == 0); // 偶数サイクルで点灯
+                float timeSinceFlash = (flashInterval * 2f) - _initialFlashTimer;
+                int flashCycle = Mathf.FloorToInt(timeSinceFlash / flashInterval);
+                bool isFlashing = (flashCycle % 2 == 0);
                 
                 if (isFlashing)
                 {
-                    // 強烈な白（HDR）
-                    _cachedFlashColor.r = flashIntensity;
-                    _cachedFlashColor.g = flashIntensity;
-                    _cachedFlashColor.b = flashIntensity;
+                    float intensity = GetFlashIntensity();
+                    _cachedFlashColor.r = intensity;
+                    _cachedFlashColor.g = intensity;
+                    _cachedFlashColor.b = intensity;
                     _cachedFlashColor.a = 1f;
                     _mpb.SetColor(_propertyID_EmissionColor, _cachedFlashColor);
                 }
@@ -541,19 +554,16 @@ public class Player : InitializeMonobehaviour
             }
             else
             {
-                // 最初の点滅が終わった後：光が徐々に弱くなる
-                // 最初の点滅が終わってからの経過時間を計算
-                float timeAfterInitialFlash = invincibleDuration - _invincibleTimer - (initialFlashInterval * 2f);
-                float fadeDuration = invincibleDuration - (initialFlashInterval * 2f); // 減衰にかける時間
+                float invDuration = GetInvincibleDuration();
+                float flashInterval2 = GetInitialFlashInterval();
+                float timeAfterInitialFlash = invDuration - _invincibleTimer - (flashInterval2 * 2f);
+                float fadeDuration = invDuration - (flashInterval2 * 2f);
                 
                 if (fadeDuration > 0f)
                 {
-                    // 減衰の割合を計算（1.0 = 点滅直後、0.0 = 無敵時間終了時）
                     float fadeRatio = 1f - (timeAfterInitialFlash / fadeDuration);
                     fadeRatio = Mathf.Clamp01(fadeRatio);
-                    
-                    // 残り時間に応じてエミッション強度を線形に減衰
-                    float currentIntensity = flashIntensity * fadeRatio;
+                    float currentIntensity = GetFlashIntensity() * fadeRatio;
                     
                     // エミッション色を設定（時間が経つほど暗くなる）
                     _cachedFlashColor.r = currentIntensity;
@@ -608,7 +618,7 @@ public class Player : InitializeMonobehaviour
             Vector3 moveDir = Quaternion.Euler(0f, movementAngle, 0f) * Vector3.forward;
             if (moveDir.sqrMagnitude >= 0.01f)
             {
-                targetVelocity = moveDir.normalized * (moveSpeed * speedMult);
+                targetVelocity = moveDir.normalized * (_moveSpeed * speedMult);
             }
         }
 
@@ -617,11 +627,11 @@ public class Player : InitializeMonobehaviour
         bool applyRotation = overrideLookAngleDeg.HasValue || (hasInput && isSpacePressed == false);
         if (applyRotation)
         {
-            float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, rotationAngle, ref _currentRotationVelocity, 1.0f / rotationSpeed);
+            float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, rotationAngle, ref _currentRotationVelocity, 1.0f / GetRotationSpeed());
             _cachedTransform.rotation = Quaternion.Euler(0f, angle, 0f);
         }
 
-        _currentVelocity = Vector3.SmoothDamp(_currentVelocity, targetVelocity, ref _smoothDampVelocity, accelerationTime);
+        _currentVelocity = Vector3.SmoothDamp(_currentVelocity, targetVelocity, ref _smoothDampVelocity, GetAccelerationTime());
         _cachedTransform.position += _currentVelocity * Time.deltaTime;
     }
 
@@ -653,14 +663,6 @@ public class Player : InitializeMonobehaviour
         return true;
     }
 
-    // LevelUpManager用のパラメータ取得・設定メソッド
-    public float GetMoveSpeed()
-    {
-        return moveSpeed;
-    }
-    
-    public void SetMoveSpeed(float value)
-    {
-        moveSpeed = value;
-    }
+    public float GetMoveSpeed() => _moveSpeed;
+    public void SetMoveSpeed(float value) { _moveSpeed = value; }
 }
