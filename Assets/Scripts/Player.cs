@@ -77,7 +77,8 @@ public class Player : InitializeMonobehaviour
     /// <summary>成長倍率。ジェム取得時の経験値に乗算する。Growth アップグレード選択時のみ+1（初期1→2→3…）。</summary>
     private int _growthMultiplier = 1;
     
-    private float _currentRotationVelocity; // 回転の滑らかさ用
+    private float _currentRotationVelocity; // 回転の滑らかさ用（ヨー）
+    private float _currentPitchVelocity; // 回転の滑らかさ用（ピッチ）
     private Vector3 _currentVelocity; // 慣性用の現在速度
     private Vector3 _smoothDampVelocity; // SmoothDamp 用（内部用）
 
@@ -588,6 +589,9 @@ public class Player : InitializeMonobehaviour
         playerRenderer.SetPropertyBlock(_mpb);
     }
     
+    /// <summary>ピッチ角の有効範囲（度）。ギムバルロック防止のためクランプする。</summary>
+    private const float PitchClampDeg = 80f;
+
     /// <summary>
     /// 入力モードのステートから呼ばれる。指定された入力に応じて移動・回転・慣性を適用する。
     /// </summary>
@@ -595,9 +599,10 @@ public class Player : InitializeMonobehaviour
     /// <param name="vertical">前後入力（-1～1）</param>
     /// <param name="isSpacePressed">スペース押下時は回転しない（キーボード向きモード用）</param>
     /// <param name="shiftOnlyRotate">true のときは回転のみで移動しない</param>
-    /// <param name="overrideLookAngleDeg">指定時は回転のみこの角度にする。移動は KeyboardWASD と同じ（カメラ基準）。</param>
+    /// <param name="overrideLookAngleDeg">指定時はヨー角（水平向き）をこの角度にする。移動は KeyboardWASD と同じ（カメラ基準）。</param>
+    /// <param name="overrideLookPitchDeg">指定時はピッチ角（上下向き）をこの角度にする。敵方向オートロックで上空の敵に向けるために使用。</param>
     /// <param name="moveSpeedScale">指定時は移動速度にこの倍率（0～1）を掛ける。カーソル移動モードで距離に応じた速度に使う。</param>
-    public void ApplyMovementInput(float horizontal, float vertical, bool isSpacePressed, bool shiftOnlyRotate, float? overrideLookAngleDeg = null, float? moveSpeedScale = null)
+    public void ApplyMovementInput(float horizontal, float vertical, bool isSpacePressed, bool shiftOnlyRotate, float? overrideLookAngleDeg = null, float? overrideLookPitchDeg = null, float? moveSpeedScale = null)
     {
         _cachedMoveInput.x = horizontal;
         _cachedMoveInput.y = vertical;
@@ -607,7 +612,7 @@ public class Player : InitializeMonobehaviour
         _cachedDirection.Normalize();
         bool hasInput = _cachedDirection.sqrMagnitude >= 0.01f;
 
-        // 移動方向は常に KeyboardWASD と同じ（カメラ基準の入力方向）
+        // 移動方向は常に KeyboardWASD と同じ（カメラ基準の入力方向）。移動は常に水平面のみ。
         float movementAngle = Mathf.Atan2(_cachedDirection.x, _cachedDirection.z) * Mathf.Rad2Deg + GetPlayerCameraAngle();
 
         float speedMult = moveSpeedScale.HasValue ? Mathf.Clamp01(moveSpeedScale.Value) : 1f;
@@ -622,13 +627,16 @@ public class Player : InitializeMonobehaviour
             }
         }
 
-        // 回転：override 時はマウス方向、それ以外は入力方向＋カメラ
+        // 回転：override 時は指定角度（ヨー＋ピッチ）、それ以外は入力方向＋カメラ（ヨーのみ）
         float rotationAngle = overrideLookAngleDeg ?? movementAngle;
         bool applyRotation = overrideLookAngleDeg.HasValue || (hasInput && isSpacePressed == false);
         if (applyRotation)
         {
-            float angle = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, rotationAngle, ref _currentRotationVelocity, 1.0f / GetRotationSpeed());
-            _cachedTransform.rotation = Quaternion.Euler(0f, angle, 0f);
+            float yaw = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.y, rotationAngle, ref _currentRotationVelocity, 1.0f / GetRotationSpeed());
+            float pitchTarget = overrideLookPitchDeg ?? 0f;
+            float pitchClamped = Mathf.Clamp(pitchTarget, -PitchClampDeg, PitchClampDeg);
+            float pitch = Mathf.SmoothDampAngle(_cachedTransform.eulerAngles.x, pitchClamped, ref _currentPitchVelocity, 1.0f / GetRotationSpeed());
+            _cachedTransform.rotation = Quaternion.Euler(pitch, yaw, 0f);
         }
 
         _currentVelocity = Vector3.SmoothDamp(_currentVelocity, targetVelocity, ref _smoothDampVelocity, GetAccelerationTime());

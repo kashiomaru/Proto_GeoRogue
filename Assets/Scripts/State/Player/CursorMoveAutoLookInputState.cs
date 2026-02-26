@@ -2,8 +2,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// 入力モード「CursorMove_AutoLook」：マウスカーソル位置へ移動、向きは一番近い敵の方向。
-/// 画面上のプレイヤーとマウスの距離に応じて移動速度が変わる。
+/// 入力モード「CursorMove_AutoLook」：マウスカーソル位置へ移動、向きは一番近い敵の方向（ヨー＋ピッチ）。
+/// 画面上のプレイヤーとマウスの距離に応じて移動速度が変わる。ブーストで上空にいるときも弾の向きが敵方向を向く。
 /// </summary>
 public class CursorMoveAutoLookInputState : IState<Player>
 {
@@ -18,11 +18,14 @@ public class CursorMoveAutoLookInputState : IState<Player>
 
     /// <summary>敵がいないときは前フレームの目標角度を維持する。</summary>
     private float _targetLookAngle;
+    /// <summary>敵がいないときは前フレームの目標ピッチを維持する。</summary>
+    private float _targetLookPitch;
 
     public void OnEnter(Player context)
     {
         _cachedCamera = context.GetPlayerCamera();
         _targetLookAngle = context.CachedTransform.eulerAngles.y;
+        _targetLookPitch = context.CachedTransform.eulerAngles.x;
     }
 
     public void OnUpdate(Player context)
@@ -68,14 +71,16 @@ public class CursorMoveAutoLookInputState : IState<Player>
         if (context.TryGetNearestEnemyPosition(out Vector3 enemyPos))
         {
             Vector3 dir = enemyPos - playerPos;
-            dir.y = 0f;
-            if (dir.sqrMagnitude >= 0.0001f)
+            float lenSq = dir.x * dir.x + dir.y * dir.y + dir.z * dir.z;
+            if (lenSq >= 0.0001f)
             {
-                _targetLookAngle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+                Vector3 dirNorm = dir / Mathf.Sqrt(lenSq);
+                _targetLookAngle = Mathf.Atan2(dirNorm.x, dirNorm.z) * Mathf.Rad2Deg;
+                _targetLookPitch = -Mathf.Asin(Mathf.Clamp(dirNorm.y, -1f, 1f)) * Mathf.Rad2Deg;
             }
         }
 
-        context.ApplyMovementInput(horizontal, vertical, false, false, _targetLookAngle, speedScale);
+        context.ApplyMovementInput(horizontal, vertical, false, false, _targetLookAngle, _targetLookPitch, speedScale);
     }
 
     public void OnExit(Player context)
