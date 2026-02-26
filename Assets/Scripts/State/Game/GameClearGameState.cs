@@ -30,7 +30,7 @@ public class GameClearGameState : GameStateBase
     {
         // 何もしない
     }
-    
+
     public override void OnExit(GameManager context)
     {
         context.UIManager?.HideGameClear();

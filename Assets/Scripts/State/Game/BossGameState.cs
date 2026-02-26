@@ -59,7 +59,7 @@ public class BossGameState : GameStateBase
         }
         UnityEngine.Time.timeScale = 1f;
     }
-    
+
     public override void OnUpdate(GameManager context)
     {
         // Esc でポーズへ
@@ -87,7 +87,7 @@ public class BossGameState : GameStateBase
             }
         }
     }
-    
+
     public override void OnExit(GameManager context)
     {
         // ポーズまたはレベルアップへ遷移するときはボスHPバー等は非表示にしない（そのまま表示）

@@ -20,7 +20,7 @@ public class TitleGameState : GameStateBase
     {
         // 何もしない
     }
-    
+
     public override void OnExit(GameManager context)
     {
         context.UIManager?.HideTitle();

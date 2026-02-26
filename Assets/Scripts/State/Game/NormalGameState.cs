@@ -25,7 +25,7 @@ public class NormalGameState : GameStateBase
         string stageName = context.GetCurrentStageData()?.StageDisplayName ?? "";
         context.UIManager?.ShowStageName(stageName);
     }
-    
+
     public override void OnUpdate(GameManager context)
     {
         // Esc でポーズへ
@@ -46,7 +46,7 @@ public class NormalGameState : GameStateBase
         if (context.GetCountdownTime() > 0f)
         {
             context.UpdateCountdownTimer();
-            
+
             // タイマーがゼロになった瞬間の分岐
             if (context.IsCountdownFinished())
             {
@@ -62,7 +62,7 @@ public class NormalGameState : GameStateBase
             }
         }
     }
-    
+
     public override void OnExit(GameManager context)
     {
         // ポーズまたはレベルアップへ遷移するときはステータス・タイマーは非表示にしない（そのまま表示）
