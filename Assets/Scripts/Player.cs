@@ -62,7 +62,7 @@ public class Player : InitializeMonobehaviour
     private int _nextLevelExp = 10;
     private int _currentLevel = 1;
     private bool _canLevelUp = false; // レベルアップ可能フラグ
-    /// <summary>成長倍率。ジェム取得時の経験値に乗算する。レベルアップごとに+1（初期1→2→3…）。</summary>
+    /// <summary>成長倍率。ジェム取得時の経験値に乗算する。Growth アップグレード選択時のみ+1（初期1→2→3…）。</summary>
     private int _growthMultiplier = 1;
     
     private float _currentRotationVelocity; // 回転の滑らかさ用
@@ -109,7 +109,7 @@ public class Player : InitializeMonobehaviour
     /// <summary>最大レベル。デバッグ表示などに使用。</summary>
     public int MaxLevel => maxLevel;
     public bool CanLevelUp => _canLevelUp;
-    /// <summary>成長倍率。ジェム取得時の経験値に乗算する値（1, 2, 3…）。アップグレード「Growth」選択で増加。</summary>
+    /// <summary>成長倍率。ジェム取得時の経験値に乗算する値（1, 2, 3…）。アップグレード「Growth」を選択したときのみ増加。</summary>
     public int GrowthMultiplier => _growthMultiplier;
 
     /// <summary>成長倍率を加算する。レベルアップ時のアップグレード「Growth」選択で呼ばれる。</summary>
