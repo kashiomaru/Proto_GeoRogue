@@ -35,6 +35,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Slider hpBar;
     [SerializeField] private Player player;
     [SerializeField] private Slider expBar;
+    [SerializeField] private Slider boostGaugeBar; // ブーストゲージ（0～1）
     
     [Header("Level Up")]
     [SerializeField] private LevelUpManager levelUpManager;
@@ -89,6 +90,9 @@ public class UIManager : MonoBehaviour
         // 経験値バーの初期化
         UpdateExpBar();
 
+        // ブーストゲージの初期化
+        UpdateBoostGaugeBar();
+
         LockCursor();
     }
     
@@ -99,6 +103,9 @@ public class UIManager : MonoBehaviour
         
         // 経験値バーを更新
         UpdateExpBar();
+
+        // ブーストゲージを更新
+        UpdateBoostGaugeBar();
         
         // カウントダウンタイマーを更新
         UpdateCountdownTimer();
@@ -134,6 +141,14 @@ public class UIManager : MonoBehaviour
             {
                 expBar.value = 1f; // 最大レベルの場合は満タン表示
             }
+        }
+    }
+
+    void UpdateBoostGaugeBar()
+    {
+        if (boostGaugeBar != null && player != null)
+        {
+            boostGaugeBar.value = player.GetBoostGaugeNormalized();
         }
     }
     

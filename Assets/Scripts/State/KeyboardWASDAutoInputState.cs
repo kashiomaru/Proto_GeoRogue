@@ -21,11 +21,16 @@ public class KeyboardWASDAutoInputState : IState<Player>
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null)
         {
+            context.SetBoostInput(keyboard.spaceKey.isPressed);
             var k = keyboard;
             if (k.aKey.isPressed) horizontal -= 1f;
             if (k.dKey.isPressed) horizontal += 1f;
             if (k.wKey.isPressed) vertical += 1f;
             if (k.sKey.isPressed) vertical -= 1f;
+        }
+        else
+        {
+            context.SetBoostInput(false);
         }
 
         if (context.TryGetNearestEnemyPosition(out Vector3 enemyPos))

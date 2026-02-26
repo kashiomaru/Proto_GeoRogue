@@ -45,6 +45,26 @@ public class Player : InitializeMonobehaviour
     [Tooltip("プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径")]
     [SerializeField] private float collisionRadius = 1f;
 
+    [Header("Boost / Altitude")]
+    [Tooltip("ブーストゲージの最大値（正規化なら1）")]
+    [SerializeField] private float boostGaugeMax = 1f;
+    [Tooltip("ブースト中のゲージ消費速度（/秒）")]
+    [SerializeField] private float boostConsumeRate = 0.5f;
+    [Tooltip("非ブースト時のゲージ回復速度（/秒）")]
+    [SerializeField] private float boostRecoverRate = 0.25f;
+    [Tooltip("ブースト開始時の上昇速度（勢いをつける）")]
+    [SerializeField] private float boostRiseSpeedInitial = 8f;
+    [Tooltip("ブースト持続時の上昇速度（初速からこの値へ落ち着く）")]
+    [SerializeField] private float boostRiseSpeedSustain = 4f;
+    [Tooltip("初速から持続速度へ落ち着くまでの時間（秒）")]
+    [SerializeField] private float boostRiseEaseTime = 0.35f;
+    [Tooltip("非ブースト時の下降速度")]
+    [SerializeField] private float fallSpeed = 3f;
+    [Tooltip("地面の高さ（Y）。これより下には行かない")]
+    [SerializeField] private float groundLevel = 0f;
+    [Tooltip("高度上限（Y）。これより上には行かない")]
+    [SerializeField] private float maxAltitude = 10f;
+
     private int _currentHp;
     /// <summary>現在の最大HP。LevelUp のプレイヤーHPアップで増加。Reset で initial に戻る。</summary>
     private int _maxHp;
@@ -68,6 +88,13 @@ public class Player : InitializeMonobehaviour
     private float _currentRotationVelocity; // 回転の滑らかさ用
     private Vector3 _currentVelocity; // 慣性用の現在速度
     private Vector3 _smoothDampVelocity; // SmoothDamp 用（内部用）
+
+    /// <summary>ブーストゲージ管理。ProcessMovement で更新される。</summary>
+    private PlayerBoostGauge _boostGauge;
+    private float _verticalVelocity; // Y方向の速度（上昇・下降）
+    private bool _wantBoost; // 入力ステートから設定される「ブーストしたいか」
+    /// <summary>連続でブーストしている時間（秒）。初速→持続速度の緩急に使用。</summary>
+    private float _boostHoldTimer;
 
     /// <summary>入力モード用ステートマシン。ProcessMovement で更新される。</summary>
     private StateMachine<PlayerInputMode, Player> _inputModeStateMachine;
@@ -165,6 +192,9 @@ public class Player : InitializeMonobehaviour
         _inputModeStateMachine.RegisterState(PlayerInputMode.CursorMove_AutoLook, new CursorMoveAutoLookInputState());
         _inputModeStateMachine.Initialize(initialInputMode);
 
+        _boostGauge = new PlayerBoostGauge();
+        _boostGauge.Initialize(boostGaugeMax, boostConsumeRate, boostRecoverRate);
+
         _firingStateMachine = new StateMachine<PlayerFiringMode, Player>(this);
         _firingStateMachine.RegisterState(PlayerFiringMode.Fan, new FanFiringState());
         _firingStateMachine.RegisterState(PlayerFiringMode.Straight, new StraightFiringState());
@@ -214,6 +244,40 @@ public class Player : InitializeMonobehaviour
         if (IsInitialized == false) return;
 
         _inputModeStateMachine?.Update();
+
+        // ブーストゲージ更新と垂直移動・高度クランプ
+        float dt = Time.deltaTime;
+        _boostGauge?.Update(dt, _wantBoost);
+
+        if (_boostGauge != null)
+        {
+            if (_boostGauge.IsBoosting)
+            {
+                _boostHoldTimer += dt;
+                float t = boostRiseEaseTime > 0f ? Mathf.Clamp01(_boostHoldTimer / boostRiseEaseTime) : 1f;
+                float riseSpeed = Mathf.Lerp(boostRiseSpeedInitial, boostRiseSpeedSustain, t);
+                _verticalVelocity = riseSpeed;
+            }
+            else
+            {
+                _boostHoldTimer = 0f;
+                _verticalVelocity = -fallSpeed;
+            }
+
+            Vector3 pos = _cachedTransform.position;
+            pos.y += _verticalVelocity * dt;
+            pos.y = Mathf.Clamp(pos.y, groundLevel, maxAltitude);
+            _cachedTransform.position = pos;
+
+            if (pos.y <= groundLevel || pos.y >= maxAltitude)
+                _verticalVelocity = 0f;
+        }
+    }
+
+    /// <summary>ブースト入力を設定する。入力モードのステートから呼ばれる（例: Space 押下時 true）。</summary>
+    public void SetBoostInput(bool wantBoost)
+    {
+        _wantBoost = wantBoost;
     }
 
     /// <summary>入力モードを切り替える。</summary>
@@ -332,9 +396,16 @@ public class Player : InitializeMonobehaviour
 
         _currentVelocity = Vector3.zero;
         _smoothDampVelocity = Vector3.zero;
+        _verticalVelocity = 0f;
+        _wantBoost = false;
+        _boostHoldTimer = 0f;
+        _boostGauge?.Reset();
 
         UpdateFlashColor();
     }
+
+    /// <summary>ブーストゲージの正規化値（0～1）。UI表示用。</summary>
+    public float GetBoostGaugeNormalized() => _boostGauge != null ? _boostGauge.CurrentGaugeNormalized : 0f;
 
     /// <summary>
     /// プレイヤー弾の発射処理（プレイ中に GameManager の Update から呼ぶ）。発射モードのステートに委譲する。

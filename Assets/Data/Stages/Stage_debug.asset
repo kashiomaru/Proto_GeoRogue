@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfb6f46c292324f4bbdbb145e3c9f405, type: 3}
   m_Name: Stage_debug
   m_EditorClassIdentifier: Assembly-CSharp::StageData
-  stageDisplayName: Stage 1
+  stageDisplayName: Debug
   stageDurationSeconds: 0
-  countdownDuration: 10
+  countdownDuration: 30
   cameraDistance: 18
   enemyData0: {fileID: 11400000, guid: 7687e235edfca4aaf89e4755bac5f3b2, type: 2}
   enemyData1: {fileID: 0}
   enemyData2: {fileID: 0}
   enemyData3: {fileID: 0}
   enemyData4: {fileID: 0}
-  bossPrefab: {fileID: 1309990021478730655, guid: a1b2c3d4e5f60718293a4b5c6d7e8f90, type: 3}
+  bossPrefab: {fileID: 1309990021478730655, guid: e665a7dfcde1c401d8b10bf287624096, type: 3}

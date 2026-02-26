@@ -36,8 +36,10 @@ public struct EnemyRespawnJob : IJobParallelFor
         float angle = rng.NextFloat(0f, math.PI * 2f);
         float dist = rng.NextFloat(respawnMinRadius, respawnMaxRadius);
         float3 offset = new float3(math.cos(angle) * dist, 0f, math.sin(angle) * dist);
-
-        positions[index] = playerPos + offset;
+        // プレイヤーがブーストで浮いていても、敵は地面（Y=0）にリスポーンする
+        float3 spawnPos = playerPos + offset;
+        spawnPos.y = 0f;
+        positions[index] = spawnPos;
         directions[index] = new float3(0f, 0f, 1f);
         active[index] = true;
         hp[index] = maxHp;

@@ -32,9 +32,17 @@ public struct EnemyMoveAndHashJob : IJobParallelFor
         }
 
         float3 pos = positions[index];
-        float3 dir = math.normalize(target - pos);
-        pos += dir * speed * deltaTime;
-
+        // プレイヤーがブーストで浮いていても、敵は地面（XZ平面）上のみ移動する
+        float3 targetFlat = target;
+        targetFlat.y = pos.y;
+        float3 dir = targetFlat - pos;
+        dir.y = 0f;
+        if (math.lengthsq(dir) > 0.0001f)
+        {
+            dir = math.normalize(dir);
+            pos += dir * speed * deltaTime;
+        }
+        pos.y = 0f;
         positions[index] = pos;
 
         // プレイヤー方向を向く（XZ 平面のみ）
@@ -44,7 +52,10 @@ public struct EnemyMoveAndHashJob : IJobParallelFor
             ? math.normalize(toPlayer)
             : new float3(0f, 0f, 1f);
 
-        float distSq = math.distancesq(pos, target);
+        // 接触ダメージはXZ平面の距離のみで判定（プレイヤーが浮いているときは当たらない）
+        float3 targetXZ = target;
+        targetXZ.y = pos.y;
+        float distSq = math.distancesq(pos, targetXZ);
         if (distSq < damageRadius * damageRadius)
         {
             damageQueue.Enqueue(damageAmount);

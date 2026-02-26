@@ -20,6 +20,8 @@ public class KeyboardWASDArrowLookInputState : IState<Player>
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null) return;
 
+        context.SetBoostInput(keyboard.spaceKey.isPressed);
+
         float horizontal = 0f;
         float vertical = 0f;
         if (keyboard.aKey.isPressed) horizontal -= 1f;

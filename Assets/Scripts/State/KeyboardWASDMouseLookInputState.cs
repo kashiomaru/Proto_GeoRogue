@@ -24,6 +24,8 @@ public class KeyboardWASDMouseLookInputState : IState<Player>
         Keyboard keyboard = Keyboard.current;
         if (mouse == null || keyboard == null) return;
 
+        context.SetBoostInput(keyboard.spaceKey.isPressed);
+
         Vector3 playerPos = context.CachedTransform.position;
         _plane.SetNormalAndPosition(Vector3.up, playerPos);
         _ray = _cachedCamera.ScreenPointToRay(mouse.position.ReadValue());
