@@ -9,9 +9,6 @@ public class Player : InitializeMonobehaviour
     private const float DefaultRotationSpeed = 10f;
     private const float DefaultAccelerationTime = 0.15f;
     private const int DefaultMaxHp = 3;
-    private const float DefaultInvincibleDuration = 1f;
-    private const float DefaultFlashIntensity = 0.8f;
-    private const float DefaultInitialFlashInterval = 0.1f;
     private const int DefaultMaxLevel = 99;
     private const int DefaultInitialNextLevelExp = 6;
     private const float DefaultNextLevelExpMultiplier = 1.15f;
@@ -29,6 +26,14 @@ public class Player : InitializeMonobehaviour
     [Header("Data")]
     [Tooltip("未設定時は内部デフォルト値を使用。弾は PlayerData の BulletData で指定。")]
     [SerializeField] private PlayerData playerData;
+
+    [Header("Hit / Flash")]
+    [Tooltip("無敵時間（秒）")]
+    [SerializeField] private float invincibleDuration = 1f;
+    [Tooltip("フラッシュの最大強度")]
+    [SerializeField] private float flashIntensity = 0.8f;
+    [Tooltip("最初の点滅の間隔（秒）")]
+    [SerializeField] private float initialFlashInterval = 0.1f;
 
     [Header("References")]
     [SerializeField] private Camera playerCamera;
@@ -108,9 +113,6 @@ public class Player : InitializeMonobehaviour
     private PlayerInputMode GetInitialInputMode() => playerData != null ? playerData.InitialInputMode : PlayerInputMode.KeyboardWASD;
     private PlayerFiringMode GetInitialFiringMode() => playerData != null ? playerData.InitialFiringMode : PlayerFiringMode.Fan;
     private int GetMaxHp() => playerData != null ? playerData.MaxHp : DefaultMaxHp;
-    private float GetInvincibleDuration() => playerData != null ? playerData.InvincibleDuration : DefaultInvincibleDuration;
-    private float GetFlashIntensity() => playerData != null ? playerData.FlashIntensity : DefaultFlashIntensity;
-    private float GetInitialFlashInterval() => playerData != null ? playerData.InitialFlashInterval : DefaultInitialFlashInterval;
     private int GetMaxLevel() => playerData != null ? playerData.MaxLevel : DefaultMaxLevel;
     private int GetInitialNextLevelExp() => playerData != null ? playerData.InitialNextLevelExp : DefaultInitialNextLevelExp;
     private float GetNextLevelExpMultiplier() => playerData != null ? playerData.NextLevelExpMultiplier : DefaultNextLevelExpMultiplier;
@@ -323,8 +325,8 @@ public class Player : InitializeMonobehaviour
         if (_currentHp > 0)
         {
             _isInvincible = true;
-            _invincibleTimer = GetInvincibleDuration();
-            _initialFlashTimer = GetInitialFlashInterval() * 2f;
+            _invincibleTimer = invincibleDuration;
+            _initialFlashTimer = initialFlashInterval * 2f;
         }
         
         return actualDamage;
@@ -530,19 +532,17 @@ public class Player : InitializeMonobehaviour
         if (_isInvincible && _invincibleTimer > 0f)
         {
             // 最初の点滅中かどうか
-            float flashInterval = GetInitialFlashInterval();
             if (_initialFlashTimer > 0f)
             {
-                float timeSinceFlash = (flashInterval * 2f) - _initialFlashTimer;
-                int flashCycle = Mathf.FloorToInt(timeSinceFlash / flashInterval);
+                float timeSinceFlash = (initialFlashInterval * 2f) - _initialFlashTimer;
+                int flashCycle = Mathf.FloorToInt(timeSinceFlash / initialFlashInterval);
                 bool isFlashing = (flashCycle % 2 == 0);
                 
                 if (isFlashing)
                 {
-                    float intensity = GetFlashIntensity();
-                    _cachedFlashColor.r = intensity;
-                    _cachedFlashColor.g = intensity;
-                    _cachedFlashColor.b = intensity;
+                    _cachedFlashColor.r = flashIntensity;
+                    _cachedFlashColor.g = flashIntensity;
+                    _cachedFlashColor.b = flashIntensity;
                     _cachedFlashColor.a = 1f;
                     _mpb.SetColor(_propertyID_EmissionColor, _cachedFlashColor);
                 }
@@ -554,16 +554,14 @@ public class Player : InitializeMonobehaviour
             }
             else
             {
-                float invDuration = GetInvincibleDuration();
-                float flashInterval2 = GetInitialFlashInterval();
-                float timeAfterInitialFlash = invDuration - _invincibleTimer - (flashInterval2 * 2f);
-                float fadeDuration = invDuration - (flashInterval2 * 2f);
+                float timeAfterInitialFlash = invincibleDuration - _invincibleTimer - (initialFlashInterval * 2f);
+                float fadeDuration = invincibleDuration - (initialFlashInterval * 2f);
                 
                 if (fadeDuration > 0f)
                 {
                     float fadeRatio = 1f - (timeAfterInitialFlash / fadeDuration);
                     fadeRatio = Mathf.Clamp01(fadeRatio);
-                    float currentIntensity = GetFlashIntensity() * fadeRatio;
+                    float currentIntensity = flashIntensity * fadeRatio;
                     
                     // エミッション色を設定（時間が経つほど暗くなる）
                     _cachedFlashColor.r = currentIntensity;

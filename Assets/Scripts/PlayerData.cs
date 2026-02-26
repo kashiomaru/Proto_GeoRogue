@@ -27,12 +27,6 @@ public class PlayerData : ScriptableObject
 
     [Header("Health")]
     [SerializeField] private int maxHp = 3;
-    [Tooltip("無敵時間（秒）")]
-    [SerializeField] private float invincibleDuration = 1f;
-    [Tooltip("フラッシュの最大強度")]
-    [SerializeField] private float flashIntensity = 0.8f;
-    [Tooltip("最初の点滅の間隔（秒）")]
-    [SerializeField] private float initialFlashInterval = 0.1f;
 
     [Header("Level System")]
     [SerializeField] private int maxLevel = 99;
@@ -73,9 +67,6 @@ public class PlayerData : ScriptableObject
     public PlayerFiringMode InitialFiringMode => initialFiringMode;
     public float InitialMagnetDist => initialMagnetDist;
     public int MaxHp => maxHp;
-    public float InvincibleDuration => invincibleDuration;
-    public float FlashIntensity => flashIntensity;
-    public float InitialFlashInterval => initialFlashInterval;
     public int MaxLevel => maxLevel;
     public int InitialNextLevelExp => initialNextLevelExp;
     public float NextLevelExpMultiplier => nextLevelExpMultiplier;
