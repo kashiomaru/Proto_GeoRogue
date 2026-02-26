@@ -1472,7 +1472,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bd5f1e9a66a84e36bc4fed01c8f1543, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Player
-  playerData: {fileID: 11400000, guid: e3f55b236c366064ab01314120bb585b, type: 2}
+  playerData: {fileID: 11400000, guid: 6deba87340cd300459710bd92aa524ef, type: 2}
+  invincibleDuration: 1
+  flashIntensity: 0.8
+  initialFlashInterval: 0.1
+  collisionRadius: 1
+  boostRiseSpeedInitial: 6
+  boostRiseSpeedSustain: 3
+  boostRiseEaseTime: 0.35
+  fallSpeed: 3
+  groundLevel: 0
+  maxAltitude: 2
   playerCamera: {fileID: 330585545}
   bulletManager: {fileID: 420466358}
   gameManager: {fileID: 379471278}

@@ -12,16 +12,9 @@ public class Player : InitializeMonobehaviour
     private const int DefaultMaxLevel = 99;
     private const int DefaultInitialNextLevelExp = 6;
     private const float DefaultNextLevelExpMultiplier = 1.15f;
-    private const float DefaultCollisionRadius = 1f;
     private const float DefaultBoostGaugeMax = 1f;
     private const float DefaultBoostConsumeRate = 1f;
     private const float DefaultBoostRecoverRate = 0.25f;
-    private const float DefaultBoostRiseSpeedInitial = 6f;
-    private const float DefaultBoostRiseSpeedSustain = 3f;
-    private const float DefaultBoostRiseEaseTime = 0.35f;
-    private const float DefaultFallSpeed = 3f;
-    private const float DefaultGroundLevel = 0f;
-    private const float DefaultMaxAltitude = 2f;
 
     [Header("Data")]
     [Tooltip("未設定時は内部デフォルト値を使用。弾は PlayerData の BulletData で指定。")]
@@ -34,6 +27,24 @@ public class Player : InitializeMonobehaviour
     [SerializeField] private float flashIntensity = 0.8f;
     [Tooltip("最初の点滅の間隔（秒）")]
     [SerializeField] private float initialFlashInterval = 0.1f;
+
+    [Header("Collision")]
+    [Tooltip("プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径")]
+    [SerializeField] private float collisionRadius = 1f;
+
+    [Header("Boost / Altitude")]
+    [Tooltip("ブースト開始時の上昇速度（勢いをつける）")]
+    [SerializeField] private float boostRiseSpeedInitial = 6f;
+    [Tooltip("ブースト持続時の上昇速度（初速からこの値へ落ち着く）")]
+    [SerializeField] private float boostRiseSpeedSustain = 3f;
+    [Tooltip("初速から持続速度へ落ち着くまでの時間（秒）")]
+    [SerializeField] private float boostRiseEaseTime = 0.35f;
+    [Tooltip("非ブースト時の下降速度")]
+    [SerializeField] private float fallSpeed = 3f;
+    [Tooltip("地面の高さ（Y）。これより下には行かない")]
+    [SerializeField] private float groundLevel = 0f;
+    [Tooltip("高度上限（Y）。これより上には行かない")]
+    [SerializeField] private float maxAltitude = 2f;
 
     [Header("References")]
     [SerializeField] private Camera playerCamera;
@@ -114,19 +125,11 @@ public class Player : InitializeMonobehaviour
     private PlayerFiringMode GetInitialFiringMode() => playerData != null ? playerData.InitialFiringMode : PlayerFiringMode.Fan;
     private int GetMaxHp() => playerData != null ? playerData.MaxHp : DefaultMaxHp;
     private int GetMaxLevel() => playerData != null ? playerData.MaxLevel : DefaultMaxLevel;
-    private int GetInitialNextLevelExp() => playerData != null ? playerData.InitialNextLevelExp : DefaultInitialNextLevelExp;
-    private float GetNextLevelExpMultiplier() => playerData != null ? playerData.NextLevelExpMultiplier : DefaultNextLevelExpMultiplier;
-    private float GetCollisionRadius() => playerData != null ? playerData.CollisionRadius : DefaultCollisionRadius;
     private float GetBoostGaugeMax() => playerData != null ? playerData.BoostGaugeMax : DefaultBoostGaugeMax;
     private float GetBoostConsumeRate() => playerData != null ? playerData.BoostConsumeRate : DefaultBoostConsumeRate;
     private float GetBoostRecoverRate() => playerData != null ? playerData.BoostRecoverRate : DefaultBoostRecoverRate;
-    private float GetBoostRiseSpeedInitial() => playerData != null ? playerData.BoostRiseSpeedInitial : DefaultBoostRiseSpeedInitial;
-    private float GetBoostRiseSpeedSustain() => playerData != null ? playerData.BoostRiseSpeedSustain : DefaultBoostRiseSpeedSustain;
-    private float GetBoostRiseEaseTime() => playerData != null ? playerData.BoostRiseEaseTime : DefaultBoostRiseEaseTime;
-    private float GetFallSpeed() => playerData != null ? playerData.FallSpeed : DefaultFallSpeed;
-    private float GetGroundLevel() => playerData != null ? playerData.GroundLevel : DefaultGroundLevel;
-    private float GetMaxAltitude() => playerData != null ? playerData.MaxAltitude : DefaultMaxAltitude;
-
+    private int GetInitialNextLevelExp() => playerData != null ? playerData.InitialNextLevelExp : DefaultInitialNextLevelExp;
+    private float GetNextLevelExpMultiplier() => playerData != null ? playerData.NextLevelExpMultiplier : DefaultNextLevelExpMultiplier;
     public int CurrentHp => _currentHp;
     public int MaxHp => _maxHp;
     public bool IsInvincible => _isInvincible;
@@ -157,7 +160,7 @@ public class Player : InitializeMonobehaviour
     /// <summary>プレイヤー弾の設定（未設定の場合は null）。</summary>
     public BulletData BulletData => GetBulletData();
     /// <summary>プレイヤー弾と敵の当たり判定に使うプレイヤー側の半径。</summary>
-    public float CollisionRadius => GetCollisionRadius();
+    public float CollisionRadius => collisionRadius;
     /// <summary>現在の入力モード。</summary>
     public PlayerInputMode CurrentInputMode => _inputModeStateMachine?.CurrentStateKey ?? PlayerInputMode.KeyboardWASD;
     /// <summary>現在の発射モード。</summary>
@@ -264,26 +267,25 @@ public class Player : InitializeMonobehaviour
 
         if (_boostGauge != null)
         {
-            float easeTime = GetBoostRiseEaseTime();
             if (_boostGauge.IsBoosting)
             {
                 _boostHoldTimer += dt;
-                float t = easeTime > 0f ? Mathf.Clamp01(_boostHoldTimer / easeTime) : 1f;
-                float riseSpeed = Mathf.Lerp(GetBoostRiseSpeedInitial(), GetBoostRiseSpeedSustain(), t);
+                float t = boostRiseEaseTime > 0f ? Mathf.Clamp01(_boostHoldTimer / boostRiseEaseTime) : 1f;
+                float riseSpeed = Mathf.Lerp(boostRiseSpeedInitial, boostRiseSpeedSustain, t);
                 _verticalVelocity = riseSpeed;
             }
             else
             {
                 _boostHoldTimer = 0f;
-                _verticalVelocity = -GetFallSpeed();
+                _verticalVelocity = -fallSpeed;
             }
 
             Vector3 pos = _cachedTransform.position;
             pos.y += _verticalVelocity * dt;
-            pos.y = Mathf.Clamp(pos.y, GetGroundLevel(), GetMaxAltitude());
+            pos.y = Mathf.Clamp(pos.y, groundLevel, maxAltitude);
             _cachedTransform.position = pos;
 
-            if (pos.y <= GetGroundLevel() || pos.y >= GetMaxAltitude())
+            if (pos.y <= groundLevel || pos.y >= maxAltitude)
                 _verticalVelocity = 0f;
         }
     }

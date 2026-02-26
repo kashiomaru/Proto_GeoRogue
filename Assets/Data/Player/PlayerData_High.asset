@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d42d7b65fda0cac49a2a35f60cd6e667, type: 3}
+  m_Name: PlayerData_High
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerData
+  bulletData: {fileID: 11400000, guid: f7f011b795517e945842053c3cb06bb6, type: 2}
+  initialMoveSpeed: 10
+  rotationSpeed: 10
+  accelerationTime: 0.15
+  initialInputMode: 3
+  initialFiringMode: 1
+  initialMagnetDist: 10
+  maxHp: 100
+  maxLevel: 99
+  initialNextLevelExp: 6
+  nextLevelExpMultiplier: 1.15
+  boostGaugeMax: 10
+  boostConsumeRate: 1
+  boostRecoverRate: 0.25
