@@ -29,6 +29,10 @@ public class BulletData : ScriptableObject
     [Tooltip("描画スケール（BulletGroup の scale に渡す）")]
     [SerializeField] private float scale = 0.5f;
 
+    [Header("Collision")]
+    [Tooltip("当たり判定の半径。0 のとき弾は点として扱う。描画サイズとは別に指定する。")]
+    [SerializeField] [Min(0f)] private float collisionRadius = 0f;
+
     [Header("Critical")]
     [Tooltip("クリティカル発生確率（0～1）。例: 0 = 0%")]
     [SerializeField] [Range(0f, 1f)] private float criticalChance = 0f;
@@ -50,6 +54,8 @@ public class BulletData : ScriptableObject
     public Mesh Mesh => mesh;
     public Material Material => material;
     public float Scale => scale;
+    /// <summary>当たり判定の半径。0 のとき弾は点として扱う。</summary>
+    public float CollisionRadius => collisionRadius;
     public float Speed => speed;
     public int Damage => damage;
     public float LifeTime => lifeTime;

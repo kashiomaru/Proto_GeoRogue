@@ -193,7 +193,7 @@ public class Player : InitializeMonobehaviour
             _criticalChance = dataBullet.CriticalChance;
             _criticalMultiplier = dataBullet.CriticalMultiplier;
             bulletManager.Initialize();
-            _bulletHandler = bulletManager.AddBulletGroup(dataBullet.Damage, dataBullet.Scale, dataBullet.Mesh, dataBullet.Material, _criticalChance, _criticalMultiplier, dataBullet.CurveValue);
+            _bulletHandler = bulletManager.AddBulletGroup(dataBullet.Damage, dataBullet.Scale, dataBullet.Mesh, dataBullet.Material, _criticalChance, _criticalMultiplier, dataBullet.CurveValue, dataBullet.CollisionRadius);
         }
         else
         {

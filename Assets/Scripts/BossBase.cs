@@ -55,7 +55,7 @@ public abstract class BossBase : MonoBehaviour
         {
             _bulletHandler = bulletManager.AddBulletGroup(
                 bulletData.Damage, bulletData.Scale, bulletData.Mesh, bulletData.Material,
-                bulletData.CriticalChance, bulletData.CriticalMultiplier, bulletData.CurveValue);
+                bulletData.CriticalChance, bulletData.CriticalMultiplier, bulletData.CurveValue, bulletData.CollisionRadius);
         }
 
         if (bossRenderer != null)

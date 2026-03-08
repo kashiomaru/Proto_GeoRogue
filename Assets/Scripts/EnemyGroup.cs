@@ -143,7 +143,7 @@ public class EnemyGroup
             }
             _bulletSpawnQueue = new NativeQueue<EnemyBulletSpawnRequest>(Allocator.Persistent);
 
-            _enemyBulletHandler = _bulletManager.AddBulletGroup(_bulletData.Damage, _bulletData.Scale, _bulletData.Mesh, _bulletData.Material);
+            _enemyBulletHandler = _bulletManager.AddBulletGroup(_bulletData.Damage, _bulletData.Scale, _bulletData.Mesh, _bulletData.Material, 0f, 1f, _bulletData.CurveValue, _bulletData.CollisionRadius);
         }
         else
         {

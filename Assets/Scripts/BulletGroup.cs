@@ -40,6 +40,8 @@ public class BulletGroup
     private NativeArray<float> _emptyScaleMultipliers;
     private int _damage;
     private float _scale;
+    /// <summary>当たり判定の半径。0 のとき弾は点として扱う。</summary>
+    private float _collisionRadius;
     /// <summary>クリティカル発生確率（0～1）。0のときは適用しない。</summary>
     private float _criticalChance;
     /// <summary>クリティカル時のダメージ倍率。</summary>
@@ -56,6 +58,8 @@ public class BulletGroup
     public int Damage => _damage;
     /// <summary>描画スケール。Gizmo 表示などで使用。</summary>
     public float Scale => _scale;
+    /// <summary>当たり判定の半径。0 のとき弾は点として扱う。</summary>
+    public float CollisionRadius => _collisionRadius;
     /// <summary>弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
     public void SetDamage(int value) { _damage = value; }
     public float CriticalChance => _criticalChance;
@@ -76,14 +80,15 @@ public class BulletGroup
     public RenderParams RenderParams => _renderParams;
 
     /// <summary>
-    /// 最大弾数・描画スケール・メッシュ・マテリアルを指定して構築する。
+    /// 最大弾数・描画スケール・当たり判定半径・メッシュ・マテリアルを指定して構築する。
     /// </summary>
     /// <param name="maxCount">最大弾数</param>
     /// <param name="damage">弾ごとのダメージ</param>
     /// <param name="scale">描画スケール</param>
+    /// <param name="collisionRadius">当たり判定の半径。0 のとき弾は点として扱う。</param>
     /// <param name="mesh">描画用メッシュ</param>
     /// <param name="material">描画用マテリアル</param>
-    public BulletGroup(int maxCount, int damage, float scale, Mesh mesh, Material material)
+    public BulletGroup(int maxCount, int damage, float scale, float collisionRadius, Mesh mesh, Material material)
     {
         Debug.Assert(mesh != null, "[BulletGroup] mesh が未設定です。インスペクターで指定してください。");
         Debug.Assert(material != null, "[BulletGroup] material が未設定です。インスペクターで指定してください。");
@@ -113,6 +118,7 @@ public class BulletGroup
         _emptyScaleMultipliers = new NativeArray<float>(0, Allocator.Persistent);
         _damage = damage;
         _scale = scale;
+        _collisionRadius = Mathf.Max(0f, collisionRadius);
         _criticalChance = 0f;
         _criticalMultiplier = 1f;
         _cachedScale = new Vector3(_scale, _scale, _scale);

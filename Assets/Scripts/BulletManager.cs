@@ -72,8 +72,9 @@ public class BulletManager : InitializeMonobehaviour
     /// <param name="criticalChance">クリティカル発生確率（0～1）。敵弾などで使わない場合は 0。</param>
     /// <param name="criticalMultiplier">クリティカル時のダメージ倍率。使わない場合は 1。</param>
     /// <param name="curveValue">弾の進行方向を回転させる速度（度/秒）。0で直進。</param>
+    /// <param name="collisionRadius">当たり判定の半径。0 のとき弾は点として扱う。</param>
     /// <returns>弾グループ操作用のハンドル。Spawn やダメージ設定はこのハンドル経由で行う。</returns>
-    public IBulletGroupHandler AddBulletGroup(int damage, float scale, Mesh mesh, Material material, float criticalChance = 0f, float criticalMultiplier = 1f, float curveValue = 0f)
+    public IBulletGroupHandler AddBulletGroup(int damage, float scale, Mesh mesh, Material material, float criticalChance = 0f, float criticalMultiplier = 1f, float curveValue = 0f, float collisionRadius = 0f)
     {
         if (IsInitialized == false)
         {
@@ -81,7 +82,7 @@ public class BulletManager : InitializeMonobehaviour
         }
 
         var groupId = _bulletGroupIdCounter++;
-        var group = new BulletGroup(maxBullets, damage, scale, mesh, material);
+        var group = new BulletGroup(maxBullets, damage, scale, collisionRadius, mesh, material);
         group.SetCriticalParams(criticalChance, criticalMultiplier);
         group.SetCurveValue(curveValue);
         _bulletGroups.Add(groupId, group);
@@ -285,7 +286,7 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <summary>
     /// Scene View 用に全弾グループの弾を Gizmos で描画する。CollisionGizmoDrawer から呼ばれる。
-    /// 当たり判定は点のため、半径は描画スケールの radiusScale 倍で見た目目安として表示する。
+    /// CollisionRadius が 0 より大きいときはその値で円を描画し、0 のときは描画スケールの radiusScale 倍で見た目目安として表示する。
     /// </summary>
     public void DrawBulletGizmos(Color color, float radiusScale = 0.5f)
     {
@@ -295,7 +296,7 @@ public class BulletManager : InitializeMonobehaviour
             var group = kv.Value;
             if (!group.Positions.IsCreated || !group.Active.IsCreated) continue;
             int n = group.Positions.Length;
-            float r = group.Scale * radiusScale;
+            float r = group.CollisionRadius > 0f ? group.CollisionRadius : group.Scale * radiusScale;
             Gizmos.color = color;
             for (int i = 0; i < n; i++)
             {
