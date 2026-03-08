@@ -37,7 +37,7 @@ public class CollisionGizmoDrawer : MonoBehaviour
     {
         if (player == null) return;
         Gizmos.color = playerColor;
-        Gizmos.DrawWireSphere(player.CachedTransform.position, player.CollisionRadius);
+        Gizmos.DrawWireSphere(player.transform.position, player.CollisionRadius);
     }
 
     private void DrawBoss()
