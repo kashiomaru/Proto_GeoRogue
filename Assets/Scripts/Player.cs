@@ -65,9 +65,8 @@ public class Player : InitializeMonobehaviour
     private bool _isInvincible = false;
     private float _initialFlashTimer = 0f; // 最初の点滅タイマー
     
-    // レンダリング関連
-    private MaterialPropertyBlock _mpb;
-    private int _propertyID_EmissionColor;
+    // レンダリング関連（ヒットフラッシュ用にマテリアルインスタンスで _EmissionColor のみ更新）
+    private Material _playerMaterial;
     
     // --- Experience & Level ---
     private int _currentExp = 0;
@@ -181,8 +180,8 @@ public class Player : InitializeMonobehaviour
         _maxHp = GetMaxHp();
         _currentHp = _maxHp;
         _nextLevelExp = GetInitialNextLevelExp();
-        _mpb = new MaterialPropertyBlock();
-        _propertyID_EmissionColor = Shader.PropertyToID("_EmissionColor");
+        // ヒットフラッシュ用にマテリアルインスタンスを取得（PropertyBlock だと URP で他プロパティが暗くなるため、エミッションだけインスタンスで更新）
+        _playerMaterial = playerRenderer.material;
 
         BulletData dataBullet = GetBulletData();
         if (dataBullet != null)
@@ -526,7 +525,12 @@ public class Player : InitializeMonobehaviour
     // ヒットフラッシュの色を更新（最初の1回だけ点滅、その後徐々に弱くなる）
     private void UpdateFlashColor()
     {
-        if (playerRenderer == null || _mpb == null)
+        if (_playerMaterial == null)
+        {
+            return;
+        }
+
+        if (!_playerMaterial.HasProperty("_EmissionColor"))
         {
             return;
         }
@@ -547,12 +551,11 @@ public class Player : InitializeMonobehaviour
                     _cachedFlashColor.g = flashIntensity;
                     _cachedFlashColor.b = flashIntensity;
                     _cachedFlashColor.a = 1f;
-                    _mpb.SetColor(_propertyID_EmissionColor, _cachedFlashColor);
+                    _playerMaterial.SetColor("_EmissionColor", _cachedFlashColor);
                 }
                 else
                 {
-                    // 通常色（黒）
-                    _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+                    _playerMaterial.SetColor("_EmissionColor", Color.black);
                 }
             }
             else
@@ -566,27 +569,22 @@ public class Player : InitializeMonobehaviour
                     fadeRatio = Mathf.Clamp01(fadeRatio);
                     float currentIntensity = flashIntensity * fadeRatio;
                     
-                    // エミッション色を設定（時間が経つほど暗くなる）
                     _cachedFlashColor.r = currentIntensity;
                     _cachedFlashColor.g = currentIntensity;
                     _cachedFlashColor.b = currentIntensity;
                     _cachedFlashColor.a = 1f;
-                    _mpb.SetColor(_propertyID_EmissionColor, _cachedFlashColor);
+                    _playerMaterial.SetColor("_EmissionColor", _cachedFlashColor);
                 }
                 else
                 {
-                    // 減衰時間が0以下の場合は通常色
-                    _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+                    _playerMaterial.SetColor("_EmissionColor", Color.black);
                 }
             }
         }
         else
         {
-            // 無敵時間外は通常色
-            _mpb.SetColor(_propertyID_EmissionColor, Color.black);
+            _playerMaterial.SetColor("_EmissionColor", Color.black);
         }
-        
-        playerRenderer.SetPropertyBlock(_mpb);
     }
     
     /// <summary>ピッチ角の有効範囲（度）。ギムバルロック防止のためクランプする。</summary>

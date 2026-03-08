@@ -14,6 +14,7 @@ Shader "Custom/Player"
 
         Pass
         {
+            Tags { "LightMode" = "UniversalForward" }
             HLSLPROGRAM
 
             #pragma vertex vert

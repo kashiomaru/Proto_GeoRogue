@@ -20,19 +20,9 @@ MonoBehaviour:
   initialFiringMode: 1
   initialMagnetDist: 5
   maxHp: 3
-  invincibleDuration: 1
-  flashIntensity: 0.8
-  initialFlashInterval: 0.1
   maxLevel: 99
   initialNextLevelExp: 6
   nextLevelExpMultiplier: 1.15
-  collisionRadius: 1
   boostGaugeMax: 1
   boostConsumeRate: 1
   boostRecoverRate: 0.25
-  boostRiseSpeedInitial: 6
-  boostRiseSpeedSustain: 3
-  boostRiseEaseTime: 0.35
-  fallSpeed: 3
-  groundLevel: 0
-  maxAltitude: 2
