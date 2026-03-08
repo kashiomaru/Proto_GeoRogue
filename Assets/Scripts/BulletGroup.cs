@@ -54,6 +54,8 @@ public class BulletGroup
     private readonly RenderParams _renderParams;
 
     public int Damage => _damage;
+    /// <summary>描画スケール。Gizmo 表示などで使用。</summary>
+    public float Scale => _scale;
     /// <summary>弾のダメージを設定する（LevelUp のダメージアップなどで使用）。</summary>
     public void SetDamage(int value) { _damage = value; }
     public float CriticalChance => _criticalChance;

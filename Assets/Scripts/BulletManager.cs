@@ -283,6 +283,28 @@ public class BulletManager : InitializeMonobehaviour
         group.CollectHitsAgainstCircle((float3)targetPosition, targetCollisionRadius, damageQueueOut);
     }
 
+    /// <summary>
+    /// Scene View 用に全弾グループの弾を Gizmos で描画する。CollisionGizmoDrawer から呼ばれる。
+    /// 当たり判定は点のため、半径は描画スケールの radiusScale 倍で見た目目安として表示する。
+    /// </summary>
+    public void DrawBulletGizmos(Color color, float radiusScale = 0.5f)
+    {
+        if (IsInitialized == false || _bulletGroups == null) return;
+        foreach (var kv in _bulletGroups)
+        {
+            var group = kv.Value;
+            if (!group.Positions.IsCreated || !group.Active.IsCreated) continue;
+            int n = group.Positions.Length;
+            float r = group.Scale * radiusScale;
+            Gizmos.color = color;
+            for (int i = 0; i < n; i++)
+            {
+                if (group.Active[i])
+                    Gizmos.DrawWireSphere(group.Positions[i], r);
+            }
+        }
+    }
+
     /// <summary>弾グループの内部ハンドル。BulletManager 外には IBulletGroupHandler として公開する。</summary>
     private sealed class BulletGroupHandler : IBulletGroupHandler
     {
