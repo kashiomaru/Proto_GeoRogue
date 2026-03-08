@@ -220,8 +220,9 @@ public class BulletManager : InitializeMonobehaviour
         _cachedCollideJob.criticalMultiplier = bulletGroup.CriticalMultiplier;
         _cachedCollideJob.seed = (uint)Time.frameCount;
 
+        float combinedRadius = targetCollisionRadius + bulletGroup.CollisionRadius;
         _cachedCollideJob.targetCellSize = targetCellSize;
-        _cachedCollideJob.targetCollisionRadiusSq = targetCollisionRadius * targetCollisionRadius;
+        _cachedCollideJob.targetCollisionRadiusSq = combinedRadius * combinedRadius;
         _cachedCollideJob.targetSpatialMap = targetSpatialMap;
         _cachedCollideJob.targetPositions = targetPositions;
         _cachedCollideJob.targetActive = targetActive;

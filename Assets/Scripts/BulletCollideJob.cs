@@ -11,7 +11,7 @@ using Unity.Mathematics;
 public struct BulletCollideJob : IJobParallelFor
 {
     public float targetCellSize;
-    /// <summary>弾との当たり判定に使うターゲットの半径の二乗（このグループ共通）。</summary>
+    /// <summary>弾との当たり判定に使う（ターゲット半径＋弾半径）の二乗。円同士の当たり判定用。</summary>
     public float targetCollisionRadiusSq;
 
     [ReadOnly] public NativeParallelMultiHashMap<int, int> targetSpatialMap;

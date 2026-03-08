@@ -189,16 +189,18 @@ public class BulletGroup
     /// <summary>
     /// 指定円（中心・半径）と当たった弾を収集し、該当弾を無効化する。
     /// ヒットした弾のダメージとクリティカル有無を damageQueueOut に Enqueue する。呼び出し側で NativeQueue を用意すること。
+    /// 弾の当たり判定半径（CollisionRadius）も考慮し、円同士の当たり判定を行う。
     /// </summary>
-    public void CollectHitsAgainstCircle(float3 center, float radius, NativeQueue<HitDamageInfo> damageQueueOut)
+    public void CollectHitsAgainstCircle(float3 center, float targetRadius, NativeQueue<HitDamageInfo> damageQueueOut)
     {
         if (_disposed || !_positions.IsCreated || !damageQueueOut.IsCreated)
         {
             return;
         }
 
+        float effectiveRadius = targetRadius + _collisionRadius;
         _cachedCollectHitsJob.center = center;
-        _cachedCollectHitsJob.radiusSq = radius * radius;
+        _cachedCollectHitsJob.radiusSq = effectiveRadius * effectiveRadius;
         _cachedCollectHitsJob.positions = _positions;
         _cachedCollectHitsJob.damage = _damage;
         _cachedCollectHitsJob.criticalChance = _criticalChance;
