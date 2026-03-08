@@ -16,7 +16,7 @@ MonoBehaviour:
   stageDurationSeconds: 0
   countdownDuration: 30
   cameraDistance: 18
-  enemyData0: {fileID: 11400000, guid: 7687e235edfca4aaf89e4755bac5f3b2, type: 2}
+  enemyData0: {fileID: 11400000, guid: ffb2abdfc9130cd42b4ffb001d2f400c, type: 2}
   enemyData1: {fileID: 0}
   enemyData2: {fileID: 0}
   enemyData3: {fileID: 0}

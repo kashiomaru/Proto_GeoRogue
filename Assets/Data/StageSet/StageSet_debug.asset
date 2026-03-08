@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: StageSet_debug
   m_EditorClassIdentifier: Assembly-CSharp::StageSetData
   stages:
-  - {fileID: 11400000, guid: b73ceed031ebc4a60a1947d1e9bcc929, type: 2}
+  - {fileID: 11400000, guid: 848e3f2ee7be4284bb5d98c165df7714, type: 2}
