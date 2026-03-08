@@ -6,6 +6,11 @@ Shader "Custom/Player"
         _Metallic("Metallic", Range(0, 1)) = 0
         _Smoothness("Smoothness", Range(0, 1)) = 0.5
         [HDR] _EmissionColor("Emission", Color) = (0, 0, 0, 1)
+        [Header(Facing Camera Additive)]
+        [HDR] _RimColor("Rim Color", Color) = (0.5, 0.5, 1, 1)
+        _RimPower("Rim Power", Range(0.1, 20)) = 2
+        _RimStrength("Rim Strength", Range(0, 1)) = 0.3
+        _RimMaxAdd("Rim Max Add", Range(0, 2)) = 1
     }
 
     SubShader
@@ -43,6 +48,10 @@ Shader "Custom/Player"
                 half _Metallic;
                 half _Smoothness;
                 half4 _EmissionColor;
+                half4 _RimColor;
+                half _RimPower;
+                half _RimStrength;
+                half _RimMaxAdd;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -74,8 +83,13 @@ Shader "Custom/Player"
                 half3 specularF0 = lerp(0.04, _BaseColor.rgb, _Metallic);
                 half3 specular = spec * specularF0 * mainLight.color * atten;
 
-                // 拡散はメタルでは弱く、スペキュラはメタルで強く。エミッションは加算。
-                half3 color = _BaseColor.rgb * lighting * (1.0 - _Metallic) + specular + _EmissionColor.rgb;
+                // 法線がカメラ側を向いているほど加算する色（RimPower で範囲、RimStrength で強さ、RimMaxAdd で上限）
+                half NdotV = saturate(dot(normalWS, viewDirWS));
+                half rimFactor = pow(NdotV, _RimPower);
+                half3 rimAdd = min(_RimColor.rgb * rimFactor * _RimStrength, _RimMaxAdd);
+
+                // 拡散はメタルでは弱く、スペキュラはメタルで強く。エミッション・リムは加算。
+                half3 color = _BaseColor.rgb * lighting * (1.0 - _Metallic) + specular + _EmissionColor.rgb + rimAdd;
                 return half4(color, _BaseColor.a);
             }
             ENDHLSL

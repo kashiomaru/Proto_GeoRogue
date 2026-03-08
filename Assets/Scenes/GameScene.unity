@@ -1476,7 +1476,7 @@ MonoBehaviour:
   invincibleDuration: 1
   flashIntensity: 0.8
   initialFlashInterval: 0.1
-  collisionRadius: 0.5
+  collisionRadius: 0.25
   boostRiseSpeedInitial: 6
   boostRiseSpeedSustain: 3
   boostRiseEaseTime: 0.35
@@ -3084,6 +3084,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c80c76221515e648983635d7fe2de10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollisionGizmoDrawer
+  drawCollisionGizmos: 1
   player: {fileID: 322285198}
   enemyManager: {fileID: 1856169496}
   bulletManager: {fileID: 420466358}
@@ -3091,7 +3092,6 @@ MonoBehaviour:
   bossColor: {r: 0.9, g: 0.2, b: 0.2, a: 0.8}
   enemyColor: {r: 0.9, g: 0.9, b: 0.2, a: 0.8}
   bulletColor: {r: 0.2, g: 0.8, b: 0.9, a: 0.6}
-  bulletRadiusScale: 0.5
 --- !u!4 &785554930
 Transform:
   m_ObjectHideFlags: 0
