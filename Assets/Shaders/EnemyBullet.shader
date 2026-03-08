@@ -24,14 +24,17 @@ Shader "Custom/EnemyBullet"
 
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
             };
@@ -56,6 +59,7 @@ Shader "Custom/EnemyBullet"
 
             Varyings vert(Attributes IN)
             {
+                UNITY_SETUP_INSTANCE_ID(IN);
                 Varyings OUT;
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
                 OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
@@ -95,4 +99,5 @@ Shader "Custom/EnemyBullet"
             ENDHLSL
         }
     }
+    Fallback "Universal Render Pipeline/Lit"
 }
