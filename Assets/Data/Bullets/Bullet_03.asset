@@ -12,12 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7bb0fbef67bd4b0ab732b80c7d56902, type: 3}
   m_Name: Bullet_03
   m_EditorClassIdentifier: Assembly-CSharp::BulletData
-  directionType: 0
+  directionRotation: 0
+  curveValue: 0
   speed: 6
   damage: 1
   lifeTime: 10
   mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 556a1e60458b64ed3979020300f4c0dd, type: 2}
+  scale: 0.5
+  collisionRadius: 0.25
+  criticalChance: 0
+  criticalMultiplier: 1.5
   fireInterval: 6
   countPerShot: 2
   spreadAngle: 15

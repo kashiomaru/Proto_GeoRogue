@@ -31,7 +31,7 @@ public class BulletData : ScriptableObject
 
     [Header("Collision")]
     [Tooltip("当たり判定の半径。0 のとき弾は点として扱う。描画サイズとは別に指定する。")]
-    [SerializeField] [Min(0f)] private float collisionRadius = 0f;
+    [SerializeField] [Min(0f)] private float collisionRadius = 0.25f;
 
     [Header("Critical")]
     [Tooltip("クリティカル発生確率（0～1）。例: 0 = 0%")]

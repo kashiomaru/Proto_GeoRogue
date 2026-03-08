@@ -287,9 +287,9 @@ public class BulletManager : InitializeMonobehaviour
 
     /// <summary>
     /// Scene View 用に全弾グループの弾を Gizmos で描画する。CollisionGizmoDrawer から呼ばれる。
-    /// CollisionRadius が 0 より大きいときはその値で円を描画し、0 のときは描画スケールの radiusScale 倍で見た目目安として表示する。
+    /// 当たり判定で使用している弾の半径（CollisionRadius）で円を描画する。0 のときは点として最小の円で表示する。
     /// </summary>
-    public void DrawBulletGizmos(Color color, float radiusScale = 0.5f)
+    public void DrawBulletGizmos(Color color)
     {
         if (IsInitialized == false || _bulletGroups == null) return;
         foreach (var kv in _bulletGroups)
@@ -297,7 +297,7 @@ public class BulletManager : InitializeMonobehaviour
             var group = kv.Value;
             if (!group.Positions.IsCreated || !group.Active.IsCreated) continue;
             int n = group.Positions.Length;
-            float r = group.CollisionRadius > 0f ? group.CollisionRadius : group.Scale * radiusScale;
+            float r = group.CollisionRadius > 0f ? group.CollisionRadius : 0.05f;
             Gizmos.color = color;
             for (int i = 0; i < n; i++)
             {

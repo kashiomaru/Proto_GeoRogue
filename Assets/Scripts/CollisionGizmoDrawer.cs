@@ -21,9 +21,6 @@ public class CollisionGizmoDrawer : MonoBehaviour
     [SerializeField] private Color enemyColor = new Color(0.9f, 0.9f, 0.2f, 0.8f);
     [SerializeField] private Color bulletColor = new Color(0.2f, 0.8f, 0.9f, 0.6f);
 
-    /// <summary>弾の Gizmo 半径は描画スケールの何倍で表示するか（当たり判定は点のため見た目目安）。</summary>
-    [SerializeField] private float bulletRadiusScale = 0.5f;
-
     private void OnDrawGizmos()
     {
         if (!drawCollisionGizmos) return;
@@ -78,6 +75,6 @@ public class CollisionGizmoDrawer : MonoBehaviour
     private void DrawBullets()
     {
         if (bulletManager == null) return;
-        bulletManager.DrawBulletGizmos(bulletColor, bulletRadiusScale);
+        bulletManager.DrawBulletGizmos(bulletColor);
     }
 }

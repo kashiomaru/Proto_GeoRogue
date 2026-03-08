@@ -20,6 +20,7 @@ MonoBehaviour:
   mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 2c7fe204c9c4f41afa83cfb1d1cb84c7, type: 2}
   scale: 0.5
+  collisionRadius: 0.25
   criticalChance: 0.8
   criticalMultiplier: 10
   fireInterval: 0.05
